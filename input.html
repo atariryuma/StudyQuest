@@ -71,6 +71,7 @@
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
       const studentParams = location.search.substring(1);
+      const studentId = `${params.get('grade')}-${params.get('class')}-${params.get('number')}`;
       let currentTask;
 
       const qBox = document.getElementById('questionBox');
@@ -98,7 +99,7 @@
           typeWriter(parsed.question || '', qBox);
           document.getElementById('evalWrap').classList.toggle('hidden', !task.selfEval);
         })
-        .getRecommendedTask(teacherCode);
+        .getRecommendedTask(teacherCode, studentId);
 
       document.getElementById('answerForm').addEventListener('submit', e => {
         e.preventDefault();
