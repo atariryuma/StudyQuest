@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyQuest – 課題管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ゲームっぽいドットフォント -->
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <!-- TailwindCSS + GSAP アニメーション + Lucide React（アイコン） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'DotGothic16', monospace;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-950 text-gray-200">
+
+  <!-- ========================================
+       HEADER
+       ======================================== -->
+  <header class="p-4 bg-gray-800 flex justify-between items-center shadow-md">
+    <h1 class="text-xl flex items-center gap-2">
+      <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
+      StudyQuest – 教師パネル
+    </h1>
+    <div class="flex items-center gap-4">
+      <a id="boardLink" href="#" class="text-sm hover:text-pink-400">回答ボードを見る</a>
+      <span id="codeBadge" class="px-3 py-1 bg-pink-600 rounded-xl text-sm tracking-wider">
+        <!-- ここに CODE: XXXX が入る -->
+      </span>
+      <span id="widgetTasks" class="flex items-center px-3 py-1 bg-indigo-600 rounded-xl text-sm tracking-wider">
+        <svg data-icon="ClipboardList" class="w-4 h-4 mr-1"></svg>
+        <span id="totalTasks">0</span> 件
+      </span>
+      <span id="widgetStudents" class="flex items-center px-3 py-1 bg-green-600 rounded-xl text-sm tracking-wider">
+        <svg data-icon="User" class="w-4 h-4 mr-1"></svg>
+        <span id="totalStudents">0</span> 名
+      </span>
+    </div>
+  </header>
+
+  <!-- ========================================
+       MAIN CONTENT
+       ======================================== -->
+  <main class="flex-grow p-6 space-y-6">
+    <section class="grid md:grid-cols-3 gap-6">
+      <!-- ===== 新しい課題フォーム ===== -->
+      <div class="md:col-span-1 bg-gray-800 p-4 rounded-2xl shadow-lg">
+        <h2 class="text-lg mb-2 flex items-center gap-1">
+          <svg data-icon="PlusCircle" class="w-5 h-5 text-pink-400"></svg>
+          新しい課題
+        </h2>
+        <form id="taskForm" class="space-y-4 text-sm">
+          <!-- ■ 教科選択 ドロップダウン -->
+          <div>
+            <label for="subject" class="text-xs">■ 教科を選択</label>
+            <select id="subject" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+              <option value="">-- 教科を選んでください --</option>
+              <option value="国語">国語</option>
+              <option value="算数">算数</option>
+              <option value="理科">理科</option>
+              <option value="社会">社会</option>
+              <option value="英語">英語</option>
+            </select>
+          </div>
+
+          <!-- ■ 問題文 -->
+          <div>
+            <label for="question" class="text-xs">■ 問題文</label>
+            <textarea id="question" rows="3" placeholder="問題文を入力…"
+                      class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" required></textarea>
+          </div>
+
+          <!-- ■ 回答タイプ選択 (Googleフォーム風) -->
+          <div>
+            <label class="text-xs">■ 回答タイプ</label>
+            <div class="mt-1 flex gap-2 text-xs">
+              <label class="flex items-center gap-1">
+                <input type="radio" name="ansType" value="short" checked> 短文回答
+              </label>
+              <label class="flex items-center gap-1">
+                <input type="radio" name="ansType" value="long"> 段落回答
+              </label>
+              <label class="flex items-center gap-1">
+                <input type="radio" name="ansType" value="radio"> 選択式 (ラジオ)
+              </label>
+              <label class="flex items-center gap-1">
+                <input type="radio" name="ansType" value="checkbox"> チェックボックス
+              </label>
+            </div>
+          </div>
+
+          <!-- ── 選択式 / チェックボックス用オプション入力エリア ── -->
+          <div id="optionsArea" class="space-y-2 hidden">
+            <!-- ─ 選択肢数を選ぶドロップダウン ─ -->
+            <div>
+              <label for="numOptions" class="text-xs">□ 選択肢数</label>
+              <select id="numOptions"
+                      class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <!-- ─ ここに選択肢用の入力欄をまとめて生成 ─ -->
+            <div id="optionInputs" class="space-y-1"></div>
+          </div>
+
+          <!-- ■ 自己評価許可 -->
+          <label class="block cursor-pointer text-xs">
+            <input type="checkbox" id="selfEval" /> 自己評価を許可する
+          </label>
+
+          <!-- ■ 作成ボタン -->
+          <button id="createBtn" type="submit"
+                  class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-xl shadow transition-transform duration-150 transform hover:scale-105">
+            作成
+          </button>
+        </form>
+      </div>
+
+      <!-- ===== 課題一覧カード型 ===== -->
+      <div class="md:col-span-2 bg-gray-800 p-4 rounded-2xl shadow-lg overflow-auto">
+        <h2 class="text-lg mb-2 flex items-center gap-1">
+          <svg data-icon="ClipboardList" class="w-5 h-5 text-pink-400"></svg>
+          課題一覧
+        </h2>
+        <div id="tasksContainer" class="grid gap-4">
+          <!-- JavaScript でカードを埋める -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- テンプレート内に teacherCode を埋め込むスクリプト -->
+  <script>
+    <?!= "const teacherCode = '" + teacher + "';" ?>
+  </script>
+
+  <!-- Lucide Icons の読み込み（モジュールとして） -->
+  <script type="module">
+    import { PlusCircle, Trash2, ClipboardList, User } from "https://cdn.jsdelivr.net/npm/lucide-react@0.255.0/dist/esm/index.js";
+    window.LucideIcons = { PlusCircle, Trash2, ClipboardList, User };
+  </script>
+
+  <script>
+    // Lucide Icons を実際に SVG に置き換え
+    function renderIcons(scope) {
+      scope.querySelectorAll('[data-icon]').forEach(el => {
+        const iconName = el.getAttribute('data-icon');
+        if (window.LucideIcons && window.LucideIcons[iconName]) {
+          el.innerHTML = window.LucideIcons[iconName]().outerHTML;
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1) teacherCode が null/空文字 ならログインページに戻す
+      if (!teacherCode) {
+        alert('不正なアクセスです。');
+        location.href = '?page=login';
+        return;
+      }
+
+      // 2) 右上バッジをセット、回答ボードリンクもセット
+      document.getElementById('codeBadge').textContent = `CODE: ${teacherCode}`;
+      document.getElementById('boardLink').href = `?page=board&teacher=${encodeURIComponent(teacherCode)}`;
+
+      // 3) 回答タイプ選択時に optionsArea を表示／非表示
+      Array.from(document.getElementsByName('ansType')).forEach(radio => {
+        radio.addEventListener('change', e => {
+          const area = document.getElementById('optionsArea');
+          if (e.target.value === 'radio' || e.target.value === 'checkbox') {
+            area.classList.remove('hidden');
+            generateOptionInputs();
+          } else {
+            area.classList.add('hidden');
+            resetOptionInputs();
+          }
+        });
+      });
+
+      // 4) numOptions が変わったときに入力欄を再生成
+      const numOptionsEl = document.getElementById('numOptions');
+      if (numOptionsEl) {
+        numOptionsEl.addEventListener('change', generateOptionInputs);
+      }
+
+      // 5) 「新しい課題」フォーム送信時
+      const taskForm = document.getElementById('taskForm');
+      taskForm.addEventListener('submit', e => {
+        e.preventDefault();
+
+        const subject = document.getElementById('subject').value;
+        const q = document.getElementById('question').value.trim();
+        const self = document.getElementById('selfEval').checked;
+        const checkedRadio = document.querySelector('input[name="ansType"]:checked');
+        if (!checkedRadio) {
+          alert('回答タイプを選択してください。');
+          return;
+        }
+        const ansType = checkedRadio.value;
+
+        if (!subject) {
+          alert('教科を選択してください。');
+          return;
+        }
+        if (!q) {
+          alert('問題文を入力してください。');
+          return;
+        }
+
+        // ペイロードをタイプ別に組み立て
+        let payload;
+        if (ansType === 'short' || ansType === 'long') {
+          payload = JSON.stringify({ subject, question: q, type: ansType });
+        } else {
+          const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
+                              .map(inp => inp.value.trim());
+          if (inputs.some(text => text === '')) {
+            alert('すべての選択肢を入力してください。');
+            return;
+          }
+          payload = JSON.stringify({
+            subject,
+            question: q,
+            type: ansType,
+            choices: inputs
+          });
+        }
+
+        // createTask を呼び出し、成功したら画面を更新
+        google.script.run
+          .withSuccessHandler(() => {
+            loadTasks();
+            updateWidgets();
+            resetForm();
+          })
+          .withFailureHandler(err => {
+            alert('課題作成中にエラーが発生しました: ' + err.message);
+          })
+          .createTask(teacherCode, payload, self);
+
+        // ボタンアニメーション
+        const btn = document.getElementById('createBtn');
+        gsap.fromTo(btn, { scale: 1.1 }, { scale: 1, duration: 0.2 });
+      });
+
+      // 6) 課題一覧を取得＆描画
+      function loadTasks() {
+        google.script.run
+          .withSuccessHandler(renderTasks)
+          .withFailureHandler(err => {
+            console.error('listTasks エラー:', err);
+            document.getElementById('tasksContainer').innerHTML =
+              '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
+          })
+          .listTasks(teacherCode);
+      }
+
+      function renderTasks(rows) {
+        const container = document.getElementById('tasksContainer');
+        container.innerHTML = '';
+        if (!rows || rows.length === 0) {
+          container.innerHTML = '<p class="text-gray-500 text-center">課題はまだありません。</p>';
+          return;
+        }
+        rows.forEach(x => {
+          let data, detail;
+          try {
+            data = JSON.parse(x.q);
+            detail = `
+              <p class="text-xs text-indigo-300 mb-1">【${data.subject || '—'}】</p>
+              <p class="text-sm mb-1 whitespace-pre-wrap">${data.question || ''}</p>
+              <p class="text-xs text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
+            `;
+          } catch (_) {
+            detail = `<p class="text-sm mb-1 whitespace-pre-wrap">${x.q}</p>`;
+          }
+          const card = document.createElement('div');
+          card.className = 'bg-gray-700 p-4 rounded-xl shadow-lg relative transform transition-transform hover:scale-102';
+          card.innerHTML = `
+            ${detail}
+            <p class="text-xs text-gray-400 mt-2">${x.date}</p>
+            <button class="deleteBtn absolute top-2 right-2 text-red-400 hover:text-red-300" data-id="${x.id}">
+              <svg data-icon="Trash2" class="w-4 h-4"></svg>
+            </button>
+          `;
+          container.appendChild(card);
+        });
+
+        // アイコンを置き換え
+        renderIcons(document);
+      }
+
+      function renderTypeLabel(type) {
+        switch (type) {
+          case 'short': return '短文回答';
+          case 'long': return '段落回答';
+          case 'radio': return '選択式（ラジオ）';
+          case 'checkbox': return 'チェックボックス';
+          default: return '不明';
+        }
+      }
+
+      // 7) 課題削除ボタン押下時
+      document.addEventListener('click', e => {
+        const btn = e.target.closest('.deleteBtn');
+        if (btn) {
+          const id = btn.dataset.id;
+          if (confirm('この課題を削除しますか？')) {
+            google.script.run
+              .withSuccessHandler(() => {
+                loadTasks();
+                updateWidgets();
+              })
+              .withFailureHandler(err => {
+                alert('削除中にエラーが発生しました: ' + err.message);
+              })
+              .deleteTask(teacherCode, id);
+          }
+        }
+      });
+
+      // 8) ウィジェット更新 (課題数・児童数)
+      function updateWidgets() {
+        google.script.run
+          .withSuccessHandler(data => {
+            document.getElementById('totalTasks').textContent = data.taskCount;
+            document.getElementById('totalStudents').textContent = data.studentCount;
+          })
+          .getStatistics(teacherCode);
+      }
+
+      // 9) フォームリセットヘルパー
+      function resetForm() {
+        document.getElementById('subject').value = '';
+        document.getElementById('question').value = '';
+        const shortRadio = document.querySelector('input[name="ansType"][value="short"]');
+        if (shortRadio) shortRadio.checked = true;
+        document.getElementById('optionsArea').classList.add('hidden');
+        resetOptionInputs();
+        document.getElementById('selfEval').checked = false;
+      }
+
+      function resetOptionInputs() {
+        const area = document.getElementById('optionInputs');
+        if (area) area.innerHTML = '';
+      }
+
+      // 選択肢入力欄を動的生成
+      function generateOptionInputs() {
+        const area = document.getElementById('optionInputs');
+        const numOptions = parseInt(document.getElementById('numOptions').value, 10);
+        area.innerHTML = '';
+        for (let i = 1; i <= numOptions; i++) {
+          const div = document.createElement('div');
+          div.className = 'flex gap-2';
+          div.innerHTML = `
+            <input type="text"
+                   class="flex-grow p-1 rounded bg-gray-700 focus:outline-none text-xs"
+                   placeholder="選択肢${i}" />
+          `;
+          area.appendChild(div);
+        }
+      }
+
+      // 10) 画面初回ロード
+      loadTasks();
+      updateWidgets();
+      gsap.from('main', { opacity: 0, y: 20, duration: 0.6 });
+    });
+  </script>
+</body>
+</html>
