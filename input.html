@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyQuest – 回答</title>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: 'DotGothic16', monospace; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-4 md:p-8">
+
+  <main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-5 gap-8">
+
+    <div class="md:col-span-2 bg-gradient-to-br from-purple-800 to-indigo-700 rounded-2xl shadow-2xl flex flex-col">
+        <div class="p-4 border-b border-white/20">
+            <h2 id="taskSubject" class="text-lg font-bold">【教科】</h2>
+            <p id="taskType" class="text-xs text-indigo-200">回答タイプ: </p>
+        </div>
+        <div id="questionBox"
+            class="p-6 text-lg leading-relaxed whitespace-pre-wrap flex-grow min-h-[200px]">
+            読み込み中…
+        </div>
+    </div>
+
+    <div class="md:col-span-3 bg-gray-800 p-6 rounded-2xl shadow-2xl">
+        <h2 class="text-xl mb-4">回答を入力する</h2>
+        <form id="answerForm" class="space-y-4">
+            <textarea
+                id="answer"
+                rows="8"
+                class="w-full p-3 rounded-lg bg-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                placeholder="ここに回答を書こう…"
+                required
+            ></textarea>
+
+            <label class="block hidden" id="evalWrap">
+                <span class="text-sm text-gray-400">自己評価</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  id="eval"
+                  value="3"
+                  class="w-full mt-1"
+                />
+            </label>
+
+            <button
+                id="sendBtn"
+                type="submit"
+                class="w-full py-3 bg-pink-600 hover:bg-pink-500 rounded-xl shadow-lg transform transition-transform hover:scale-105"
+            >
+                回答を送信する
+            </button>
+        </form>
+    </div>
+
+  </main>
+
+  <div id="xpContainer"
+    class="fixed top-4 left-1/2 transform -translate-x-1/2 w-2/3 md:w-1/3 bg-gray-800 rounded-full overflow-hidden shadow-lg hidden">
+    <div id="xpBar" class="h-2 bg-pink-400 w-0"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(location.search);
+      const teacherCode = params.get('teacher');
+      const studentParams = location.search.substring(1);
+      let currentTask;
+
+      const qBox = document.getElementById('questionBox');
+
+      function typeWriter(text, element) {
+        element.textContent = '';
+        [...text].forEach((char, i) => {
+          setTimeout(() => { element.textContent += char; }, 30 * i);
+        });
+      }
+
+      google.script.run
+        .withSuccessHandler(task => {
+          currentTask = task;
+          if (!task || !task.q) {
+            qBox.textContent = '課題はありません。';
+            document.getElementById('sendBtn').disabled = true;
+            return;
+          }
+
+          const parsed = JSON.parse(task.q);
+          document.getElementById('taskSubject').textContent = `【${parsed.subject || 'その他'}】`;
+          document.getElementById('taskType').textContent = `回答タイプ: ${parsed.type}`;
+
+          typeWriter(parsed.question || '', qBox);
+          document.getElementById('evalWrap').classList.toggle('hidden', !task.selfEval);
+        })
+        .getRecommendedTask(teacherCode);
+
+      document.getElementById('answerForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!currentTask) return;
+
+        const answerText = document.getElementById('answer').value.trim();
+        const evalValue = currentTask.selfEval ? document.getElementById('eval').value : '';
+
+        google.script.run
+          .withSuccessHandler(() => {
+            gsap.to('#xpBar', { width: '80%', duration: 1 });
+            document.getElementById('xpContainer').classList.remove('hidden');
+            setTimeout(() => location.reload(), 1500);
+          })
+          .submitAnswer(teacherCode, studentParams, currentTask.id, answerText, evalValue);
+      });
+    });
+  </script>
+
+</body>
+</html>
