@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyQuest – ログイン</title>
+  <!-- ゲームっぽいドットフォント -->
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <!-- TailwindCSS + GSAP -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: 'DotGothic16', monospace; }
+    #particleCanvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%; z-index: -1;
+    }
+    /* 初回メッセージ用モーダル */
+    #firstMessage {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    #firstMessage .modal {
+      background: #1f2937; padding: 1.5rem; border-radius: 1rem;
+      max-width: 90%; color: #fff; font-size: 0.875rem;
+    }
+    #firstMessage button {
+      margin-top: 1rem; padding: 0.5rem 1rem; background: #ec4899;
+      border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-900 to-gray-900 text-white">
+
+  <!-- 背景パーティクル用キャンバス -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- ログインボックス -->
+  <div id="loginBox" class="bg-gray-900/80 p-8 rounded-2xl shadow-2xl w-80 md:w-96 text-center">
+    <h1 class="text-3xl mb-4 tracking-widest drop-shadow-lg">
+      Study<span class="text-pink-400">Quest</span>
+    </h1>
+    <form id="loginForm" class="space-y-4 text-sm">
+      <!-- 教師モード切替 -->
+      <label class="block text-left text-xs cursor-pointer">
+        <input type="checkbox" id="teacherMode" /> 私は教師です
+      </label>
+
+      <!-- 教師パスコード -->
+      <div id="passcodeWrap" class="hidden">
+        <input
+          id="passcode"
+          type="password"
+          placeholder="教師パスコード（kyoushi）"
+          class="w-full p-2 rounded bg-gray-800 placeholder-gray-500 focus:outline-none"
+        />
+      </div>
+
+      <!-- 児童用：教師コード -->
+      <div id="teacherCodeWrap">
+        <input
+          id="teacherCode"
+          type="text"
+          maxlength="6"
+          placeholder="教師コード (6桁英数字)"
+          class="w-full p-2 rounded bg-gray-800 placeholder-gray-500 focus:outline-none"
+          required
+        />
+      </div>
+
+      <!-- 児童用：学年・組・番号 -->
+      <div id="studentFields" class="space-y-2">
+        <input
+          id="grade"
+          type="number"
+          min="1"
+          max="6"
+          placeholder="学年"
+          class="w-full p-2 rounded bg-gray-800 focus:outline-none"
+          required
+        />
+        <input
+          id="classroom"
+          type="text"
+          maxlength="1"
+          placeholder="組"
+          class="w-full p-2 rounded bg-gray-800 focus:outline-none"
+          required
+        />
+        <input
+          id="number"
+          type="number"
+          min="1"
+          max="99"
+          placeholder="番号"
+          class="w-full p-2 rounded bg-gray-800 focus:outline-none"
+          required
+        />
+      </div>
+
+      <button
+        id="loginBtn"
+        type="submit"
+        class="w-full py-2 bg-pink-600 hover:bg-pink-500 rounded-xl shadow-lg uppercase tracking-widest transform transition-all duration-200"
+      >
+        ログイン
+      </button>
+    </form>
+    <p id="loading" class="mt-3 text-xs text-gray-400 hidden">通信中…</p>
+  </div>
+
+  <!-- 初回ログイン用注意メッセージ（モーダル）-->
+  <div id="firstMessage">
+    <div class="modal">
+      <p>🎉 初回ログインありがとうございます！</p>
+      <p>これから Google Drive 上に</p>
+      <p><strong>「StudyQuest_<span id="newCodeSpan"></span>」</strong>フォルダを作成します。</p>
+      <p>児童の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
+      <p>※既に同名フォルダがある場合は上書きされますのでご注意を。</p>
+      <button id="closeFirstMsg">了解しました</button>
+    </div>
+  </div>
+
+  <!-- exec URL を埋め込む -->
+  <script>
+    <?!= "const SCRIPT_URL = '" + scriptUrl + "';" ?>
+  </script>
+
+  <script>
+    // ==============================
+    // 背景パーティクル
+    // ==============================
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const maxParticles = 80;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.3;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (
+          this.x < 0 || this.x > canvas.width ||
+          this.y < 0 || this.y > canvas.height
+        ) {
+          this.reset();
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+        }
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < maxParticles; i++) {
+        particles.push(new Particle());
+      }
+    }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    initParticles();
+    animateParticles();
+
+    // ==============================
+    // ログイン画面のスクリプト
+    // ==============================
+    document.addEventListener('DOMContentLoaded', () => {
+      gsap.from('#loginBox', { scale: 0, duration: 0.6, ease: 'back' });
+      toggleTeacherMode();
+      document.getElementById('teacherMode').addEventListener('change', toggleTeacherMode);
+      document.getElementById('loginForm').addEventListener('submit', handleSubmit);
+    });
+
+    function toggleTeacherMode() {
+      const isTeacher = document.getElementById('teacherMode').checked;
+      const passWrap = document.getElementById('passcodeWrap');
+      const codeWrap = document.getElementById('teacherCodeWrap');
+      const studentFields = document.getElementById('studentFields');
+
+      if (isTeacher) {
+        passWrap.classList.remove('hidden');
+        codeWrap.classList.add('hidden');
+        studentFields.classList.add('hidden');
+        document.getElementById('passcode').required = true;
+        document.getElementById('teacherCode').required = false;
+        document.getElementById('grade').required = false;
+        document.getElementById('classroom').required = false;
+        document.getElementById('number').required = false;
+      } else {
+        passWrap.classList.add('hidden');
+        codeWrap.classList.remove('hidden');
+        studentFields.classList.remove('hidden');
+        document.getElementById('passcode').required = false;
+        document.getElementById('teacherCode').required = true;
+        document.getElementById('grade').required = true;
+        document.getElementById('classroom').required = true;
+        document.getElementById('number').required = true;
+      }
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const isTeacher = document.getElementById('teacherMode').checked;
+      const loading = document.getElementById('loading');
+      const btn = document.getElementById('loginBtn');
+      loading.classList.remove('hidden');
+      btn.disabled = true;
+
+      // ボタンバウンド
+      gsap.to(btn, { scale: 1.05, duration: 0.1 }).then(() => {
+        gsap.to(btn, { scale: 1, duration: 0.1 });
+      });
+
+      if (isTeacher) {
+        // ── 教師モード ──
+        const passcode = document.getElementById('passcode').value.trim();
+        if (passcode !== 'kyoushi') {
+          alert('パスコードが違います。');
+          loading.classList.add('hidden');
+          btn.disabled = false;
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(result => {
+            const { status, teacherCode, message } = result;
+
+            if (status === 'new') {
+              // 初回ログイン時
+              document.getElementById('newCodeSpan').textContent = teacherCode;
+              document.getElementById('newCodeSpan2').textContent = teacherCode;
+              document.getElementById('firstMessage').style.display = 'flex';
+
+              document.getElementById('closeFirstMsg').onclick = () => {
+                document.getElementById('firstMessage').style.display = 'none';
+                window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+              };
+            }
+            else if (status === 'ok') {
+              // 2回目以降
+              alert('おかえりなさい！');
+              window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+            }
+            else {
+              // error
+              alert(message || 'エラーが発生しました。');
+              loading.classList.add('hidden');
+              btn.disabled = false;
+            }
+          })
+          .withFailureHandler(err => {
+            alert('教師ログインでエラー: ' + err.message);
+            loading.classList.add('hidden');
+            btn.disabled = false;
+          })
+          .initTeacher(passcode);
+
+      } else {
+        // ── 児童モード ──
+        const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
+        const grade = document.getElementById('grade').value.trim();
+        const classroom = document.getElementById('classroom').value.trim().toUpperCase();
+        const number = document.getElementById('number').value.trim();
+
+        if (!teacherCode) {
+          alert('教師コードを入力してください。');
+          loading.classList.add('hidden');
+          btn.disabled = false;
+          return;
+        }
+        if (!grade || !classroom || !number) {
+          alert('学年・組・番号を正しく入力してください。');
+          loading.classList.add('hidden');
+          btn.disabled = false;
+          return;
+        }
+
+        const studentParams = new URLSearchParams({
+          grade: grade,
+          class: classroom,
+          number: number,
+          teacher: teacherCode
+        }).toString();
+
+        google.script.run
+          .withSuccessHandler(() => {
+            window.top.location.href = SCRIPT_URL + '?page=input&' + studentParams;
+          })
+          .withFailureHandler(err => {
+            alert('児童ログインに失敗: ' + err.message);
+            loading.classList.add('hidden');
+            btn.disabled = false;
+          })
+          .initStudent(teacherCode, grade, classroom, number);
+      }
+    }
+  </script>
+
+</body>
+</html>
