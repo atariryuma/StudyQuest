@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyQuest – ボード</title>
+  <!-- ゲームっぽいフォント -->
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <!-- TailwindCSS + GSAP -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>body { font-family: 'DotGothic16', monospace; }</style>
+</head>
+<body class="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-6">
+  <header class="mb-6 flex justify-between items-center">
+    <h1 class="text-2xl flex items-center gap-2">
+      <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
+      みんなの回答ボード
+    </h1>
+    <a href="#" id="backLink" class="text-sm hover:text-pink-400">&laquo; 管理パネルに戻る</a>
+  </header>
+  <div class="grid gap-4" id="answers" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(location.search);
+      const teacherCode = params.get('teacher');
+      if (!teacherCode) {
+        alert('不正なアクセスです。');
+        location.href = '?page=login';
+        return;
+      }
+      document.getElementById('backLink').href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+
+      function loadBoard() {
+        google.script.run.withSuccessHandler(renderBoard).listBoard(teacherCode);
+      }
+
+      function renderBoard(rows) {
+        const container = document.getElementById('answers');
+        container.innerHTML = '';
+        if (!rows.length) {
+          container.innerHTML = '<p class="text-gray-500 text-center">まだ回答がありません。</p>';
+          return;
+        }
+        rows.forEach((r, i) => {
+          const card = document.createElement('div');
+          card.className = 'p-4 bg-gray-800 rounded-xl shadow-md break-words opacity-0';
+          card.innerHTML = `
+            <h3 class="text-pink-400 text-sm mb-1">${r.name}</h3>
+            <p class="text-gray-200 whitespace-pre-wrap">${r.answer}</p>
+          `;
+          container.appendChild(card);
+          // カードが順番に回転しながらフェードイン
+          gsap.to(card, {
+            delay: i * 0.1,
+            opacity: 1,
+            rotationY: 0,
+            duration: 0.6,
+            from: { rotationY: 90 }
+          });
+        });
+      }
+
+      loadBoard();
+      setInterval(loadBoard, 15000);
+    });
+  </script>
+</body>
+</html>
