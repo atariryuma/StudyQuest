@@ -1,55 +1,41 @@
-name: Deploy GAS via Clasp
+name: Build & Deploy GAS
 
 on:
   push:
     branches:
-      - main      # main ブランチへのプッシュで実行
-  workflow_dispatch: {}  # 手動実行も可能
-
-env:
-  # Secrets に登録しているサービスアカウントキーの名前を確認：
-  # GitHub リポジトリ > Settings > Secrets > Actions で
-  # 「GCP_CREDENTIALS」にサービスアカウントの Base64 エンコード済み JSON をセットしている前提
-  GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-  SCRIPT_ID: ${{ secrets.SCRIPT_ID }}  # Clasp 用 Script ID
+      - main         # main ブランチにプッシュされたときに実行
+  workflow_dispatch: # 手動トリガーも可能にする
 
 jobs:
-  build-and-deploy:
-    name: Build & Deploy GAS
+  deploy:
+    name: Deploy GAS via clasp
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
 
-      - name: Use Node.js 20.x
+      - name: Node.js をセットアップ (v20.x)
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
-        # Clasp v3 は Node ≥20 が推奨されるためこうしておく :contentReference[oaicite:0]{index=0}
+          node-version: 20.x
 
-      - name: Install Clasp CLI
+      - name: clasp をインストール (@google/clasp v3)
         run: npm install --global @google/clasp@3.0.6-alpha
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
-        # Clasp の最新アルファ版（v3）をインストールし、ADC モードに対応する :contentReference[oaicite:1]{index=1}
 
-      - name: Decode service account JSON and set ADC
+      - name: Secrets の Base64 を復元してファイル保存
         run: |
-          # Secrets の Base64 を復元してファイル保存
+          # GitHub Secrets に登録したキー名が "GCP_CREDENTIALS" であれば、以下のように復元します
           echo "$GCP_CREDENTIALS" | base64 -d > "$HOME/gcp-sa.json"
-          # 環境変数として指定し、Clasp の ADC 認証に利用させる
+          # 環境変数として設定。clasp の ADC 認証で使う
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-sa.json" >> $GITHUB_ENV
-        shell: bash
 
-      - name: Generate .clasp.json
+      - name: .clasp.json に scriptId を書き込む
         run: |
-          # GitHub Secrets から渡された SCRIPT_ID を .clasp.json に書き込む
+          # GitHub Secrets に登録したキー名が "SCRIPT_ID" であれば、こうして JSON を生成します
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
-      - name: Push to Google Apps Script via Clasp
-        run: clasp push --force --adc
-        env:
-          # 環境変数は前ステップでセット済み
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-        shell: bash
+      - name: clasp push --force --adc (GAS にデプロイ)
+        run: |
+          # ADC（Application Default Credentials）モードで GAS プロジェクトを上書きプッシュ
+          clasp push --force --adc
