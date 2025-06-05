@@ -177,6 +177,66 @@ function getSpreadsheetByTeacherCode(teacherCode) {
 }
 
 /**
+ * findStudentSheet_(ss, studentId):
+ * 学年・組・番号の組み合わせから既存シートを柔軟に探索し、
+ * 必要に応じて正規化した名前へリネームして返す
+ */
+function findStudentSheet_(ss, studentId) {
+  studentId = String(studentId || '').trim();
+  if (!ss || !studentId) return null;
+
+  const normalize = (id) => {
+    return String(id || '')
+      .replace(/[\u2010-\u2015\uff0d]/g, '-') // various hyphen chars
+      .replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFF10 + 48)) // full-width digits
+      .replace(/\s+/g, '')
+      .toUpperCase();
+  };
+
+  const target = normalize(studentId);
+  const direct = ss.getSheetByName(STUDENT_SHEET_PREFIX + target);
+  if (direct) return direct;
+
+  const parts = target.split('-');
+  if (parts.length !== 3) return null;
+  const [grade, classroom, number] = parts;
+
+  let candidate = null;
+  let maxRows = -1;
+  ss.getSheets().forEach(sh => {
+    const name = sh.getName();
+    if (!name.startsWith(STUDENT_SHEET_PREFIX)) return;
+    let idPart = name.substring(STUDENT_SHEET_PREFIX.length);
+    idPart = normalize(idPart);
+    const ps = idPart.split('-');
+    if (ps.length !== 3) return;
+    if (ps[0] === grade && ps[1] === classroom && ps[2] === number) {
+      const rows = sh.getLastRow();
+      if (rows > maxRows) {
+        candidate = sh;
+        maxRows = rows;
+      }
+    }
+  });
+
+  if (candidate) {
+    const newName = STUDENT_SHEET_PREFIX + target;
+    if (candidate.getName() !== newName) {
+      const existing = ss.getSheetByName(newName);
+      if (existing && existing !== candidate) {
+        if (existing.getLastRow() > candidate.getLastRow()) {
+          candidate = existing;
+        } else {
+          ss.deleteSheet(existing);
+        }
+      }
+      candidate.setName(newName);
+    }
+  }
+  return candidate;
+}
+
+/**
  * initStudent(teacherCode, grade, classroom, number):
  * 生徒の初回ログイン処理
  * ・生徒一覧シートに登録（なければ）
@@ -357,8 +417,7 @@ function getRecommendedTask(teacherCode, studentId) {
   const tasks = listTasks(teacherCode);
   if (!tasks || tasks.length === 0) return null;
 
-  const studentSheetName = STUDENT_SHEET_PREFIX + studentId;
-  const studentSheet     = ss.getSheetByName(studentSheetName);
+  const studentSheet = findStudentSheet_(ss, studentId);
   const answeredIds      = [];
   if (studentSheet) {
     const data = studentSheet.getDataRange().getValues();
@@ -390,8 +449,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
   if (!ss) {
     throw new Error('回答送信エラー: 教師の設定ファイルが見つかりません。');
   }
-  const studentSheetName = STUDENT_SHEET_PREFIX + studentId; // ex: "生徒_6-1-1"
-  const studentSheet     = ss.getSheetByName(studentSheetName);
+  const studentSheet = findStudentSheet_(ss, studentId);
   if (!studentSheet) {
     throw new Error(`回答送信エラー: 生徒「${studentId}」の専用シートが見つかりません。`);
   }
