@@ -141,11 +141,20 @@
     <?!= "const teacherCode = '" + teacher + "';" ?>
   </script>
 
-  <!-- Lucide Icons の読み込み（モジュールとして） -->
-  <script type="module">
-    import { PlusCircle, Trash2, ClipboardList, User } from "https://cdn.jsdelivr.net/npm/lucide-react@0.255.0/dist/esm/index.js";
-    window.LucideIcons = { PlusCircle, Trash2, ClipboardList, User };
-  </script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
+<script>
+  function renderIcons(scope) {
+    scope.querySelectorAll('[data-icon]').forEach(el => {
+      const iconName = el.getAttribute('data-icon');
+      if (window.lucide && typeof window.lucide[iconName] === 'function') {
+        el.innerHTML = window.lucide[iconName]().outerHTML;
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    renderIcons(document);
+  });
+</script>
 
   <script>
     // Lucide Icons を実際に SVG に置き換え
@@ -250,63 +259,6 @@
         gsap.fromTo(btn, { scale: 1.1 }, { scale: 1, duration: 0.2 });
       });
 
-      // 6) 課題一覧を取得＆描画
-      function loadTasks() {
-        google.script.run
-          .withSuccessHandler(renderTasks)
-          .withFailureHandler(err => {
-            console.error('listTasks エラー:', err);
-            document.getElementById('tasksContainer').innerHTML =
-              '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
-          })
-          .listTasks(teacherCode);
-      }
-
-      function renderTasks(rows) {
-        const container = document.getElementById('tasksContainer');
-        container.innerHTML = '';
-        if (!rows || rows.length === 0) {
-          container.innerHTML = '<p class="text-gray-500 text-center">課題はまだありません。</p>';
-          return;
-        }
-        rows.forEach(x => {
-          let data, detail;
-          try {
-            data = JSON.parse(x.q);
-            detail = `
-              <p class="text-xs text-indigo-300 mb-1">【${data.subject || '—'}】</p>
-              <p class="text-sm mb-1 whitespace-pre-wrap">${data.question || ''}</p>
-              <p class="text-xs text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
-            `;
-          } catch (_) {
-            detail = `<p class="text-sm mb-1 whitespace-pre-wrap">${x.q}</p>`;
-          }
-          const card = document.createElement('div');
-          card.className = 'bg-gray-700 p-4 rounded-xl shadow-lg relative transform transition-transform hover:scale-102';
-          card.innerHTML = `
-            ${detail}
-            <p class="text-xs text-gray-400 mt-2">${x.date}</p>
-            <button class="deleteBtn absolute top-2 right-2 text-red-400 hover:text-red-300" data-id="${x.id}">
-              <svg data-icon="Trash2" class="w-4 h-4"></svg>
-            </button>
-          `;
-          container.appendChild(card);
-        });
-
-        // アイコンを置き換え
-        renderIcons(document);
-      }
-
-      function renderTypeLabel(type) {
-        switch (type) {
-          case 'short': return '短文回答';
-          case 'long': return '段落回答';
-          case 'radio': return '選択式（ラジオ）';
-          case 'checkbox': return 'チェックボックス';
-          default: return '不明';
-        }
-      }
-
       // 7) 課題削除ボタン押下時
       document.addEventListener('click', e => {
         const btn = e.target.closest('.deleteBtn');
@@ -326,7 +278,7 @@
         }
       });
 
-      // 8) ウィジェット更新 (課題数・児童数)
+      // 8) ウィジェット更新 (課題数・生徒数)
       function updateWidgets() {
         google.script.run
           .withSuccessHandler(data => {
@@ -368,6 +320,93 @@
           area.appendChild(div);
         }
       }
+
+      /**
+       * 画面下部の「課題一覧」を取得して表示する
+       */
+      function loadTasks() {
+        google.script.run
+          .withSuccessHandler(renderTasks)
+          .withFailureHandler(err => {
+            console.error('listTasks エラー:', err);
+            document.getElementById('tasksContainer').innerHTML =
+              '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
+          })
+          .listTasks(teacherCode);
+      }
+
+      /**
+       * 取得した rows をカードで描画する
+       * rows は [{ id, q, selfEval, date }, …] の配列
+       */
+      function renderTasks(rows) {
+        const container = document.getElementById('tasksContainer');
+        container.innerHTML = '';
+        if (!rows || rows.length === 0) {
+          container.innerHTML = '<p class="text-gray-500 text-center">課題はまだありません。</p>';
+          return;
+        }
+
+        rows.forEach(x => {
+          let data, detailHtml;
+          try {
+            data = JSON.parse(x.q);
+            detailHtml = `
+              <p class="text-xs text-indigo-300 mb-1">【${data.subject || '—'}】</p>
+              <p class="text-sm mb-1 whitespace-pre-wrap">${data.question || ''}</p>
+              <p class="text-xs text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
+            `;
+          } catch (_) {
+            detailHtml = `<p class="text-sm mb-1 whitespace-pre-wrap">${x.q}</p>`;
+          }
+
+          const card = document.createElement('div');
+          card.className = 'bg-gray-700 p-4 rounded-xl shadow transition-transform hover:scale-102 relative';
+          card.innerHTML = `
+            ${detailHtml}
+            <p class="text-xs text-gray-400 mt-2">${x.date}</p>
+            <button class="deleteBtn absolute top-2 right-2 text-red-400 hover:text-red-300" data-id="${x.id}">
+              <svg data-icon="Trash2" class="w-4 h-4"></svg>
+            </button>
+          `;
+          container.appendChild(card);
+        });
+
+        // アイコン描画
+        renderIcons(document);
+
+        // 削除ボタンにイベントをバインド
+        document.querySelectorAll('.deleteBtn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            const id = e.currentTarget.getAttribute('data-id');
+            if (!id) return;
+            if (!confirm('この課題を削除しますか？')) return;
+            google.script.run
+              .withSuccessHandler(() => {
+                loadTasks();
+                updateWidgets();
+              })
+              .withFailureHandler(err => {
+                alert('削除に失敗しました: ' + err.message);
+              })
+              .deleteTask(teacherCode, id);
+          });
+        });
+      }
+
+      /**
+       * type を日本語ラベルに変換するヘルパー
+       */
+      function renderTypeLabel(type) {
+        switch (type) {
+          case 'short':    return '短文回答';
+          case 'long':     return '段落回答';
+          case 'radio':    return '選択式（ラジオ）';
+          case 'checkbox': return 'チェックボックス';
+          default:         return '不明';
+        }
+      }
+
 
       // 10) 画面初回ロード
       loadTasks();
