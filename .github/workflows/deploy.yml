@@ -1,5 +1,5 @@
 name: Deploy GAS
-'on':
+on:
   push:
     branches:
       - main
@@ -9,7 +9,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+    env:
+      GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+      
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -27,22 +30,15 @@ jobs:
         run: clasp --version
         
       - name: Restore GCP service-account key
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
-          echo "$GOOGLE_CREDENTIALS" | base64 -d > "$HOME/gcp-sa.json"
+          echo "$GCP_CREDENTIALS" | base64 -d > "$HOME/gcp-sa.json"
           chmod 600 "$HOME/gcp-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-sa.json" >> $GITHUB_ENV
           
       - name: Authenticate with clasp
         run: clasp login --creds "$HOME/gcp-sa.json"
         
-      - name: Verify authentication
-        run: clasp projects || echo "Warning: Could not list projects"
-        
       - name: Write .clasp.json
-        env:
-          SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
         run: |
           echo "{\"scriptId\":\"$SCRIPT_ID\"}" > .clasp.json
           
