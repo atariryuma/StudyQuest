@@ -184,6 +184,9 @@ function getSpreadsheetByTeacherCode(teacherCode) {
  * ・課題一覧からすべてのタスクをインポート
  */
 function initStudent(teacherCode, grade, classroom, number) {
+  grade      = String(grade).trim();
+  classroom  = String(classroom).trim();
+  number     = String(number).trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error('教師コードが正しくありません。');
@@ -308,6 +311,7 @@ function deleteTask(teacherCode, taskId) {
  * その生徒の“未回答”最新タスクを返す
  */
 function getRecommendedTask(teacherCode, studentId) {
+  studentId = String(studentId || '').trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return null;
   const tasks = listTasks(teacherCode);
@@ -341,6 +345,7 @@ function getRecommendedTask(teacherCode, studentId) {
  * 生徒シートへの回答記録＆全体ログへの追記
  */
 function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
+  studentId = String(studentId || '').trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error('回答送信エラー: 教師の設定ファイルが見つかりません。');
@@ -406,6 +411,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
 function getStudentHistory(teacherCode, studentId) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
+  studentId = String(studentId || '').trim();
   const sheet = ss.getSheetByName(STUDENT_SHEET_PREFIX + studentId);
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
