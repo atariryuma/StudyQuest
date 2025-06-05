@@ -7,6 +7,7 @@ const SHEET_TOC             = '📜 目次';
 const SHEET_TASKS           = '課題一覧';
 const SHEET_STUDENTS        = '生徒一覧';
 const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
+const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
@@ -113,7 +114,7 @@ function initTeacher(passcode) {
     {
       name: SHEET_TASKS,
       color: "ff9900",
-      header: ['ID', '問題データ(JSON)', '自己評価許可', '作成日時'],
+      header: ['ID', '問題データ(JSON)', '自己評価許可', '作成日時', 'ペルソナ'],
       description: "作成された課題の一覧です。"
     },
     {
@@ -125,8 +126,14 @@ function initTeacher(passcode) {
     {
       name: SHEET_GLOBAL_ANSWERS,
       color: "008080",
-      header: ['日時', '生徒ID', '課題ID', '回答概要', '自己評価'],
+      header: ['日時', '生徒ID', '課題ID', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー', 'AI呼び出し回数', '回答回数'],
       description: "全生徒の回答の概要（ボード表示用）です。"
+    },
+    {
+      name: SHEET_AI_FEEDBACK,
+      color: "ff4444",
+      header: ['日時', '生徒ID', '課題ID', '回答回数', 'AI呼び出し回数', '回答本文', 'フィードバック内容'],
+      description: "Gemini API からのフィードバックログです。"
     }
   ];
   tocSheet.appendRow(['']);
@@ -311,8 +318,16 @@ function initStudent(teacherCode, grade, classroom, number) {
   if (!studentSheet) {
     // 個別シートを作成
     studentSheet = ss.insertSheet(studentSheetName);
-    studentSheet.appendRow(['日時', '課題ID', '課題内容(参照用)', '回答本文', '自己評価']);
+    studentSheet.appendRow(['日時', '課題ID', '課題内容', '回答本文', '付与XP', '累積XP', 'レベル', 'トロフィー', '回答回数']);
     studentSheet.setTabColor("f4b400");
+
+    // 生徒用 Drive フォルダ作成
+    const stuFolderName = `StudyQuest_Stu_${teacherCode}_${studentId}`;
+    let stuFolder = findLatestFolderByName_(stuFolderName);
+    if (!stuFolder) {
+      stuFolder = DriveApp.createFolder(stuFolderName);
+      stuFolder.createFile(`Responses_${studentId}.csv`, 'timestamp,taskId,answer');
+    }
 
     // 目次シートにリンクを追加
     const tocSheet = ss.getSheetByName(SHEET_TOC);
@@ -331,7 +346,7 @@ function initStudent(teacherCode, grade, classroom, number) {
     if (taskSheet) {
       const lastRow = taskSheet.getLastRow();
       if (lastRow >= 2) {
-        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 4).getValues();
+        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 5).getValues();
         taskData.forEach(row => {
           const taskId        = row[0];
           const payloadAsJson = row[1];
@@ -343,8 +358,7 @@ function initStudent(teacherCode, grade, classroom, number) {
           } catch (e) {
             questionText = payloadAsJson;
           }
-          // [作成日時, taskId, questionText, '', '']
-          studentSheet.appendRow([createdAt, taskId, questionText, '', '']);
+          studentSheet.appendRow([createdAt, taskId, questionText, '', 0, 0, 0, '', 0]);
         });
       }
     }
@@ -357,7 +371,7 @@ function initStudent(teacherCode, grade, classroom, number) {
  * createTask(teacherCode, payloadAsJson, selfEval):
  * 新しい課題を課題一覧シートに追加
  */
-function createTask(teacherCode, payloadAsJson, selfEval) {
+function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error("課題作成失敗: 教師のスプレッドシートが見つかりません。");
@@ -367,7 +381,7 @@ function createTask(teacherCode, payloadAsJson, selfEval) {
     throw new Error(`システムエラー: 「${SHEET_TASKS}」シートが見つかりません。`);
   }
   const taskId = Utilities.getUuid();
-  taskSheet.appendRow([taskId, payloadAsJson, selfEval, new Date()]);
+  taskSheet.appendRow([taskId, payloadAsJson, selfEval, new Date(), persona || '']);
 }
 
 /**
@@ -381,12 +395,13 @@ function listTasks(teacherCode) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
   return data.reverse().map(row => ({
     id: row[0],
     q: row[1],
     selfEval: row[2],
-    date: Utilities.formatDate(new Date(row[3]), 'JST', 'yyyy/MM/dd HH:mm')
+    date: Utilities.formatDate(new Date(row[3]), 'JST', 'yyyy/MM/dd HH:mm'),
+    persona: row[4] || ''
   }));
 }
 
@@ -440,10 +455,10 @@ function getRecommendedTask(teacherCode, studentId) {
 }
 
 /**
- * submitAnswer(teacherCode, studentId, taskId, answer, evaluation):
+ * submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp, level, trophies, aiCalls, attemptCount):
  * 生徒シートへの回答記録＆全体ログへの追記
  */
-function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
+function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp, level, trophies, aiCalls, attemptCount) {
   studentId = String(studentId || '').trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
@@ -454,23 +469,8 @@ function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
     throw new Error(`回答送信エラー: 生徒「${studentId}」の専用シートが見つかりません。`);
   }
 
-  const data = studentSheet.getDataRange().getValues();
-  let foundRow = -1;
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][1] === taskId) {
-      foundRow = i + 1;
-      break;
-    }
-  }
-
-  if (foundRow !== -1) {
-    // 既存行に上書き
-    studentSheet.getRange(foundRow, 1).setValue(new Date());   // 日時
-    studentSheet.getRange(foundRow, 4).setValue(answer);       // 回答本文
-    studentSheet.getRange(foundRow, 5).setValue(evaluation);   // 自己評価
-  } else {
-    // 新規行追加
-    let questionText = '';
+  // 常に新規行追加
+  let questionText = '';
     const taskSheet = ss.getSheetByName(SHEET_TASKS);
     if (taskSheet) {
       const allTasks = taskSheet.getDataRange().getValues();
@@ -486,8 +486,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
         }
       }
     }
-    studentSheet.appendRow([new Date(), taskId, questionText, answer, evaluation]);
-  }
+  studentSheet.appendRow([new Date(), taskId, questionText, answer, earnedXp, totalXp, level, trophies || '', attemptCount]);
 
   // 全体ログにも追記
   const globalAnswerSheet = ss.getSheetByName(SHEET_GLOBAL_ANSWERS);
@@ -496,7 +495,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, evaluation) {
     if (typeof answer === 'string' && answer.length > 50) {
       answerSummary = answer.substring(0, 50) + '...';
     }
-    globalAnswerSheet.appendRow([new Date(), studentId, taskId, answerSummary, evaluation]);
+    globalAnswerSheet.appendRow([new Date(), studentId, taskId, answerSummary, earnedXp, totalXp, level, trophies || '', aiCalls, attemptCount]);
   } else {
     console.warn(`「${SHEET_GLOBAL_ANSWERS}」シートが見つかりません。`);
   }
@@ -516,8 +515,8 @@ function getStudentHistory(teacherCode, studentId) {
   const rows = [];
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    // [日時, 課題ID, 課題内容, 回答, 自己評価]
-    rows.push([row[0], row[1], row[2], row[3], row[4]]);
+    // [日時, 課題ID, 質問, 回答, 付与XP, 累積XP, レベル, トロフィー, 回答回数]
+    rows.push([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]]);
   }
   return rows; // たとえ空でも [] を返す
 }
@@ -535,13 +534,19 @@ function listBoard(teacherCode) {
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  // 5列目まで取得
-  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  // 10列目まで取得
+  const data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
   const sliceStart = Math.max(0, data.length - 30);
   const slice = data.slice(sliceStart).reverse();
   return slice.map(row => ({
-    name: `生徒 ${row[1]}`,
-    answer: row[3]
+    studentId: row[1],
+    answer: row[3],
+    earnedXp: row[4],
+    totalXp: row[5],
+    level: row[6],
+    trophies: row[7],
+    aiCalls: row[8],
+    attempts: row[9]
   }));
 }
 
@@ -559,6 +564,53 @@ function getStatistics(teacherCode) {
   const taskCount    = taskSheet ? Math.max(0, taskSheet.getLastRow() - 1) : 0;
   const studentCount = studentSheet ? Math.max(0, studentSheet.getLastRow() - 1) : 0;
   return { taskCount, studentCount };
+}
+
+/**
+ * callGeminiAPI_GAS(prompt, persona): Gemini API を呼び出してフィードバックを取得
+ */
+function callGeminiAPI_GAS(prompt, persona) {
+  const personaMap = {
+    '小学生向け': 'あなたは小学校高学年以上向けの優しい先生です。',
+    '中学生向け': 'あなたは中学生向けの適切な言葉遣いをする先生です。',
+    '教師向け':   'あなたは現役教師が使用するプロンプト形式です。'
+  };
+  const base = personaMap[persona] || '';
+  const finalPrompt = base + '\n' + prompt;
+  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!apiKey) return 'APIキーが設定されていません';
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey;
+  const payload = { contents: [{ parts: [{ text: finalPrompt }] }] };
+  const res = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  const obj = JSON.parse(res.getContentText());
+  if (obj.candidates && obj.candidates[0] && obj.candidates[0].content) {
+    return obj.candidates[0].content.parts.map(p => p.text).join('\n');
+  }
+  return 'No response';
+}
+
+/**
+ * logToSpreadsheet(logData): AIフィードバックログを記録
+ */
+function logToSpreadsheet(logData) {
+  const ss = getSpreadsheetByTeacherCode(logData.teacherCode);
+  if (!ss) return;
+  const sheet = ss.getSheetByName(SHEET_AI_FEEDBACK);
+  if (!sheet) return;
+  sheet.appendRow([
+    new Date(),
+    logData.studentId,
+    logData.taskId,
+    logData.attempt,
+    logData.aiCalls,
+    logData.answer || '',
+    logData.feedback || ''
+  ]);
 }
 
 /**
