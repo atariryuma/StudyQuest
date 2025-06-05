@@ -1,5 +1,11 @@
-name: Deploy GAS
+# ─────────────────────────────────────────────────────────────────────────────
+# FILE: .github/workflows/deploy.yml
+# DESCRIPTION: Push されたら自動的に Apps Script にデプロイするワークフロー
+# ─────────────────────────────────────────────────────────────────────────────
 
+name: Deploy GAS via Clasp
+
+# main ブランチへの push をトリガーにして実行
 on:
   push:
     branches:
@@ -7,31 +13,52 @@ on:
 
 jobs:
   deploy:
+    name: Deploy GAS Project
     runs-on: ubuntu-latest
+    # リポジトリの Secrets に設定した環境変数を読み込む
     env:
-      GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      # サービスアカウントのJSONをBase64化した文字列を 
+      # 「GOOGLE_CREDENTIALS」という名前のリポジトリシークレットに登録しておく
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      # あらかじめ取得しておいた Apps Script のスクリプトID
+      # 「SCRIPT_ID」という名前のリポジトリシークレットに登録しておく
       SCRIPT_ID:      ${{ secrets.SCRIPT_ID }}
-    steps:
 
-      - name: Check out repository
+    steps:
+      # 1. リポジトリをチェックアウト
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js (>=20.x)
+      # 2. Node.js をセットアップ（@google/clasp は Node 製のCLIなので Node が必要）
+      - name: Setup Node.js (v20.x)
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
-      - name: Install clasp (v3)
-        run: npm install --global @google/clasp@3.0.6-alpha
-
-      - name: Restore GCP service-account key
+      # 3. clasp をグローバルにインストール（安定版の最新を指定）
+      - name: Install clasp (stable)
         run: |
-          echo "$GCP_CREDENTIALS" | base64 -d > "$HOME/gcp-sa.json"
+          # @google/clasp の安定版を指定
+          npm install --global @google/clasp@latest
+
+      # 4. サービスアカウントJSONを復元してアプリデフォルト認証を有効化
+      - name: Authenticate with Google (ADC)
+        run: |
+          # リポジトリシークレットから渡ってきた Base64 文字列を復元してファイルに出力
+          echo "${GOOGLE_CREDENTIALS}" | base64 -d > "$HOME/gcp-sa.json"
+          # 環境変数 GOOGLE_APPLICATION_CREDENTIALS を設定して
+          # clasp push が ADC (Application Default Credentials) で認証できるようにする
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-sa.json" >> $GITHUB_ENV
 
+      # 5. .clasp.json を生成して、スクリプトID を書き込む
       - name: Write .clasp.json
         run: |
-          echo "{\"scriptId\":\"$SCRIPT_ID\"}" > .clasp.json
+          # SCRIPT_ID はリポジトリシークレットから渡されている
+          echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
-      - name: Push to Google Apps Script
-        run: clasp push --force --adc
+      # 6. クラップ（clasp）で Apps Script にプッシュ
+      - name: Push to Apps Script
+        run: |
+          # --force: 強制上書きプッシュ
+          # --adc: Application Default Credentials を使う
+          clasp push --force --adc
