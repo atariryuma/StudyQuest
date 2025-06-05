@@ -41,6 +41,24 @@
       </span>
     </div>
   </header>
+  <!-- Gemini 設定エリア -->
+  <section class="p-4 bg-gray-900 flex flex-col md:flex-row gap-4 items-end" id="geminiSettings">
+    <div class="flex-1">
+      <label for="apiKeySetting" class="text-xs">Gemini APIキー</label>
+      <input id="apiKeySetting" type="text" class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" />
+    </div>
+    <div>
+      <label for="personaSetting" class="text-xs">ペルソナ</label>
+      <select id="personaSetting" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+        <option value="">-- 選択 --</option>
+        <option value="小学生向け">小学生向け</option>
+        <option value="中学生向け">中学生向け</option>
+        <option value="教師向け">教師向け</option>
+      </select>
+    </div>
+    <button id="saveGeminiBtn" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
+    <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
+  </section>
   <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-3xl font-bold"></div>
   </div>
@@ -118,19 +136,6 @@
             <input type="checkbox" id="selfEval" /> 自己評価を許可する
           </label>
 
-          <div>
-            <label for="apiKey" class="text-xs">■ Gemini APIキー</label>
-            <input id="apiKey" type="text" class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" />
-          </div>
-          <div>
-            <label for="persona" class="text-xs">□ ペルソナ選択</label>
-            <select id="persona" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
-              <option value="">-- 選択 --</option>
-              <option value="小学生向け">小学生向け</option>
-              <option value="中学生向け">中学生向け</option>
-              <option value="教師向け">教師向け</option>
-            </select>
-          </div>
 
           <!-- ■ 作成ボタン -->
           <button id="createBtn" type="submit"
@@ -203,6 +208,10 @@
         document.getElementById('teacherCodeModal').classList.add('hidden');
       });
 
+      // Gemini 設定読み込み
+      loadGeminiSettings();
+      document.getElementById('saveGeminiBtn').addEventListener('click', saveGeminiSettings);
+
       // 3) 回答タイプ選択時に optionsArea を表示／非表示
       Array.from(document.getElementsByName('ansType')).forEach(radio => {
         radio.addEventListener('change', e => {
@@ -231,7 +240,7 @@
         const subject = document.getElementById('subject').value;
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
-        const persona = document.getElementById('persona').value;
+        const persona = document.getElementById('personaSetting').value;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
           alert('回答タイプを選択してください。');
@@ -313,6 +322,28 @@
           .getStatistics(teacherCode);
       }
 
+      // Gemini 設定を取得して表示
+      function loadGeminiSettings() {
+        google.script.run
+          .withSuccessHandler(data => {
+            document.getElementById('apiKeySetting').value = data.apiKey || '';
+            document.getElementById('personaSetting').value = data.persona || '';
+            document.getElementById('geminiStatus').classList.toggle('hidden', !data.apiKey);
+          })
+          .getGeminiSettings();
+      }
+
+      // Gemini 設定を保存
+      function saveGeminiSettings() {
+        const key = document.getElementById('apiKeySetting').value.trim();
+        const persona = document.getElementById('personaSetting').value;
+        google.script.run
+          .withSuccessHandler(() => {
+            document.getElementById('geminiStatus').classList.remove('hidden');
+          })
+          .setGeminiSettings(key, persona);
+      }
+
       // 9) フォームリセットヘルパー
       function resetForm() {
         document.getElementById('subject').value = '';
@@ -322,8 +353,6 @@
         document.getElementById('optionsArea').classList.add('hidden');
         resetOptionInputs();
         document.getElementById('selfEval').checked = false;
-        document.getElementById('apiKey').value = '';
-        document.getElementById('persona').value = '';
       }
 
       function resetOptionInputs() {
@@ -388,7 +417,7 @@
           }
 
           const card = document.createElement('div');
-          card.className = 'bg-gray-700 p-4 rounded-xl shadow transition-transform hover:scale-102 relative';
+          card.className = 'bg-gray-700 p-4 rounded-xl shadow transition-transform hover:scale-102 relative cursor-pointer';
           card.innerHTML = `
             ${detailHtml}
             <p class="text-xs text-gray-400 mt-2">${x.date}</p>
@@ -396,6 +425,11 @@
               <svg data-icon="Trash2" class="w-4 h-4"></svg>
             </button>
           `;
+          card.addEventListener('click', e => {
+            if (!e.target.closest('.deleteBtn')) {
+              location.href = `?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${x.id}`;
+            }
+          });
           container.appendChild(card);
         });
 

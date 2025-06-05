@@ -551,6 +551,31 @@ function listBoard(teacherCode) {
 }
 
 /**
+ * listTaskBoard(teacherCode, taskId):
+ * 指定課題の回答ログを新しい順に返す
+ */
+function listTaskBoard(teacherCode, taskId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return [];
+  const sheet = ss.getSheetByName(SHEET_GLOBAL_ANSWERS);
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  const filtered = data.filter(r => r[2] === taskId).reverse();
+  return filtered.map(row => ({
+    studentId: row[1],
+    answer: row[3],
+    earnedXp: row[4],
+    totalXp: row[5],
+    level: row[6],
+    trophies: row[7],
+    aiCalls: row[8],
+    attempts: row[9]
+  }));
+}
+
+/**
  * getStatistics(teacherCode):
  * 課題数・生徒数を取得
  */
@@ -619,4 +644,24 @@ function logToSpreadsheet(logData) {
  */
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/**
+ * Gemini 設定を保存
+ */
+function setGeminiSettings(apiKey, persona) {
+  const props = PropertiesService.getScriptProperties();
+  if (apiKey !== undefined) props.setProperty('GEMINI_API_KEY', apiKey);
+  if (persona !== undefined) props.setProperty('GEMINI_PERSONA', persona);
+}
+
+/**
+ * Gemini 設定を取得
+ */
+function getGeminiSettings() {
+  const props = PropertiesService.getScriptProperties();
+  return {
+    apiKey: props.getProperty('GEMINI_API_KEY') || '',
+    persona: props.getProperty('GEMINI_PERSONA') || ''
+  };
 }
