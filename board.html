@@ -13,9 +13,9 @@
 </head>
 <body class="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-6">
   <header class="mb-6 flex justify-between items-center">
-    <h1 class="text-2xl flex items-center gap-2">
+    <h1 id="boardHeading" class="text-2xl flex items-center gap-2">
       <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
-      みんなの回答ボード
+      <span id="boardHeadingText">みんなの回答ボード</span>
     </h1>
     <a href="#" id="backLink" class="text-sm hover:text-pink-400">&laquo; 管理パネルに戻る</a>
   </header>
@@ -25,15 +25,20 @@
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
+      const taskId = params.get('task');
       if (!teacherCode) {
         alert('不正なアクセスです。');
         location.href = '?page=login';
         return;
       }
       document.getElementById('backLink').href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+      if (taskId) {
+        document.getElementById('boardHeadingText').textContent = '課題別ボード';
+      }
 
       function loadBoard() {
-        google.script.run.withSuccessHandler(renderBoard).listBoard(teacherCode);
+        const func = taskId ? 'listTaskBoard' : 'listBoard';
+        google.script.run.withSuccessHandler(renderBoard)[func](teacherCode, taskId);
       }
 
       function renderBoard(rows) {
