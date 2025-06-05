@@ -41,6 +41,9 @@
       </span>
     </div>
   </header>
+  <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-3xl font-bold"></div>
+  </div>
 
   <!-- ========================================
        MAIN CONTENT
@@ -115,6 +118,20 @@
             <input type="checkbox" id="selfEval" /> 自己評価を許可する
           </label>
 
+          <div>
+            <label for="apiKey" class="text-xs">■ Gemini APIキー</label>
+            <input id="apiKey" type="text" class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" />
+          </div>
+          <div>
+            <label for="persona" class="text-xs">□ ペルソナ選択</label>
+            <select id="persona" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+              <option value="">-- 選択 --</option>
+              <option value="小学生向け">小学生向け</option>
+              <option value="中学生向け">中学生向け</option>
+              <option value="教師向け">教師向け</option>
+            </select>
+          </div>
+
           <!-- ■ 作成ボタン -->
           <button id="createBtn" type="submit"
                   class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-xl shadow transition-transform duration-150 transform hover:scale-105">
@@ -178,6 +195,13 @@
       // 2) 右上バッジをセット、回答ボードリンクもセット
       document.getElementById('codeBadge').textContent = `CODE: ${teacherCode}`;
       document.getElementById('boardLink').href = `?page=board&teacher=${encodeURIComponent(teacherCode)}`;
+      document.getElementById('codeBadge').addEventListener('click', () => {
+        document.getElementById('teacherCodeModalText').textContent = teacherCode;
+        document.getElementById('teacherCodeModal').classList.remove('hidden');
+      });
+      document.getElementById('teacherCodeModal').addEventListener('click', () => {
+        document.getElementById('teacherCodeModal').classList.add('hidden');
+      });
 
       // 3) 回答タイプ選択時に optionsArea を表示／非表示
       Array.from(document.getElementsByName('ansType')).forEach(radio => {
@@ -207,6 +231,7 @@
         const subject = document.getElementById('subject').value;
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
+        const persona = document.getElementById('persona').value;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
           alert('回答タイプを選択してください。');
@@ -252,7 +277,7 @@
           .withFailureHandler(err => {
             alert('課題作成中にエラーが発生しました: ' + err.message);
           })
-          .createTask(teacherCode, payload, self);
+          .createTask(teacherCode, payload, self, persona);
 
         // ボタンアニメーション
         const btn = document.getElementById('createBtn');
@@ -297,6 +322,8 @@
         document.getElementById('optionsArea').classList.add('hidden');
         resetOptionInputs();
         document.getElementById('selfEval').checked = false;
+        document.getElementById('apiKey').value = '';
+        document.getElementById('persona').value = '';
       }
 
       function resetOptionInputs() {
