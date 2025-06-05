@@ -2,122 +2,520 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>StudyQuest – 回答</title>
+  <title>StudyQuest – クエストボード</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ゲームっぽいドットフォント -->
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <!-- TailwindCSS + GSAP -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Lucide UMD for icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
   <style>
-    body { font-family: 'DotGothic16', monospace; }
+    body {
+      font-family: 'DotGothic16', monospace;
+    }
+    #particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    /* デバッグパネル */
+    #debugPanel {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      width: 320px;
+      max-height: 200px;
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid #4b5563;
+      border-radius: 0.5rem;
+      overflow-y: auto;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      color: #d1d5db;
+      z-index: 50;
+    }
+    #debugPanelHeader {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #debugClose {
+      cursor: pointer;
+      color: #f87171;
+    }
+    /* 履歴モーダルの黒透過背景 */
+    #historyModal {
+      background: rgba(0, 0, 0, 0.7);
+    }
+    /* モバイル時にカラムを縦並びに */
+    @media (max-width: 768px) {
+      #questMain {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
   </style>
 </head>
-<body class="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-4 md:p-8">
+<body class="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center p-4 md:p-8">
+  <!-- 背景パーティクル用キャンバス -->
+  <canvas id="particleCanvas"></canvas>
 
-  <main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-5 gap-8">
-
-    <div class="md:col-span-2 bg-gradient-to-br from-purple-800 to-indigo-700 rounded-2xl shadow-2xl flex flex-col">
-        <div class="p-4 border-b border-white/20">
-            <h2 id="taskSubject" class="text-lg font-bold">【教科】</h2>
-            <p id="taskType" class="text-xs text-indigo-200">回答タイプ: </p>
-        </div>
-        <div id="questionBox"
-            class="p-6 text-lg leading-relaxed whitespace-pre-wrap flex-grow min-h-[200px]">
-            読み込み中…
-        </div>
+  <!-- XPバー＋レベル表示 -->
+  <div class="w-full max-w-3xl mx-auto mt-6 mb-4 px-4">
+    <div class="flex justify-between items-center mb-1">
+      <span class="text-sm">Level <span id="playerLevel">1</span></span>
+      <span class="text-sm"><span id="xpCurrent">0</span> XP / <span id="xpNext">100</span> XP</span>
     </div>
-
-    <div class="md:col-span-3 bg-gray-800 p-6 rounded-2xl shadow-2xl">
-        <h2 class="text-xl mb-4">回答を入力する</h2>
-        <form id="answerForm" class="space-y-4">
-            <textarea
-                id="answer"
-                rows="8"
-                class="w-full p-3 rounded-lg bg-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
-                placeholder="ここに回答を書こう…"
-                required
-            ></textarea>
-
-            <label class="block hidden" id="evalWrap">
-                <span class="text-sm text-gray-400">自己評価</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  id="eval"
-                  value="3"
-                  class="w-full mt-1"
-                />
-            </label>
-
-            <button
-                id="sendBtn"
-                type="submit"
-                class="w-full py-3 bg-pink-600 hover:bg-pink-500 rounded-xl shadow-lg transform transition-transform hover:scale-105"
-            >
-                回答を送信する
-            </button>
-        </form>
+    <div class="bg-gray-800 rounded-full overflow-hidden w-full h-2">
+      <div id="xpFill" class="h-full bg-pink-400 w-0"></div>
     </div>
-
-  </main>
-
-  <div id="xpContainer"
-    class="fixed top-4 left-1/2 transform -translate-x-1/2 w-2/3 md:w-1/3 bg-gray-800 rounded-full overflow-hidden shadow-lg hidden">
-    <div id="xpBar" class="h-2 bg-pink-400 w-0"></div>
   </div>
 
+  <main id="questMain" class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-5 gap-8">
+    <!-- 左カラム：未回答・回答済みクエスト一覧をまとめたカード -->
+    <div class="md:col-span-2 bg-gradient-to-br from-purple-800 to-indigo-700 rounded-2xl shadow-2xl flex flex-col p-4 space-y-6">
+      <!-- 未回答クエスト -->
+      <section>
+        <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-white">
+          <svg data-icon="Target" class="w-6 h-6 text-pink-400"></svg>
+          未回答クエスト
+        </h2>
+        <div id="unansweredList" class="bg-gray-800 p-4 rounded-lg min-h-[80px] space-y-2">
+          <p class="text-gray-400 text-sm text-center">読み込み中…</p>
+        </div>
+      </section>
+
+      <!-- 回答済みクエスト -->
+      <section>
+        <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-white">
+          <svg data-icon="CheckCircle" class="w-6 h-6 text-indigo-400"></svg>
+          完了済みクエスト
+        </h2>
+        <div id="answeredList" class="bg-gray-800 p-4 rounded-lg min-h-[80px] space-y-2">
+          <p class="text-gray-400 text-sm text-center">読み込み中…</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- 右カラム：クエスト詳細＆送信フォームカード -->
+    <div class="md:col-span-3 bg-gray-800 p-6 rounded-2xl shadow-2xl flex flex-col">
+      <h2 id="detailTitle" class="text-xl font-bold mb-4 text-center">クエスト詳細</h2>
+      <div id="detailContent" class="flex-grow bg-gray-700 p-4 rounded-lg shadow-inner min-h-[200px]">
+        <p class="text-gray-400 text-center">左のクエストを選択してください。</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- 提出履歴モーダル -->
+  <div id="historyModal" class="fixed inset-0 hidden items-center justify-center">
+    <div class="bg-gray-800 p-4 rounded-2xl max-w-lg w-full mx-4 shadow-2xl">
+      <h3 class="text-lg font-bold mb-2 flex items-center gap-2 text-white">
+        <svg data-icon="BookOpen" class="w-5 h-5 text-indigo-300"></svg>
+        提出履歴
+      </h3>
+      <div id="historyContent" class="max-h-64 overflow-y-auto space-y-2 px-2">
+        <!-- 履歴がここに挿入される -->
+      </div>
+      <button id="historyClose" class="mt-4 px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-sm rounded-lg shadow-md transition-transform hover:scale-105">
+        閉じる
+      </button>
+    </div>
+  </div>
+
+  <!-- デバッグパネル（左下） -->
+  <div id="debugPanel">
+    <div id="debugPanelHeader">
+      <span>デバッグログ</span>
+      <span id="debugClose">✕</span>
+    </div>
+    <div id="debugContent"></div>
+  </div>
+
+  <!-- Apps Script から埋め込まれるテンプレート変数 -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(location.search);
-      const teacherCode = params.get('teacher');
-      const studentParams = location.search.substring(1);
-      const studentId = `${params.get('grade')}-${params.get('class')}-${params.get('number')}`;
-      let currentTask;
-
-      const qBox = document.getElementById('questionBox');
-
-      function typeWriter(text, element) {
-        element.textContent = '';
-        [...text].forEach((char, i) => {
-          setTimeout(() => { element.textContent += char; }, 30 * i);
-        });
-      }
-
-      google.script.run
-        .withSuccessHandler(task => {
-          currentTask = task;
-          if (!task || !task.q) {
-            qBox.textContent = '課題はありません。';
-            document.getElementById('sendBtn').disabled = true;
-            return;
-          }
-
-          const parsed = JSON.parse(task.q);
-          document.getElementById('taskSubject').textContent = `【${parsed.subject || 'その他'}】`;
-          document.getElementById('taskType').textContent = `回答タイプ: ${parsed.type}`;
-
-          typeWriter(parsed.question || '', qBox);
-          document.getElementById('evalWrap').classList.toggle('hidden', !task.selfEval);
-        })
-        .getRecommendedTask(teacherCode, studentId);
-
-      document.getElementById('answerForm').addEventListener('submit', e => {
-        e.preventDefault();
-        if (!currentTask) return;
-
-        const answerText = document.getElementById('answer').value.trim();
-        const evalValue = currentTask.selfEval ? document.getElementById('eval').value : '';
-
-        google.script.run
-          .withSuccessHandler(() => {
-            gsap.to('#xpBar', { width: '80%', duration: 1 });
-            document.getElementById('xpContainer').classList.remove('hidden');
-            setTimeout(() => location.reload(), 1500);
-          })
-          .submitAnswer(teacherCode, studentParams, currentTask.id, answerText, evalValue);
-      });
-    });
+    const teacherCode = "<?= teacher ?>";
+    const grade       = "<?= grade ?>";
+    const classroom   = "<?= classroom ?>";
+    const number      = "<?= number ?>";
+    const studentId   = `${grade}-${classroom}-${number}`;  // 例: "6-1-1"
   </script>
 
+  <script>
+    // Lucide Icons のレンダリング
+    function renderIcons(scope) {
+      scope.querySelectorAll('[data-icon]').forEach(el => {
+        const iconName = el.getAttribute('data-icon');
+        if (window.lucide && typeof window.lucide[iconName] === 'function') {
+          el.innerHTML = window.lucide[iconName]().outerHTML;
+        }
+      });
+    }
+
+    // デバッグログ出力用
+    const debugContentElem = document.getElementById('debugContent');
+    function debug(msg) {
+      const t = new Date().toLocaleTimeString();
+      debugContentElem.innerHTML += `<p>[${t}] ${msg}</p>`;
+      debugContentElem.scrollTop = debugContentElem.scrollHeight;
+    }
+
+    // デバッグパネル閉じるボタン
+    document.getElementById('debugClose').addEventListener('click', () => {
+      document.getElementById('debugPanel').classList.add('hidden');
+    });
+
+    // XP / Level の状態
+    let xp = 0;
+    let level = 1;
+    const xpPerQuest = 20;
+
+    // クエスト一覧系の配列
+    let allUnanswered = [];
+    let allAnswered   = [];
+    let currentQuest  = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 背景パーティクルを起動
+      initParticles();
+      animateParticles();
+
+      // Lucide Icons を描画
+      renderIcons(document);
+
+      debug('🔄 ページ読み込み完了。');
+      debug(`▶ teacherCode="${teacherCode}", grade="${grade}", class="${classroom}", number="${number}"`);
+      debug(`▶ client で組み立てた studentId="${studentId}"`);
+
+      if (!teacherCode || !grade || !classroom || !number) {
+        debug('⚠️ パラメータ不足 → 処理中断');
+        alert('無効なアクセスです。再度ログインしてください。');
+        return;
+      }
+
+      initStudentAndLoad();
+    });
+
+    // ─── initStudent & クエスト一覧ロード ───
+    function initStudentAndLoad() {
+      debug('➤ initStudent を呼び出し→ 生徒シートを初期化（存在しない場合は作成）');
+      google.script.run
+        .withSuccessHandler(res => {
+          debug(`✅ initStudent 成功 → 返り値: ${JSON.stringify(res)}`);
+          loadQuestLists();
+          loadXP();
+        })
+        .withFailureHandler(err => {
+          debug(`❌ initStudent エラー: ${err.message || JSON.stringify(err)}`);
+          alert('初期化に失敗しました。');
+        })
+        .initStudent(teacherCode, grade, classroom, number);
+    }
+
+    // ─── listTasks ＆ getStudentHistory ／描画 ───
+    function loadQuestLists() {
+      debug('➤ listTasks を呼び出し中…');
+      google.script.run
+        .withSuccessHandler(tasks => {
+          debug(`✅ listTasks 成功 → tasks.length = ${Array.isArray(tasks) ? tasks.length : 'undefined'}`);
+          debug(`   ↓ raw tasks =\n${JSON.stringify(tasks, null, 2)}`);
+          tasks = Array.isArray(tasks) ? tasks : [];
+          debug(`   ⇒ tasks IDリスト: ${JSON.stringify(tasks.map(t => t.id))}`);
+
+          debug('➤ getStudentHistory を呼び出し中…');
+          google.script.run
+            .withSuccessHandler(historyRows => {
+              // null/undefined なら空配列に置き換え
+              if (!Array.isArray(historyRows)) {
+                debug('   ⚠️ getStudentHistory が null/undefined → [] に置き換え');
+                historyRows = [];
+              }
+              debug(`✅ getStudentHistory 成功 → historyRows.length = ${historyRows.length}`);
+              debug(`   ↓ raw historyRows =\n${JSON.stringify(historyRows, null, 2)}`);
+
+              // 回答済み ID リストを作成（回答本文が空ではないもののみ）
+              const answeredIds = new Set(
+                historyRows
+                  .map(r => {
+                    const ans = r[3];
+                    const txt = (ans == null ? '' : ans.toString().trim());
+                    return txt === '' ? null : r[1];
+                  })
+                  .filter(v => v !== null)
+              );
+              debug(`   → answeredIds = ${JSON.stringify(Array.from(answeredIds))}`);
+
+              allUnanswered = tasks.filter(t => !answeredIds.has(t.id));
+              allAnswered   = tasks.filter(t =>  answeredIds.has(t.id));
+              debug(`   → allUnanswered 件数=${allUnanswered.length}, IDs=${JSON.stringify(allUnanswered.map(q => q.id))}`);
+              debug(`   → allAnswered   件数=${allAnswered.length}, IDs=${JSON.stringify(allAnswered.map(q => q.id))}`);
+
+              renderQuestLists(allUnanswered, allAnswered, historyRows);
+            })
+            .withFailureHandler(errHist => {
+              debug(`❌ getStudentHistory エラー: ${errHist.message || JSON.stringify(errHist)}`);
+              renderQuestLists(tasks, [], []);
+            })
+            .getStudentHistory(teacherCode, studentId);
+        })
+        .withFailureHandler(err => {
+          debug(`❌ listTasks エラー: ${err.message || JSON.stringify(err)}`);
+          document.getElementById('unansweredList').innerHTML =
+            '<p class="text-red-500 text-center">クエスト取得に失敗しました。</p>';
+        })
+        .listTasks(teacherCode);
+    }
+
+    // ─── クエスト一覧を描画 ───
+    function renderQuestLists(allUnanswered, allAnswered, historyRows) {
+      debug('✍ renderQuestLists 開始');
+      const ulUn = document.getElementById('unansweredList');
+      const ulAn = document.getElementById('answeredList');
+      ulUn.innerHTML = '';
+      ulAn.innerHTML = '';
+
+      // 未回答
+      if (!Array.isArray(allUnanswered) || allUnanswered.length === 0) {
+        ulUn.innerHTML = '<p class="text-gray-400 text-sm text-center">未回答クエストはありません。</p>';
+        debug('  [画面上] 未回答クエストなし表示');
+      } else {
+        allUnanswered.forEach(q => {
+          let parsed;
+          try {
+            parsed = JSON.parse(q.q);
+          } catch (e) {
+            parsed = { subject: '(JSON 解析失敗)', question: q.q };
+          }
+          const item = document.createElement('div');
+          item.className = 'bg-gray-700 p-3 rounded-md cursor-pointer hover:bg-gray-600';
+          item.innerHTML = `
+            <p class="text-sm mb-1 text-white">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</p>
+            <p class="text-xs text-gray-300">${q.date}</p>
+          `;
+          item.addEventListener('click', () => showQuestDetail(q, false, historyRows));
+          ulUn.appendChild(item);
+        });
+        debug('  [画面上] 未回答クエストを描画完了');
+      }
+
+      // 回答済み
+      if (!Array.isArray(allAnswered) || allAnswered.length === 0) {
+        ulAn.innerHTML = '<p class="text-gray-400 text-sm text-center">回答済みクエストはありません。</p>';
+        debug('  [画面上] 回答済みクエストなし表示');
+      } else {
+        allAnswered.forEach(q => {
+          let parsed;
+          try {
+            parsed = JSON.parse(q.q);
+          } catch (e) {
+            parsed = { subject: '(JSON 解析失敗)', question: q.q };
+          }
+          const item = document.createElement('div');
+          item.className = 'bg-gray-700 p-3 rounded-md cursor-pointer hover:bg-gray-600';
+          item.innerHTML = `
+            <p class="text-sm line-through opacity-70 text-gray-300">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</p>
+            <p class="text-xs text-gray-400">${q.date}</p>
+          `;
+          item.addEventListener('click', () => showQuestDetail(q, true, historyRows));
+          ulAn.appendChild(item);
+        });
+        debug('  [画面上] 回答済みクエストを描画完了');
+      }
+    }
+
+    // ─── クエスト詳細を表示 & 送信処理 ───
+    function showQuestDetail(task, isAnswered, historyRows) {
+      debug(`✏ showQuestDetail → task.id=${task.id}, isAnswered=${isAnswered}`);
+      currentQuest = task;
+      let parsed;
+      try {
+        parsed = JSON.parse(task.q);
+      } catch (e) {
+        parsed = { subject: '(JSON 解析失敗)', question: task.q };
+      }
+
+      const detail = document.getElementById('detailContent');
+      detail.innerHTML = `
+        <h3 class="text-lg font-bold mb-2 text-white">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</h3>
+        <div id="formArea" class="mt-2">
+          <textarea id="detailAnswer" placeholder="ここに回答を入力…" class="w-full p-2 bg-gray-600 rounded text-sm text-gray-100 placeholder-gray-400"></textarea>
+          <div class="mt-2 flex gap-2">
+            <button id="submitBtn" class="bg-pink-600 hover:bg-pink-500 text-white text-sm px-4 py-1 rounded shadow transition-transform hover:scale-105">送信</button>
+            <button id="viewHistoryBtn" class="text-xs text-indigo-300 hover:underline">履歴を見る</button>
+          </div>
+        </div>
+      `;
+      debug('  [画面上] 詳細画面表示完了');
+
+      // 直近の回答があればプリフィル
+      const userSubs = historyRows.filter(r => r[1] === task.id);
+      debug(`  このタスクの履歴件数: ${userSubs.length}`);
+      if (userSubs.length > 0) {
+        const last = userSubs[userSubs.length - 1];
+        document.getElementById('detailAnswer').value = last[3] || '';
+        debug(`  [画面上] 前回回答をプリフィル: "${last[3] || ''}"`);
+      }
+
+      // 送信ボタンにイベント設定
+      document.getElementById('submitBtn').addEventListener('click', () => {
+        const text = document.getElementById('detailAnswer').value.trim();
+        submitAnswer(task.id, text);
+      });
+      debug('  [画面上] 送信ボタンに click イベントを設定');
+
+      // 履歴表示ボタンにイベント設定
+      document.getElementById('viewHistoryBtn').addEventListener('click', () => {
+        showHistory(task.id, historyRows);
+      });
+      debug('  [画面上] 履歴表示ボタンに click イベントを設定');
+    }
+
+    // ─── 回答を送信（複数回OK） ───
+    function submitAnswer(taskId, text) {
+      if (!text) {
+        debug('⚠️ 送信エラー: 回答が空です');
+        return;
+      }
+      debug(`➤ submitAnswer → taskId=${taskId}, text length=${text.length}`);
+      google.script.run
+        .withSuccessHandler(() => {
+          debug('✅ submitAnswer 成功 → XPを加算');
+          xp += xpPerQuest;
+          if (xp >= xpNextThreshold()) {
+            level++;
+            xp = xp - xpNextThreshold();
+            debug(`🎉 レベルアップ！ 現在のレベル: ${level}`);
+          }
+          updateXPBar();
+
+          debug('…少し遅延後にクエストリストを再読み込み');
+          setTimeout(() => {
+            loadQuestLists();
+            debug('➤ クエストリスト再読み込み完了');
+          }, 200);
+
+          gsap.fromTo('#submitBtn', { scale: 1.1 }, { scale: 1, duration: 0.2 });
+        })
+        .withFailureHandler(err => {
+          debug(`❌ submitAnswer エラー: ${err.message || JSON.stringify(err)}`);
+        })
+        .submitAnswer(teacherCode, studentId, taskId, text, '');
+    }
+
+    // ─── 提出履歴モーダルを表示 ───
+    function showHistory(taskId, historyRows) {
+      debug(`📚 showHistory → taskId=${taskId}`);
+      const rows = historyRows.filter(r => r[1] === taskId);
+      debug(`  対象履歴件数 = ${rows.length}`);
+      const container = document.getElementById('historyContent');
+      container.innerHTML = '';
+
+      if (rows.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm text-center">提出履歴がありません。</p>';
+        debug('  [画面上] 提出履歴なし');
+      } else {
+        rows.forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-700 p-2 rounded mb-1';
+          div.innerHTML = `
+            <p class="text-xs text-gray-400">${new Date(r[0]).toLocaleString()}</p>
+            <p class="text-sm text-gray-100">${r[3]}</p>
+          `;
+          container.appendChild(div);
+        });
+        debug(`  [画面上] 提出履歴 ${rows.length} 件を表示`);
+      }
+      document.getElementById('historyModal').classList.remove('hidden');
+    }
+
+    // ─── 履歴モーダルを閉じる ───
+    document.getElementById('historyClose').addEventListener('click', () => {
+      debug('✖ 履歴モーダルを閉じました');
+      document.getElementById('historyModal').classList.add('hidden');
+    });
+
+    // ─── XP / Level 更新 ───
+    function loadXP() {
+      updateXPBar();
+      debug('➤ XPバー初期化完了');
+    }
+    function xpNextThreshold() {
+      return level * 100;
+    }
+    function updateXPBar() {
+      document.getElementById('playerLevel').textContent = level;
+      document.getElementById('xpCurrent').textContent = xp;
+      document.getElementById('xpNext').textContent = xpNextThreshold();
+      const pct = Math.min((xp / xpNextThreshold()) * 100, 100);
+      gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
+      debug(`  XPバー更新: ${xp}/${xpNextThreshold()} (${Math.round(pct)}%)`);
+    }
+
+    // ─── 背景パーティクル（軽量実装） ───
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const maxParticles = 80;
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.3;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (
+          this.x < 0 || this.x > canvas.width ||
+          this.y < 0 || this.y > canvas.height
+        ) {
+          this.reset();
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+        }
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < maxParticles; i++) {
+        particles.push(new Particle());
+      }
+    }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+  </script>
 </body>
 </html>
