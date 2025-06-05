@@ -10,28 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) リポジトリをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Node.js（v20）をセットアップして Clasp v3 を使えるようにする
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
+          node-version: "18"
+          # Clasp v3 は Node >=18 でも動作します（ただし推奨は ≥20 ですが、v3.0.6-alpha は警告つきで18でもインストール可）
 
-      # 3) Clasp v3 をインストール
-      - name: Install clasp v3
-        run: npm install -g @google/clasp@3
+      - name: Install clasp v3 (pre-release)
+        run: npm install -g @google/clasp@3.0.6-alpha
 
-      # 4) サービスアカウントJSONを復元し、環境変数で ADC にセット
       - name: Authenticate via ADC
         env:
           GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
+          # Base64 されたサービスアカウントJSONを復元
           echo "${GCP_CREDENTIALS}" | base64 -d > credentials.json
+          # 環境変数にセットしてADC認証
           export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
-          # .clasp.json がすでにリポジトリにある場合は不要。ただし初回は作成しておく。
+          # 必要なら .clasp.json を再生成 (Script ID は既にリポジトリにあるかSecretsで指定)
           echo "{\"scriptId\":\"${{ secrets.SCRIPT_ID }}\"}" > .clasp.json
-          # Clasp v3 で ADC 認証を使ってプッシュ
+          # Clasp v3 で ADC を使ってプッシュ
           clasp push --force --adc
