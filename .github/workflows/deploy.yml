@@ -1,56 +1,38 @@
-# ───────────────────────────────────────────────────────────────────────────────
-# ファイルパス： .github/workflows/deploy.yml
 name: Deploy to Google Apps Script
 
-# “main” ブランチに push されたときにこのワークフローを実行する
 on:
   push:
     branches:
-      - main   # もし “master” を使っているなら、ここを master に変更してください。
-# ───────────────────────────────────────────────────────────────────────────────
+      - main   # ブランチ名はあなたのリポジトリに合わせてください（main か master）
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. リポジトリをチェックアウト（リポジトリ上の最新ファイルを取得）
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
 
-      # 2. Node.js をインストール（clasp を動かすために必要）
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"   # 16 や 18 など、安定版の LTS を指定してください
+          node-version: "18"
 
-      # 3. clasp をグローバルにインストール（安定版 v2 系を使う）
       - name: Install clasp
         run: npm install -g @google/clasp@2
 
-      # 4. GitHub Secrets から Base64 化された JSON キーを取り出し、復号して認証
       - name: Authenticate with service account
         env:
           GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
-          # 「GOOGLE_CREDENTIALS」に登録された Base64 文字列をデコードして credentials.json に書き出す
           echo "${GCP_CREDENTIALS}" | base64 -d > ./credentials.json
-
-          # clasp を使い、サービスアカウント認証（ブラウザを使わずにログイン）
           clasp login --credentials ./credentials.json --no-localhost
 
-      # 5. .clasp.json を生成（SCRIPT_ID を埋め込む）
       - name: Create .clasp.json
         run: |
-          # GitHub Secrets の「SCRIPT_ID」を使って、.clasp.json を作成する
           echo "{\"scriptId\":\"${{ secrets.SCRIPT_ID }}\"}" > .clasp.json
 
-      # 6. クラウド上の GAS に対してローカルのコードを push して上書きデプロイ
       - name: Push to Google Apps Script
         run: clasp push --force
-        # 「--force」を付けると、appsscript.json などマニフェストも含め 
-        # すべてのファイルを確認なしで上書きします
-# ───────────────────────────────────────────────────────────────────────────────
-
