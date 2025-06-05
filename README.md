@@ -1,6 +1,4 @@
-**要件定義書（StudyQuest／Gamified Web App プロジェクト）**
-
----
+# StudyQuest
 
 ## 1. プロジェクト概要
 
