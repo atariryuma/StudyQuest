@@ -28,7 +28,8 @@ jobs:
           GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
           echo "${GCP_CREDENTIALS}" | base64 -d > ./credentials.json
-          clasp login --credentials ./credentials.json --no-localhost
+          # 修正：--credentials を --creds に変更
+          clasp login --creds ./credentials.json --no-localhost
 
       - name: Create .clasp.json
         run: |
@@ -36,4 +37,3 @@ jobs:
 
       - name: Push to Google Apps Script
         run: clasp push --force
-        
