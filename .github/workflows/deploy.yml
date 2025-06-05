@@ -3,7 +3,7 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - main   # ブランチ名はあなたのリポジトリに合わせてください（main か master）
+      - main
 
 jobs:
   deploy:
