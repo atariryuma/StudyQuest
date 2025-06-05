@@ -37,7 +37,7 @@ jobs:
           GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
           echo "${GCP_CREDENTIALS}" | base64 -d > ./credentials.json
-          export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/credentials.json" >> $GITHUB_ENV
 
       # 6. コードを Google Apps Script にプッシュ
       - name: Push to Google Apps Script
