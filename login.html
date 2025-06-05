@@ -70,6 +70,7 @@
           required
         />
       </div>
+      <div id="teacherCodeDisplay" class="text-xs text-gray-400 mb-2 hidden"></div>
 
       <!-- 児童用：学年・組・番号 -->
       <div id="studentFields" class="space-y-2">
@@ -199,6 +200,14 @@
     // ==============================
     document.addEventListener('DOMContentLoaded', () => {
       gsap.from('#loginBox', { scale: 0, duration: 0.6, ease: 'back' });
+      const savedCode = localStorage.getItem('teacherCode');
+      if (savedCode) {
+        document.getElementById('teacherCode').value = savedCode;
+        document.getElementById('teacherCodeWrap').classList.add('hidden');
+        const disp = document.getElementById('teacherCodeDisplay');
+        disp.textContent = `教師コード: ${savedCode}`;
+        disp.classList.remove('hidden');
+      }
       toggleTeacherMode();
       document.getElementById('teacherMode').addEventListener('change', toggleTeacherMode);
       document.getElementById('loginForm').addEventListener('submit', handleSubmit);
@@ -221,7 +230,9 @@
       const isTeacher = document.getElementById('teacherMode').checked;
       const passWrap = document.getElementById('passcodeWrap');
       const codeWrap = document.getElementById('teacherCodeWrap');
+      const codeDisp = document.getElementById('teacherCodeDisplay');
       const studentFields = document.getElementById('studentFields');
+      const savedCode = localStorage.getItem('teacherCode');
 
       if (isTeacher) {
         passWrap.classList.remove('hidden');
@@ -234,7 +245,14 @@
         document.getElementById('number').required = false;
       } else {
         passWrap.classList.add('hidden');
-        codeWrap.classList.remove('hidden');
+        if (savedCode) {
+          codeWrap.classList.add('hidden');
+          codeDisp.textContent = `教師コード: ${savedCode}`;
+          codeDisp.classList.remove('hidden');
+        } else {
+          codeWrap.classList.remove('hidden');
+          codeDisp.classList.add('hidden');
+        }
         studentFields.classList.remove('hidden');
         document.getElementById('passcode').required = false;
         document.getElementById('teacherCode').required = true;
@@ -302,7 +320,8 @@
 
       } else {
         // ── 児童モード ──
-        const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
+        const saved = localStorage.getItem('teacherCode');
+        const teacherCode = (saved || document.getElementById('teacherCode').value).trim().toUpperCase();
         const grade = document.getElementById('grade').value.trim();
         const classroom = document.getElementById('classroom').value.trim().toUpperCase();
         const number = document.getElementById('number').value.trim();
@@ -329,6 +348,7 @@
 
         google.script.run
           .withSuccessHandler(() => {
+            localStorage.setItem('teacherCode', teacherCode);
             window.top.location.href = SCRIPT_URL + '?page=input&' + studentParams;
           })
           .withFailureHandler(err => {
