@@ -3,8 +3,8 @@ name: Build & Deploy GAS
 on:
   push:
     branches:
-      - main         # main ブランチにプッシュされたときに実行
-  workflow_dispatch: # 手動トリガーも可能にする
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -23,19 +23,43 @@ jobs:
       - name: clasp をインストール (@google/clasp v3)
         run: npm install --global @google/clasp@3.0.6-alpha
 
+      # ─────────────────────────────────────────────────────────
+      # デバッグ：GCP_CREDENTIALS がそもそも渡っているか確認する
+      - name: (デバッグ) GCP_CREDENTIALS の長さをチェック
+        run: |
+          echo "GCP_CREDENTIALS length: $(echo -n "$GCP_CREDENTIALS" | wc -c)"
+          # 0 ならゼロバイト。適切に渡っていない。
+        shell: bash
+
+      # 仮に長さが 0 以上なら復元を試みる
+      - name: (デバッグ) シークレットから復元した JSON を先頭だけ表示
+        if: ${{ env.GCP_CREDENTIALS != '' }}
+        run: |
+          echo "$GCP_CREDENTIALS" | base64 -d > debug-credentials.json
+          echo "---- begin debug-credentials.json ----"
+          head -n 10 debug-credentials.json
+          echo "----  end debug-credentials.json  ----"
+
       - name: Secrets の Base64 を復元してファイル保存
         run: |
-          # GitHub Secrets に登録したキー名が "GCP_CREDENTIALS" であれば、以下のように復元します
           echo "$GCP_CREDENTIALS" | base64 -d > "$HOME/gcp-sa.json"
-          # 環境変数として設定。clasp の ADC 認証で使う
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-sa.json" >> $GITHUB_ENV
+
+      - name: (デバッグ) 復元結果の最終行だけ見る
+        run: |
+          tail -n 3 "$HOME/gcp-sa.json" || echo "(ファイルがないか空です)"
+
+      # ─────────────────────────────────────────────────────────
 
       - name: .clasp.json に scriptId を書き込む
         run: |
-          # GitHub Secrets に登録したキー名が "SCRIPT_ID" であれば、こうして JSON を生成します
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
-      - name: clasp push --force --adc (GAS にデプロイ)
+      - name: (デバッグ) .clasp.json の中身を確認
         run: |
-          # ADC（Application Default Credentials）モードで GAS プロジェクトを上書きプッシュ
-          clasp push --force --adc
+          cat .clasp.json || echo ".clasp.json が見つかりません"
+
+      # ─────────────────────────────────────────────────────────
+
+      - name: clasp push --force --adc (GAS にデプロイ)
+        run: clasp push --force --adc
