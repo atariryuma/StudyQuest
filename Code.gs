@@ -198,15 +198,55 @@ function initStudent(teacherCode, grade, classroom, number) {
 
   const studentId = `${grade}-${classroom}-${number}`; // e.g. "6-1-1"
 
-  // 生徒一覧に未登録なら追加
+  // 生徒一覧に未登録なら追加 / 旧ID のままなら更新
   const studentListData = studentListSheet.getDataRange().getValues();
-  const exists = studentListData.some(row => row[0] === studentId);
-  if (!exists) {
+  let studentRowIndex = -1;
+  for (let i = 1; i < studentListData.length; i++) {
+    const idVal = String(studentListData[i][0] || '').trim();
+    if (idVal === studentId) {
+      studentRowIndex = i;
+      break;
+    }
+  }
+  if (studentRowIndex === -1) {
     studentListSheet.appendRow([studentId, grade, classroom, number, new Date()]);
+  } else if (studentListData[studentRowIndex][0] !== studentId) {
+    studentListSheet.getRange(studentRowIndex + 1, 1).setValue(studentId);
   }
 
   const studentSheetName = STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
-  let studentSheet = ss.getSheetByName(studentSheetName);
+  let studentSheet = null;
+  let maxRows = -1;
+  const allSheets = ss.getSheets();
+  for (const sh of allSheets) {
+    const name = sh.getName();
+    if (!name.startsWith(STUDENT_SHEET_PREFIX)) continue;
+    const idPart = name.substring(STUDENT_SHEET_PREFIX.length);
+    const parts = idPart.split('-');
+    if (parts.length !== 3) continue;
+    if (parts[0].trim() === grade && parts[1].trim() === classroom && parts[2].trim() === number) {
+      const rows = sh.getLastRow();
+      if (rows > maxRows) {
+        studentSheet = sh;
+        maxRows = rows;
+      }
+    }
+  }
+
+  if (studentSheet) {
+    if (studentSheet.getName() !== studentSheetName) {
+      const existing = ss.getSheetByName(studentSheetName);
+      if (existing && existing !== studentSheet) {
+        // keep the sheet with more rows
+        if (existing.getLastRow() > studentSheet.getLastRow()) {
+          studentSheet = existing;
+        } else {
+          ss.deleteSheet(existing);
+        }
+      }
+      studentSheet.setName(studentSheetName);
+    }
+  }
 
   if (!studentSheet) {
     // 個別シートを作成
