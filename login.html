@@ -214,7 +214,10 @@
       document.getElementById('teacherCode').addEventListener('input', normalizeTeacherCode);
       document.getElementById('grade').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
       document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
-      // "組" は全角入力を許可し、Enter(送信)時に半角へ変換するため、リアルタイム変換は行わない
+      // "組" は全角入力を許可し、Enterキー等の送信時に半角へ変換するため、リアルタイム変換は行わない
+
+      // 入力フィールドのフォーカス制御
+      setupFieldFocus();
     });
 
     function toHalf(str) {
@@ -262,7 +265,7 @@
       }
     }
 
-    function handleSubmit(e) {
+      function handleSubmit(e) {
       e.preventDefault();
       const isTeacher = document.getElementById('teacherMode').checked;
       const loading = document.getElementById('loading');
@@ -323,7 +326,7 @@
         const saved = localStorage.getItem('teacherCode');
         const teacherCode = (saved || document.getElementById('teacherCode').value).trim().toUpperCase();
         const grade = document.getElementById('grade').value.trim();
-        const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
+        const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase().replace(/[^A-Z0-9]/g,'');
         const number = document.getElementById('number').value.trim();
 
         if (!teacherCode) {
@@ -357,6 +360,42 @@
             btn.disabled = false;
           })
           .initStudent(teacherCode, grade, classroom, number);
+      }
+
+      // フォーカス移動設定
+      function setupFieldFocus() {
+        const teacherInput = document.getElementById('teacherCode');
+        const gradeInput = document.getElementById('grade');
+        const classInput = document.getElementById('classroom');
+        const numberInput = document.getElementById('number');
+
+        // 初期フォーカス
+        if (document.getElementById('teacherCodeWrap').classList.contains('hidden')) {
+          gradeInput.focus();
+        } else {
+          teacherInput.focus();
+        }
+
+        teacherInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            gradeInput.focus();
+          }
+        });
+
+        gradeInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            classInput.focus();
+          }
+        });
+
+        classInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            numberInput.focus();
+          }
+        });
       }
     }
   </script>
