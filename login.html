@@ -202,7 +202,20 @@
       toggleTeacherMode();
       document.getElementById('teacherMode').addEventListener('change', toggleTeacherMode);
       document.getElementById('loginForm').addEventListener('submit', handleSubmit);
+      document.getElementById('teacherCode').addEventListener('input', normalizeTeacherCode);
+      document.getElementById('grade').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
+      document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
+      document.getElementById('classroom').addEventListener('input', e => { e.target.value = toHalf(e.target.value).toUpperCase().replace(/[^A-Z]/g,''); });
     });
+
+    function toHalf(str) {
+      return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+    }
+
+    function normalizeTeacherCode() {
+      const el = document.getElementById('teacherCode');
+      el.value = toHalf(el.value).toUpperCase().replace(/[^A-Z0-9]/g,'');
+    }
 
     function toggleTeacherMode() {
       const isTeacher = document.getElementById('teacherMode').checked;
