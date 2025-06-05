@@ -1,43 +1,64 @@
 name: Deploy GAS
-
 'on':
   push:
     branches:
       - main
   workflow_dispatch: {}
 
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
     steps:
-
       - name: Check out repository
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+        
       - name: Set up Node.js (>=20.x)
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-
-      - name: Install clasp (v3)
-        run: npm install --global @google/clasp@3.0.6-alpha
-
+          cache: 'npm'
+          
+      - name: Install clasp (latest stable)
+        run: npm install --global @google/clasp@latest
+        
+      - name: Verify clasp installation
+        run: clasp --version
+        
       - name: Restore GCP service-account key
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
           echo "$GOOGLE_CREDENTIALS" | base64 -d > "$HOME/gcp-sa.json"
+          chmod 600 "$HOME/gcp-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-sa.json" >> $GITHUB_ENV
-
+          
       - name: Authenticate with clasp
         run: clasp login --creds "$HOME/gcp-sa.json"
-
+        
+      - name: Verify authentication
+        run: clasp projects || echo "Warning: Could not list projects"
+        
       - name: Write .clasp.json
         env:
           SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
         run: |
           echo "{\"scriptId\":\"$SCRIPT_ID\"}" > .clasp.json
-
+          
+      - name: Validate project structure
+        run: |
+          if [ ! -f "appsscript.json" ]; then
+            echo "Error: appsscript.json not found"
+            exit 1
+          fi
+          echo "Project structure validated"
+          
       - name: Push to Google Apps Script
-        run: clasp push --force --adc
+        run: clasp push --force
+        
+      - name: Clean up credentials
+        if: always()
+        run: |
+          rm -f "$HOME/gcp-sa.json"
+          rm -f .clasp.json
