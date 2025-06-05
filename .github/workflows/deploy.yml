@@ -1,45 +1,46 @@
-name: Deploy to Google Apps Script
+name: Deploy GAS via clasp
 
 on:
   push:
     branches:
       - main
 
-env:
-  SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
-  # ここを GCP_CREDENTIALS ではなく GOOGLE_CREDENTIALS に合わせる
-  GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-
 jobs:
   deploy:
     name: Deploy GAS via clasp
     runs-on: ubuntu-latest
 
+    env:
+      # GitHub のリポジトリの Settings → Secrets で設定しておく
+      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Use Node.js 20.x
+      - name: Set up Node.js (20.x)
         uses: actions/setup-node@v3
         with:
           node-version: "20.x"
 
       - name: Install clasp v3
-        run: |
-          npm install --global @google/clasp@3.0.6-alpha
+        run: npm install --global @google/clasp@3.0.6-alpha
 
-      - name: Decode service account key
+      - name: Decode service account JSON & configure ADC
         run: |
-          # Secrets.GOOGLE_CREDENTIALS の値（Base64文字列）を復元してファイルに書き出し
+          # Base64 化されたサービスアカウント JSON を復元
           echo "${GCP_CREDENTIALS}" | base64 -d > "${HOME}/gcp-sa.json"
+          # 環境変数にセットして ADC を有効化
           echo "GOOGLE_APPLICATION_CREDENTIALS=${HOME}/gcp-sa.json" >> $GITHUB_ENV
 
-      - name: Generate .clasp.json
+      - name: Create .clasp.json
         run: |
-          mkdir -p ~/.clasprc
-          # Secrets.SCRIPT_ID を使って .clasp.json を生成
+          # .clasp.json に scriptId を書き出す
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
-      - name: Push to Apps Script (ADC)
+      - name: Push to Google Apps Script
         run: |
+          # clasp を ADC モードで実行
           clasp push --force --adc
+        # clasp コマンドは環境変数 GOOGLE_APPLICATION_CREDENTIALS を参照する
