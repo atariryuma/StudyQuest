@@ -5,32 +5,42 @@ on:
     branches:
       - main
 
+env:
+  # Secret containing your Apps Script project’s Script ID
+  SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+  # Secret containing your base64-encoded GCP service account JSON
+  GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+
 jobs:
   deploy:
+    name: Deploy GAS via clasp
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
-          # Clasp v3 は Node >=18 でも動作します（ただし推奨は ≥20 ですが、v3.0.6-alpha は警告つきで18でもインストール可）
+          node-version: "20.x"
 
-      - name: Install clasp v3 (pre-release)
-        run: npm install -g @google/clasp@3.0.6-alpha
-
-      - name: Authenticate via ADC
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      - name: Install clasp v3
         run: |
-          # Base64 されたサービスアカウントJSONを復元
-          echo "${GCP_CREDENTIALS}" | base64 -d > credentials.json
-          # 環境変数にセットしてADC認証
-          export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
-          # 必要なら .clasp.json を再生成 (Script ID は既にリポジトリにあるかSecretsで指定)
-          echo "{\"scriptId\":\"${{ secrets.SCRIPT_ID }}\"}" > .clasp.json
-          # Clasp v3 で ADC を使ってプッシュ
+          npm install --global @google/clasp@3.0.6-alpha
+
+      - name: Decode service account key
+        id: decode_key
+        run: |
+          echo "${GCP_CREDENTIALS}" | base64 -d > "${HOME}/gcp-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${HOME}/gcp-sa.json" >> $GITHUB_ENV
+
+      - name: Generate .clasp.json
+        run: |
+          mkdir -p ~/.clasprc
+          echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
+
+      - name: Push to Apps Script (ADC)
+        run: |
           clasp push --force --adc
+
