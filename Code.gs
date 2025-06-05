@@ -188,6 +188,7 @@ function findStudentSheet_(ss, studentId) {
   const normalize = (id) => {
     return String(id || '')
       .replace(/[\u2010-\u2015\uff0d]/g, '-') // various hyphen chars
+      .replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFF10 + 48)) // full-width digits
       .replace(/\s+/g, '')
       .toUpperCase();
   };
