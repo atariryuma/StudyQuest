@@ -6,10 +6,9 @@ on:
       - main
 
 env:
-  # Secret containing your Apps Script project’s Script ID
   SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
-  # Secret containing your base64-encoded GCP service account JSON
-  GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+  # ここを GCP_CREDENTIALS ではなく GOOGLE_CREDENTIALS に合わせる
+  GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
 
 jobs:
   deploy:
@@ -30,17 +29,17 @@ jobs:
           npm install --global @google/clasp@3.0.6-alpha
 
       - name: Decode service account key
-        id: decode_key
         run: |
+          # Secrets.GOOGLE_CREDENTIALS の値（Base64文字列）を復元してファイルに書き出し
           echo "${GCP_CREDENTIALS}" | base64 -d > "${HOME}/gcp-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=${HOME}/gcp-sa.json" >> $GITHUB_ENV
 
       - name: Generate .clasp.json
         run: |
           mkdir -p ~/.clasprc
+          # Secrets.SCRIPT_ID を使って .clasp.json を生成
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
       - name: Push to Apps Script (ADC)
         run: |
           clasp push --force --adc
-
