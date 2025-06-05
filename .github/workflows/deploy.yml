@@ -20,11 +20,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "20"
 
       # 3. Clasp CLI をインストール
       - name: Install clasp
         run: npm install -g @google/clasp@3.0.6-alpha
+
+      - name: Check clasp version
+        run: clasp --version
 
       # 4. .clasp.json を作成（Script ID を指定）
       - name: Create .clasp.json
