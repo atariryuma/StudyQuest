@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. リポジトリからコードをチェックアウト
+      # 1. コードをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: "18"
 
-      # 3. clasp CLI をインストール
+      # 3. Clasp CLI をインストール
       - name: Install clasp
         run: npm install -g @google/clasp@2
 
@@ -31,7 +31,7 @@ jobs:
         run: |
           echo "{\"scriptId\":\"${{ secrets.SCRIPT_ID }}\"}" > .clasp.json
 
-      # 5. サービスアカウントキーでログイン
+      # 5. サービスアカウントキーでログイン（ここが最重要）
       - name: Authenticate with service account
         env:
           GCP_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
