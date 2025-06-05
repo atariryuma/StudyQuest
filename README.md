@@ -470,3 +470,11 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 * **各クラス用スプレッドシート名**： `StudyQuest_<teacherCode>_Grade<学年>_Class<組>_Log`
 * **シート一覧**（各クラス用シート共通）：
 # テストコミット #午後
+
+### GitHub ActionsによるGASデプロイ
+
+`.github/workflows/deploy.yml` では `main` ブランチへの push または手動実行で `clasp push` を行います。事前に次のシークレットを設定してください。
+
+- `GOOGLE_CREDENTIALS` – サービスアカウントJSONを base64 エンコードした文字列
+- `SCRIPT_ID` – デプロイ先の Apps Script プロジェクトID
+
