@@ -263,7 +263,7 @@
       }
     }
 
-    function handleSubmit(e) {
+      function handleSubmit(e) {
       e.preventDefault();
       const isTeacher = document.getElementById('teacherMode').checked;
       const loading = document.getElementById('loading');
@@ -358,6 +358,42 @@
             btn.disabled = false;
           })
           .initStudent(teacherCode, grade, classroom, number);
+      }
+
+      // フォーカス移動設定
+      function setupFieldFocus() {
+        const teacherInput = document.getElementById('teacherCode');
+        const gradeInput = document.getElementById('grade');
+        const classInput = document.getElementById('classroom');
+        const numberInput = document.getElementById('number');
+
+        // 初期フォーカス
+        if (document.getElementById('teacherCodeWrap').classList.contains('hidden')) {
+          gradeInput.focus();
+        } else {
+          teacherInput.focus();
+        }
+
+        teacherInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            gradeInput.focus();
+          }
+        });
+
+        gradeInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            classInput.focus();
+          }
+        });
+
+        classInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            numberInput.focus();
+          }
+        });
       }
     }
   </script>
