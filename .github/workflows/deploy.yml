@@ -47,6 +47,7 @@ jobs:
           echo "→ 新しいバージョン番号: $NEW_VER"
 
           # 3) “既存”のウェブアプリ (DEPLOYMENT_ID) に上書きデプロイ
+
           if clasp deploy --help | grep -q -- '--type'; then
             clasp deploy \
               --deploymentId "${DEPLOYMENT_ID}" \
