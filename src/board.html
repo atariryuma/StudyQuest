@@ -30,7 +30,7 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
-
+    
     document.addEventListener('DOMContentLoaded', () => {
       function escapeHtml(text) {
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
