@@ -151,6 +151,15 @@
   </script>
 
   <script>
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // Lucide Icons のレンダリング
     function renderIcons(scope) {
       scope.querySelectorAll('[data-icon]').forEach(el => {
