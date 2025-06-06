@@ -16,10 +16,7 @@ jobs:
     env:
       # リポジトリのシークレットとして登録済み
       # - secrets.GOOGLE_CREDENTIALS : サービスアカウント JSON (auth ステップで利用)
-      # - secrets.SCRIPT_ID          : デプロイ対象の Apps Script プロジェクトの Script ID
       GCP_PROJECT: gas-deploy-project
-      SERVICE_ACCOUNT: gas-deploy-bot@gas-deploy-project.iam.gserviceaccount.com
-      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
 
     steps:
       # 1) ソースコードをチェックアウト
@@ -59,17 +56,11 @@ jobs:
       - name: Install clasp (stable)
         run: npm install --global @google/clasp@latest
 
-      # 5) .clasp.json を書き込み（SCRIPT_ID を設定）
-      - name: Write .clasp.json
-        run: |
-          echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
-
-      # 6) clasp で Apps Script にデプロイ
+      # 5) clasp で Apps Script にデプロイ
       - name: Push to Apps Script
         run: |
           echo "=== Deploying to Apps Script via clasp ==="
           # プッシュ実行（ADC を利用）
           clasp push --force --adc
         env:
-          SCRIPT_ID: ${{ env.SCRIPT_ID }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
