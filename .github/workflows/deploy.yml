@@ -45,14 +45,10 @@ jobs:
         with:
           project_id: ${{ steps.auth.outputs.project_id }}
 
-      # 5) 認証情報から必要な環境変数をエクスポート
-      - name: Export env vars
+      # 5) Apps Script API を有効化（既に有効化済みでも安全に通過）
+      - name: Enable Apps Script API
         run: |
-          echo "GCP_PROJECT=${{ steps.auth.outputs.project_id }}" >> $GITHUB_ENV
-          echo "SERVICE_ACCOUNT=$(jq -r '.client_email' \"$GOOGLE_APPLICATION_CREDENTIALS\")" >> $GITHUB_ENV
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        id: set-env
+          gcloud services enable script.googleapis.com --project=$GCP_PROJECT
 
       # 6) clasp をインストール（最新の安定版を指定）
       - name: Install clasp (stable)
@@ -65,4 +61,4 @@ jobs:
           # プッシュ実行（ADC を利用）
           clasp push --force --adc
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}

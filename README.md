@@ -484,4 +484,5 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 1. Google Cloud でサービスアカウントを作成し、Apps Script API を有効化します。
 2. 生成した JSON キーの内容を `GOOGLE_CREDENTIALS` シークレットに登録します。
 3. `main` ブランチへ push するか、Actions タブから **Deploy GAS via Clasp** ワークフローを手動実行します。
-4. ワークフローが `clasp push` を実行し、`src/` 以下のファイルが Apps Script プロジェクトへ自動デプロイされます。
+4. ワークフロー実行時に `gcloud services enable script.googleapis.com` が呼び出され、未有効であっても API が自動的に有効化されます。
+5. その後 `clasp push` が実行され、`src/` 以下のファイルが Apps Script プロジェクトへ自動デプロイされます。
