@@ -34,10 +34,25 @@ jobs:
         # ※ 以降のステップで env.SCRIPT_ID はそのまま参照できます
 
       # 3) Google への認証
-      - name: Authenticate to Google Cloud
+      - id: auth
+        name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      # 認証情報からプロジェクトIDとサービスアカウントを環境変数に設定
+      - name: Export env vars
+        run: |
+          echo "GCP_PROJECT=${{ steps.auth.outputs.project_id }}" >> $GITHUB_ENV
+          echo "SERVICE_ACCOUNT=$(jq -r '.client_email' \"$GOOGLE_APPLICATION_CREDENTIALS\")" >> $GITHUB_ENV
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        id: set-env
+
+      - name: Check Auth / Permissions (Debug)
+        run: |
+          chmod +x .github/scripts/check_auth.sh
+          .github/scripts/check_auth.sh
 
       # 4) clasp をインストール（最新の安定版を指定）
       - name: Install clasp (stable)
