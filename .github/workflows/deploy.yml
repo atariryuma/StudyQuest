@@ -17,6 +17,8 @@ jobs:
       # GitHub リポジトリのシークレットとして登録済みの変数
       # - secrets.GOOGLE_CREDENTIALS : サービスアカウント JSON (auth ステップで使用)
       # - secrets.SCRIPT_ID          : デプロイ対象の Apps Script プロジェクトの Script ID
+      GCP_PROJECT: gas-deploy-project
+      SERVICE_ACCOUNT: gas-deploy-bot@gas-deploy-project.iam.gserviceaccount.com
       SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
 
     steps:
