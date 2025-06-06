@@ -40,6 +40,11 @@
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
       const taskId = params.get('task');
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+      }
       if (!teacherCode) {
         alert('不正なアクセスです。');
         location.href = '?page=login';
