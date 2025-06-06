@@ -1,4 +1,3 @@
-# .github/workflows/deploy-gas-webapp.yml
 name: Deploy GAS as Web App
 
 on:
@@ -6,76 +5,67 @@ on:
     branches:
       - main
 
+# .github/workflows/deploy-gas-webapp.yml （抜粋）
 jobs:
   deploy-gas-webapp:
-    name: Deploy GAS → overwrite existing Web App deployment
     runs-on: ubuntu-latest
-
     env:
-      # GitHub リポジトリのシークレットに登録済み
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-      # 1) ソースコードをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # 2) Node.js をセットアップ（clasp が Node.js 上の CLI なので必要）
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # 3) clasp をインストール
       - name: Install clasp (latest)
         run: npm install --global @google/clasp@latest
 
-      # 4) CLASPRC_JSON (認証情報) を ~/.clasprc.json に書き出し
       - name: Configure ~/.clasprc.json for clasp authentication
         run: |
           mkdir -p ~/.config
           echo "${CLASPRC_JSON}" > ~/.clasprc.json
-        # CLASPRC_JSON は Secrets から渡ってくる OAuth/SvcAcct 情報の JSON 全文
 
-      # 5) ソースを push → 新バージョン作成 → 既存 deploymentId に上書きデプロイ
       - name: Push & Deploy as Web App
         id: deploy
         run: |
           set -eux
 
-          # 5-1) ローカルのファイルを Apps Script に強制アップロード
+          # 1) ローカルのファイルを Apps Script に強制アップロード
           clasp push --force
 
-          # 5-2) 新しいバージョンを作成し、番号を変数に入れる
-          #      grep/awk を同じ行に書き、改行でパイプが壊れないようにする
+          # 2) 新しいバージョンを JSON 形式で作成し、versionNumber を抜き出す
           NEW_VER=$(
-            clasp version "auto-$(date +%Y%m%d%H%M%S)" \
-              | grep 'Created version number:' \
-              | awk '{print $4}'
+            clasp version "auto-$(date +%Y%m%d%H%M%S)" --json \
+              | jq -r '.versionNumber'
           )
+          # もし NEW_VER が空だったらエラー扱い
           if [ -z "$NEW_VER" ]; then
             echo "Failed to retrieve version number" >&2
             exit 1
           fi
           echo "→ 新しいバージョン番号: $NEW_VER"
 
-          # 5-3) 既存の DEPLOYMENT_ID を指定して、バージョン番号だけ置き換え（上書き更新）
+          # 3) 既存の DEPLOYMENT_ID を使って上書きデプロイ
+          #    (--webapp や --type webapp は不要。初回作成時のみ --type webapp を実行済みの前提)
           clasp deploy \
             --deploymentId "${DEPLOYMENT_ID}" \
             --versionNumber "${NEW_VER}" \
             --description "auto-deploy from GitHub Actions"
 
-          # 5-4) 公開 URL を組み立て (クエリ ?page=login を末尾に追加)
+          # 4) 公開 URL を組み立て (?page=login を末尾に追加)
           FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
           echo "✅ Web アプリ最新版の URL: ${FINAL_URL}"
 
-          # GitHub Actions の出力値にもセットしておく
+          # GitHub Actions の出力値にもセット
           echo "webapp_url=${FINAL_URL}" >> "$GITHUB_OUTPUT"
 
-      # 6) （例）出力された URL を次のステップで利用
       - name: Show output webapp_url
         run: |
           echo "==== 出力された webapp_url ===="
