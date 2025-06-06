@@ -7,9 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      # clasp 認証 JSON を GitHub Secrets に設定しておく
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-      # 手動初回デプロイで取得した Web アプリの DEPLOYMENT_ID
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
@@ -29,21 +27,31 @@ jobs:
           mkdir -p ~/.config
           echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-      - name: Push & Deploy Web App
+      - name: Push & Update Web App
+        id: deploy
         run: |
           set -eux
 
           # 1) コードを強制アップロード
           clasp push --force
 
-          # 2) 新しいバージョンを作成して番号を取得
+          # 2) 新しいバージョンを作成し、番号を抽出
           NEW_VER=$(clasp version "auto-$(date +%Y%m%d%H%M%S)" \
             | grep -oE "[0-9]+" | head -n1)
-          [ -n "$NEW_VER" ] || (echo "version generation failed" >&2; exit 1)
+          if [ -z "$NEW_VER" ]; then
+            echo "Failed to retrieve version number" >&2
+            exit 1
+          fi
+          echo "→ Version: $NEW_VER"
 
-          # 3) 既存の Web アプリに上書きデプロイ
-          clasp deploy \
-            --deploymentId "${DEPLOYMENT_ID}" \
+          # 3) 既存 Web App (タイプ：webapp) のデプロイをバージョンだけ上書き
+          clasp update-deployment "${DEPLOYMENT_ID}" \
             --versionNumber "${NEW_VER}" \
-            --description "auto-deploy from GitHub Actions" \
-            --type webapp
+            --description "auto-deploy from GitHub Actions"
+
+          # 4) 固定 URL に ?page=login を付与
+          echo "webapp_url=https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Show URL
+        run: echo "${{ steps.deploy.outputs.webapp_url }}"
