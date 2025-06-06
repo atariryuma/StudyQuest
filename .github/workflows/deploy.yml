@@ -68,9 +68,7 @@ jobs:
       - name: Push to Apps Script
         run: |
           echo "=== Deploying to Apps Script via clasp ==="
-          # ADC を使ってログイン
-          clasp login --creds "$GOOGLE_APPLICATION_CREDENTIALS"
-          # プッシュ実行
+          # プッシュ実行（ADC を利用）
           clasp push --force --adc
         env:
           SCRIPT_ID: ${{ env.SCRIPT_ID }}
