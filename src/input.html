@@ -151,6 +151,15 @@
   </script>
 
   <script>
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // Lucide Icons のレンダリング
     function renderIcons(scope) {
       scope.querySelectorAll('[data-icon]').forEach(el => {
@@ -170,8 +179,12 @@
     }
 
     function escapeHtml(text) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-      return String(text).replace(/[&<>"']/g, m => map[m]);
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     // デバッグパネル閉じるボタン
@@ -189,6 +202,11 @@
     let allUnanswered = [];
     let allAnswered   = [];
     let currentQuest  = null;
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       // 背景パーティクルを起動
@@ -445,15 +463,15 @@
         container.innerHTML = '<p class="text-gray-400 text-sm text-center">提出履歴がありません。</p>';
         debug('  [画面上] 提出履歴なし');
       } else {
-          rows.forEach(r => {
-            const div = document.createElement('div');
-            div.className = 'bg-gray-700 p-2 rounded mb-1';
-            div.innerHTML = `
-              <p class="text-xs text-gray-400">${escapeHtml(new Date(r[0]).toLocaleString())}</p>
-              <p class="text-sm text-gray-100">${escapeHtml(r[3])}</p>
-            `;
-            container.appendChild(div);
-          });
+        rows.forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-700 p-2 rounded mb-1';
+          div.innerHTML = `
+            <p class="text-xs text-gray-400">${escapeHtml(new Date(r[0]).toLocaleString())}</p>
+            <p class="text-sm text-gray-100">${escapeHtml(r[3])}</p>
+          `;
+          container.appendChild(div);
+        });
         debug(`  [画面上] 提出履歴 ${rows.length} 件を表示`);
       }
       document.getElementById('historyModal').classList.remove('hidden');
