@@ -28,6 +28,7 @@
     </h1>
     <div class="flex items-center gap-4">
       <a id="boardLink" href="#" class="text-sm hover:text-pink-400">回答ボードを見る</a>
+      <a id="backToLogin" href="?page=login" class="text-sm hover:text-pink-400">ログイン画面へ</a>
       <span id="codeBadge" class="px-3 py-1 bg-pink-600 rounded-xl text-sm tracking-wider">
         <!-- ここに CODE: XXXX が入る -->
       </span>
@@ -45,7 +46,7 @@
   <section class="p-4 bg-gray-900 flex flex-col md:flex-row gap-4 items-end" id="geminiSettings">
     <div class="flex-1">
       <label for="apiKeySetting" class="text-xs">Gemini APIキー</label>
-      <input id="apiKeySetting" type="text" class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" />
+      <input id="apiKeySetting" type="password" class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" placeholder="保存済みの場合は空白" />
     </div>
     <div>
       <label for="personaSetting" class="text-xs">ペルソナ</label>
@@ -326,7 +327,14 @@
       function loadGeminiSettings() {
         google.script.run
           .withSuccessHandler(data => {
-            document.getElementById('apiKeySetting').value = data.apiKey || '';
+            const keyInput = document.getElementById('apiKeySetting');
+            if (data.apiKey) {
+              keyInput.value = '';
+              keyInput.placeholder = '********';
+            } else {
+              keyInput.value = '';
+              keyInput.placeholder = '';
+            }
             document.getElementById('personaSetting').value = data.persona || '';
             document.getElementById('geminiStatus').classList.toggle('hidden', !data.apiKey);
           })
