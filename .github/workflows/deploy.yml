@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -54,7 +55,7 @@ jobs:
       - name: Write .clasp.json
         run: |
           # SCRIPT_ID はリポジトリシークレットから渡されている
-          echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
+          echo "{\"scriptId\":\"${SCRIPT_ID}\",\"rootDir\":\"src\"}" > .clasp.json
 
       # 6. クラップ（clasp）で Apps Script にプッシュ
       - name: Push to Apps Script

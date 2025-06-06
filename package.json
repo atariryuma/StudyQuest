@@ -1,0 +1,11 @@
+{
+  "name": "studyquest",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "clasp push --force --no-open"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}
