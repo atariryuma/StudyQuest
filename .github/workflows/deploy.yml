@@ -7,19 +7,17 @@ on:
 
 jobs:
   deploy-gas:
-    name: Deploy GAS via clasp
     runs-on: ubuntu-latest
     concurrency:
       group: deploy-${{ github.ref }}
       cancel-in-progress: true
 
     env:
-      # ここに、先ほど作成したシークレット名をセットしておく
-      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}  # ローカルで取得した ~/.clasprc.json の中身
       GCP_PROJECT: gas-deploy-project
 
     steps:
-      # 1) コードをチェックアウト
+      # 1) コードのチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -34,31 +32,22 @@ jobs:
       - name: Install clasp (latest)
         run: npm install --global @google/clasp@latest
 
-      # 3) CLASPRC_JSON をファイルに書き出し → clasp による認証情報を復元
+      # 3) CLASPRC_JSON を ~/.clasprc.json に書き出し → clasp の認証情報を復元
       - name: Restore OAuth credentials for clasp
         run: |
-          # シークレットに入っている JSON 全文を ~/.clasprc.json に書き出す
           mkdir -p ~/.config
           echo "${CLASPRC_JSON}" > ~/.clasprc.json
-        shell: bash
 
-      # 4) Apps Script API を念のためオン（通常はもう済んでいれば不要ですが、一応）
-      - name: Enable Apps Script API
-        run: |
-          gcloud config set project ${GCP_PROJECT}
-          gcloud services enable script.googleapis.com
-        env:
-          # gcloud に使う認証は“ヒトユーザーの OAuth2”ではなく CLI 上の Application Default Credentials になるので、
-          # ここでは（もし必要なら）別途サービスアカウントを渡す方法もありますが、すでにプロジェクト側で有効になっていれば省略可能です。
-          # たとえば、事前にローカルから gcloud auth application-default login などをしておくとこのステップで認証を通せます。
-          # ここでは最小限、「すでに有効になっている想定」で skip しても OK です。
-          # （もし「Enable Apps Script API」が必要であれば、別途 gcloud 用のサービスアカウントキーを渡してください）
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-        # ※↑このあたりは既に有効済みなら省略してかまいません
+      # ※以下の「Enable Apps Script API」ステップはすでに有効化済みなら不要なので、削除またはコメントアウトします
+      # - name: Enable Apps Script API
+      #   run: |
+      #     gcloud config set project ${GCP_PROJECT}
+      #     gcloud services enable script.googleapis.com
+      #   env:
+      #     GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}  # サービスアカウントキーを別途用意している場合のみ必要
 
-      # 5) 最後に clasp push で Apps Script 側へデプロイ
+      # 4) clasp push
       - name: Push to Apps Script
         run: |
           echo "=== Deploying to Apps Script via clasp ==="
           clasp push --force
-        # clasp は自動で ~/.clasprc.json を見に行き、そこに入っているリフレッシュトークンで実行します
