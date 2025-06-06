@@ -161,10 +161,9 @@
     </section>
   </main>
 
-  <!-- teacherCode を window オブジェクトにセット（Apps Script から埋め込む場合は下記のように書き換え） -->
+  <!-- teacherCode を window オブジェクトにセット -->
   <script>
-    // Apps Script から teacher 変数が埋め込まれている場合
-    window.teacherCode = typeof teacher !== 'undefined' ? teacher : '';
+    window.teacherCode = '<?!= teacher ?>';
   </script>
 
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
