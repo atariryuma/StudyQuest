@@ -23,7 +23,7 @@
        ======================================== -->
   <header class="p-4 bg-gray-800 flex justify-between items-center shadow-md">
     <div class="flex items-center gap-4">
-      <a id="backToLogin" href="?page=login" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
+      <a id="backToLogin" href="?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
       <h1 class="text-xl flex items-center gap-2">
         <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
         StudyQuest – 教師パネル
@@ -62,14 +62,14 @@
     <button id="saveGeminiBtn" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
     <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
   </section>
-  <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-3xl font-bold"></div>
   </div>
 
   <!-- ========================================
        MAIN CONTENT
        ======================================== -->
-  <main class="flex-grow p-6 space-y-6">
+  <main class="flex-grow p-6 space-y-6 text-base">
     <section class="grid md:grid-cols-3 gap-6">
       <!-- ===== 新しい課題フォーム ===== -->
       <div class="md:col-span-1 bg-gray-800 p-4 rounded-2xl shadow-lg">
@@ -77,11 +77,11 @@
           <svg data-icon="PlusCircle" class="w-5 h-5 text-pink-400"></svg>
           新しい課題
         </h2>
-        <form id="taskForm" class="space-y-4 text-sm">
+        <form id="taskForm" class="space-y-4 text-base">
           <!-- ■ 教科選択 ドロップダウン -->
           <div>
-            <label for="subject" class="text-xs">■ 教科を選択</label>
-            <select id="subject" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+            <label for="subject" class="text-sm">■ 教科を選択</label>
+            <select id="subject" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base">
               <option value="">-- 教科を選んでください --</option>
               <option value="国語">国語</option>
               <option value="算数">算数</option>
@@ -93,15 +93,15 @@
 
           <!-- ■ 問題文 -->
           <div>
-            <label for="question" class="text-xs">■ 問題文</label>
+            <label for="question" class="text-sm">■ 問題文</label>
             <textarea id="question" rows="3" placeholder="問題文を入力…"
-                      class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" required></textarea>
+                      class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-base" required></textarea>
           </div>
 
           <!-- ■ 回答タイプ選択 (Googleフォーム風) -->
           <div>
-            <label class="text-xs">■ 回答タイプ</label>
-            <div class="mt-1 flex gap-2 text-xs">
+            <label class="text-sm">■ 回答タイプ</label>
+            <div class="mt-1 flex gap-2 text-sm">
               <label class="flex items-center gap-1">
                 <input type="radio" name="ansType" value="short" checked> 短文回答
               </label>
@@ -121,9 +121,9 @@
           <div id="optionsArea" class="space-y-2 hidden">
             <!-- ─ 選択肢数を選ぶドロップダウン ─ -->
             <div>
-              <label for="numOptions" class="text-xs">□ 選択肢数</label>
+              <label for="numOptions" class="text-sm">□ 選択肢数</label>
               <select id="numOptions"
-                      class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+                      class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base">
                 <option value="2" selected>2</option>
                 <option value="3">3</option>
                 <option value="4">4</option>
@@ -135,14 +135,14 @@
           </div>
 
           <!-- ■ 自己評価許可 -->
-          <label class="block cursor-pointer text-xs">
+          <label class="block cursor-pointer text-sm">
             <input type="checkbox" id="selfEval" /> 自己評価を許可する
           </label>
 
 
           <!-- ■ 作成ボタン -->
           <button id="createBtn" type="submit"
-                  class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-xl shadow transition-transform duration-150 transform hover:scale-105">
+                  class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-xl shadow transition-transform duration-150 transform hover:scale-105 text-base">
             作成
           </button>
         </form>
@@ -154,7 +154,7 @@
           <svg data-icon="ClipboardList" class="w-5 h-5 text-pink-400"></svg>
           課題一覧
         </h2>
-        <div id="tasksContainer" class="grid gap-4">
+        <div id="tasksContainer" class="grid gap-4 text-base">
           <!-- JavaScript でカードを埋める -->
         </div>
       </div>
@@ -174,8 +174,8 @@
     function renderIcons(scope) {
       scope.querySelectorAll('[data-icon]').forEach(el => {
         const iconName = el.getAttribute('data-icon');
-        if (window.LucideIcons && window.LucideIcons[iconName]) {
-          el.innerHTML = window.LucideIcons[iconName]().outerHTML;
+        if (window.lucide && typeof window.lucide[iconName] === 'function') {
+          el.innerHTML = window.lucide[iconName]().outerHTML;
         }
       });
     }
@@ -368,7 +368,7 @@
           div.className = 'flex gap-2';
           div.innerHTML = `
             <input type="text"
-                   class="flex-grow p-1 rounded bg-gray-700 focus:outline-none text-xs"
+                   class="flex-grow p-1 rounded bg-gray-700 focus:outline-none text-sm"
                    placeholder="選択肢${i}" />
           `;
           area.appendChild(div);
@@ -406,19 +406,19 @@
           try {
             data = JSON.parse(x.q);
             detailHtml = `
-              <p class="text-xs text-indigo-300 mb-1">【${data.subject || '—'}】</p>
-              <p class="text-sm mb-1 whitespace-pre-wrap">${data.question || ''}</p>
-              <p class="text-xs text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
+              <p class="text-sm text-indigo-300 mb-1">【${data.subject || '—'}】</p>
+              <p class="text-base mb-1 whitespace-pre-wrap">${data.question || ''}</p>
+              <p class="text-sm text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
             `;
           } catch (_) {
-            detailHtml = `<p class="text-sm mb-1 whitespace-pre-wrap">${x.q}</p>`;
+            detailHtml = `<p class="text-base mb-1 whitespace-pre-wrap">${x.q}</p>`;
           }
 
           const card = document.createElement('div');
           card.className = 'bg-gray-700 p-4 rounded-xl shadow transition-transform hover:scale-102 relative cursor-pointer';
           card.innerHTML = `
             ${detailHtml}
-            <p class="text-xs text-gray-400 mt-2">${x.date}</p>
+            <p class="text-sm text-gray-400 mt-2">${x.date}</p>
             <button class="deleteBtn absolute top-2 right-2 text-red-400 hover:text-red-300" data-id="${x.id}">
               <svg data-icon="Trash2" class="w-4 h-4"></svg>
             </button>
