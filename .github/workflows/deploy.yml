@@ -1,3 +1,4 @@
+# .github/workflows/deploy-gas.yml
 name: Deploy GAS Project
 
 on:
@@ -7,47 +8,68 @@ on:
 
 jobs:
   deploy-gas:
+    name: Deploy GAS via clasp (overwrite existing deployment)
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-${{ github.ref }}
-      cancel-in-progress: true
 
     env:
-      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}  # ローカルで取得した ~/.clasprc.json の中身
-      GCP_PROJECT: gas-deploy-project
+      # リポジトリの Secrets として登録済み
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-      # 1) コードのチェックアウト
+      # 1) リポジトリをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # 2) Node.js と clasp をインストール
+      # 2) Node.js をセットアップ
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      # 3) clasp をインストール
       - name: Install clasp (latest)
-        run: npm install --global @google/clasp@latest
+        run: |
+          npm install --global @google/clasp@latest
 
-      # 3) CLASPRC_JSON を ~/.clasprc.json に書き出し → clasp の認証情報を復元
-      - name: Restore OAuth credentials for clasp
+      # 4) シークレットの CLASPRC_JSON を ~/.clasprc.json に書き出し
+      - name: Configure ~/.clasprc.json for clasp
         run: |
           mkdir -p ~/.config
           echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-      # ※以下の「Enable Apps Script API」ステップはすでに有効化済みなら不要なので、削除またはコメントアウトします
-      # - name: Enable Apps Script API
-      #   run: |
-      #     gcloud config set project ${GCP_PROJECT}
-      #     gcloud services enable script.googleapis.com
-      #   env:
-      #     GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}  # サービスアカウントキーを別途用意している場合のみ必要
-
-      # 4) clasp push
-      - name: Push to Apps Script
+      # 5) clasp push → 新バージョンを作成 → 既存 deploymentId に上書きデプロイ
+      - name: Push & Deploy to Apps Script
+        id: deploy
         run: |
-          echo "=== Deploying to Apps Script via clasp ==="
+          set -eux
+
+          # 5-1) ソースを Apps Script 側に push（常に force）
           clasp push --force
+
+          # 5-2) 新しいバージョン番号を作成
+          #       「Created version number: X」を抽出して NEW_VER に入れる。
+          NEW_VER=$(clasp version "auto-$(date +%Y%m%d%H%M%S)" \
+            | grep 'Created version number:' | awk '{print $4}')
+          echo "→ 新しいバージョン番号: $NEW_VER"
+
+          # 5-3) 既存の DEPLOYMENT_ID を上書き更新する形でデプロイ
+          clasp deploy \
+            --deploymentId "${DEPLOYMENT_ID}" \
+            --versionNumber "$NEW_VER" \
+            --description "auto-deploy from GitHub Actions"
+
+          # 5-4) 最終的な Web アプリ URL に "?page=login" を付与して出力
+          FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
+          echo "✅ Web アプリ最新版の URL: ${FINAL_URL}"
+          # （必要であれば GitHub Actions の出力値にもセット可能）
+          echo "webapp_url=${FINAL_URL}" >> $GITHUB_OUTPUT
+
+      # 6) （必要に応じて）後続ステップで FINAL_URL を使う例
+      #    例えば Slack に通知するときなどに出力を使える
+      - name: Show "webapp_url" output
+        run: |
+          echo "==== 出力された webapp_url ===="
+          echo "${{ steps.deploy.outputs.webapp_url }}"
