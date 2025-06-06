@@ -394,7 +394,7 @@
       // 送信ボタンにイベント設定
       document.getElementById('submitBtn').addEventListener('click', () => {
         const text = document.getElementById('detailAnswer').value.trim();
-        submitAnswer(task.id, text);
+        submitAnswer(task.id, text, userSubs.length + 1);
       });
       debug('  [画面上] 送信ボタンに click イベントを設定');
 
@@ -419,7 +419,7 @@
     }
 
     // ─── 回答を送信（複数回OK） ───
-    function submitAnswer(taskId, text) {
+    function submitAnswer(taskId, text, attemptCount) {
       if (!text) {
         debug('⚠️ 送信エラー: 回答が空です');
         return;
@@ -448,7 +448,7 @@
         .withFailureHandler(err => {
           debug(`❌ submitAnswer エラー: ${err.message || JSON.stringify(err)}`);
         })
-        .submitAnswer(teacherCode, studentId, taskId, text, xpPerQuest, totalXp + xpPerQuest, level, '', 0, userSubs.length + 1);
+        .submitAnswer(teacherCode, studentId, taskId, text, xpPerQuest, totalXp + xpPerQuest, level, '', 0, attemptCount);
     }
 
     // ─── 提出履歴モーダルを表示 ───
