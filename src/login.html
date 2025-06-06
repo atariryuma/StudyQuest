@@ -66,11 +66,12 @@
           type="text"
           maxlength="6"
           placeholder="教師コード (6桁英数字)"
+          list="teacherHistory"
           class="w-full p-2 rounded bg-gray-800 placeholder-gray-500 focus:outline-none"
           required
         />
+        <datalist id="teacherHistory"></datalist>
       </div>
-      <div id="teacherCodeDisplay" class="text-xs text-gray-400 mb-2 hidden"></div>
 
       <!-- 児童用：学年・組・番号 -->
       <div id="studentFields" class="space-y-2">
@@ -200,14 +201,14 @@
     // ==============================
     document.addEventListener('DOMContentLoaded', () => {
       gsap.from('#loginBox', { scale: 0, duration: 0.6, ease: 'back' });
-      const savedCode = localStorage.getItem('teacherCode');
-      if (savedCode) {
-        document.getElementById('teacherCode').value = savedCode;
-        document.getElementById('teacherCodeWrap').classList.add('hidden');
-        const disp = document.getElementById('teacherCodeDisplay');
-        disp.textContent = `教師コード: ${savedCode}`;
-        disp.classList.remove('hidden');
-      }
+      const history = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
+      const list = document.getElementById('teacherHistory');
+      list.innerHTML = '';
+      history.forEach(code => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        list.appendChild(opt);
+      });
       toggleTeacherMode();
       document.getElementById('teacherMode').addEventListener('change', toggleTeacherMode);
       document.getElementById('loginForm').addEventListener('submit', handleSubmit);
@@ -215,6 +216,7 @@
       document.getElementById('grade').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
       document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
       // "組" は全角入力を許可し、Enter(送信)時に半角へ変換するため、リアルタイム変換は行わない
+      setupFieldFocus();
     });
 
     function toHalf(str) {
@@ -226,13 +228,20 @@
       el.value = toHalf(el.value).toUpperCase().replace(/[^A-Z0-9]/g,'');
     }
 
+    function addHistory(code) {
+      code = String(code || '').toUpperCase();
+      let list = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
+      list = list.filter(c => c !== code);
+      list.unshift(code);
+      if (list.length > 5) list = list.slice(0,5);
+      localStorage.setItem('teacherCodeHistory', JSON.stringify(list));
+    }
+
     function toggleTeacherMode() {
       const isTeacher = document.getElementById('teacherMode').checked;
       const passWrap = document.getElementById('passcodeWrap');
       const codeWrap = document.getElementById('teacherCodeWrap');
-      const codeDisp = document.getElementById('teacherCodeDisplay');
       const studentFields = document.getElementById('studentFields');
-      const savedCode = localStorage.getItem('teacherCode');
 
       if (isTeacher) {
         passWrap.classList.remove('hidden');
@@ -245,14 +254,7 @@
         document.getElementById('number').required = false;
       } else {
         passWrap.classList.add('hidden');
-        if (savedCode) {
-          codeWrap.classList.add('hidden');
-          codeDisp.textContent = `教師コード: ${savedCode}`;
-          codeDisp.classList.remove('hidden');
-        } else {
-          codeWrap.classList.remove('hidden');
-          codeDisp.classList.add('hidden');
-        }
+        codeWrap.classList.remove('hidden');
         studentFields.classList.remove('hidden');
         document.getElementById('passcode').required = false;
         document.getElementById('teacherCode').required = true;
@@ -296,12 +298,14 @@
 
               document.getElementById('closeFirstMsg').onclick = () => {
                 document.getElementById('firstMessage').style.display = 'none';
+                addHistory(teacherCode);
                 window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
               };
             }
             else if (status === 'ok') {
               // 2回目以降
               alert('おかえりなさい！');
+              addHistory(teacherCode);
               window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
             }
             else {
@@ -320,8 +324,7 @@
 
       } else {
         // ── 児童モード ──
-        const saved = localStorage.getItem('teacherCode');
-        const teacherCode = (saved || document.getElementById('teacherCode').value).trim().toUpperCase();
+        const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
         const grade = document.getElementById('grade').value.trim();
         const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
         const number = document.getElementById('number').value.trim();
@@ -348,7 +351,7 @@
 
         google.script.run
           .withSuccessHandler(() => {
-            localStorage.setItem('teacherCode', teacherCode);
+            addHistory(teacherCode);
             window.top.location.href = SCRIPT_URL + '?page=input&' + studentParams;
           })
           .withFailureHandler(err => {
@@ -366,12 +369,7 @@
         const classInput = document.getElementById('classroom');
         const numberInput = document.getElementById('number');
 
-        // 初期フォーカス
-        if (document.getElementById('teacherCodeWrap').classList.contains('hidden')) {
-          gradeInput.focus();
-        } else {
-          teacherInput.focus();
-        }
+        teacherInput.focus();
 
         teacherInput.addEventListener('keypress', e => {
           if (e.key === 'Enter') {
