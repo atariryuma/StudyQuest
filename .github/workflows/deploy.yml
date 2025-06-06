@@ -1,34 +1,28 @@
 name: deploy-gas-webapp
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy-gas-webapp:
     runs-on: ubuntu-latest
     env:
-      # clasp の認証情報をシークレットに入れておく前提
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-      # すでに「ウェブアプリとして一度だけ手動デプロイ」したときに得られた
-      # DEPLOYMENT_ID をリポジトリのシークレットとして登録しておく
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
-      - name: Install clasp (latest)
+      - name: Install clasp
         run: npm install --global @google/clasp@latest
 
-      - name: Configure ~/.clasprc.json for clasp authentication
+      - name: Configure clasp auth
         run: |
           mkdir -p ~/.config
           echo "${CLASPRC_JSON}" > ~/.clasprc.json
@@ -38,12 +32,10 @@ jobs:
         run: |
           set -eux
 
-          # 1) ローカルのファイルを Apps Script に強制アップロード
+          # 1) ファイルをアップロード
           clasp push --force
 
-          # 2) 新しいバージョンを作成し、「数字だけ」を抜き出す
-          #    --json が使えない環境のため、
-          #    「Created version number: 9」などの出力から数字を grep で拾う
+          # 2) バージョンを作成して番号を抽出
           NEW_VER=$(
             clasp version "auto-$(date +%Y%m%d%H%M%S)" \
               | grep -oE "[0-9]+" | head -n1
@@ -54,17 +46,17 @@ jobs:
           fi
           echo "→ 新しいバージョン番号: $NEW_VER"
 
-          # 3) 既存の DEPLOYMENT_ID を使って上書きデプロイ
+          # 3) “既存”のウェブアプリ (DEPLOYMENT_ID) に上書きデプロイ
           clasp deploy \
             --deploymentId "${DEPLOYMENT_ID}" \
             --versionNumber "${NEW_VER}" \
             --description "auto-deploy from GitHub Actions"
 
-          # 4) 公開 URL を組み立て (末尾に ?page=login を追加)
+          # 4) 固定URLに ?page=login を付けて出力
           FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
           echo "✅ Web アプリ最新版の URL: ${FINAL_URL}"
 
-          # GitHub Actions の出力値にもセット
+          # GitHub Actions の出力値にも渡しておく
           echo "webapp_url=${FINAL_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Show output webapp_url
