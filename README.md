@@ -474,7 +474,7 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 
 `.github/workflows/deploy.yml` では `main` ブランチへの push または手動実行で `clasp push` を行います。事前に次のシークレットを設定してください。
 
-- `GOOGLE_CREDENTIALS` – サービスアカウントJSONを base64 エンコードした文字列
+- `GOOGLE_CREDENTIALS` – サービスアカウントJSONの中身をそのまま登録
   （サービスアカウントのメールアドレスはここから自動取得されます）
   
 デプロイ先の Script ID はリポジトリに含まれる `.clasp.json` に記録しており、シークレットの登録は不要です。
@@ -482,7 +482,7 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 #### デプロイ手順
 
 1. Google Cloud でサービスアカウントを作成し、Apps Script API を有効化します。
-2. 生成した JSON キーを `base64` エンコードし、リポジトリの `GOOGLE_CREDENTIALS` シークレットに登録します。
+2. 生成した JSON キーの内容を `GOOGLE_CREDENTIALS` シークレットに登録します。
 3. `main` ブランチへ push するか、Actions タブから **Deploy GAS via Clasp** ワークフローを手動実行します。
 4. ワークフローが `clasp push` を実行し、`src/` 以下のファイルが Apps Script プロジェクトへ自動デプロイされます。
 
