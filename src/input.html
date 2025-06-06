@@ -194,6 +194,11 @@
     let allAnswered   = [];
     let currentQuest  = null;
 
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // 背景パーティクルを起動
       initParticles();

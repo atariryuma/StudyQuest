@@ -32,6 +32,11 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
+      }
+
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
       const taskId = params.get('task');
