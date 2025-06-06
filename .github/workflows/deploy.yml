@@ -33,12 +33,20 @@ jobs:
           node-version: '20'
         # ※ 以降のステップで env.SCRIPT_ID はそのまま参照できます
 
+
       # 3) Google への認証
       - id: auth
         name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      # gcloud CLI をセットアップ
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ steps.auth.outputs.project_id }}
+          export_default_credentials: true
 
       # 認証情報からプロジェクトIDとサービスアカウントを環境変数に設定
       - name: Export env vars

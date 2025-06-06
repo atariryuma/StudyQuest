@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # --- 事前チェック ---
 if [[ -z "${GCP_PROJECT}" ]]; then
@@ -44,20 +44,28 @@ ACCESS_TOKEN="$(gcloud auth application-default print-access-token)"
 
 echo "→ Drive API: /drive/v3/files/${SCRIPT_ID}/permissions"
 echo "  (各 permission の role, type, emailAddress をチェックしてください)"
-curl -s \
+PERM_JSON=$(curl -s \
   -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-  "https://www.googleapis.com/drive/v3/files/${SCRIPT_ID}?fields=permissions" \
-  | jq '.permissions[] | {id: .id, type: .type, role: .role, emailAddress: .emailAddress}'
+  "https://www.googleapis.com/drive/v3/files/${SCRIPT_ID}?fields=permissions")
+if command -v jq >/dev/null; then
+  echo "$PERM_JSON" | jq '.permissions[] | {id: .id, type: .type, role: .role, emailAddress: .emailAddress}'
+else
+  echo "$PERM_JSON"
+fi
 
 echo
 echo "========================"
 echo "  4. Apps Script API でプロジェクト情報を取得 "
 echo "    (プロジェクト自体が存在しているか、parentId などを確認)"
 echo "========================"
-curl -s \
+PROJECT_JSON=$(curl -s \
   -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-  "https://script.googleapis.com/v1/projects/${SCRIPT_ID}" \
-  | jq '{ scriptId: .scriptId, title: .title, parentId: .parentId, createTime: .createTime, updateTime: .updateTime }'
+  "https://script.googleapis.com/v1/projects/${SCRIPT_ID}")
+if command -v jq >/dev/null; then
+  echo "$PROJECT_JSON" | jq '{ scriptId: .scriptId, title: .title, parentId: .parentId, createTime: .createTime, updateTime: .updateTime }'
+else
+  echo "$PROJECT_JSON"
+fi
 
 echo
 echo "========================"
