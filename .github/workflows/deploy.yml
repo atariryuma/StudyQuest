@@ -42,6 +42,11 @@ jobs:
         with:
           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ steps.auth.outputs.project_id }}
+
       # 認証情報からプロジェクトIDとサービスアカウントを環境変数に設定
       - name: Export env vars
         run: |
