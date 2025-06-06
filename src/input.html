@@ -169,6 +169,15 @@
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
 
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // デバッグパネル閉じるボタン
     document.getElementById('debugClose').addEventListener('click', () => {
       document.getElementById('debugPanel').classList.add('hidden');
