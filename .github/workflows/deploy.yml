@@ -47,11 +47,20 @@ jobs:
           echo "→ 新しいバージョン番号: $NEW_VER"
 
           # 3) “既存”のウェブアプリ (DEPLOYMENT_ID) に上書きデプロイ
-          clasp deploy \
-            --deploymentId "${DEPLOYMENT_ID}" \
-            --versionNumber "${NEW_VER}" \
-            --description "auto-deploy from GitHub Actions" \
-            --type webapp
+
+          if clasp deploy --help | grep -q -- '--type'; then
+            clasp deploy \
+              --deploymentId "${DEPLOYMENT_ID}" \
+              --versionNumber "${NEW_VER}" \
+              --description "auto-deploy from GitHub Actions" \
+              --type webapp
+          else
+            # 古い clasp は --type 未対応
+            clasp deploy \
+              --deploymentId "${DEPLOYMENT_ID}" \
+              --versionNumber "${NEW_VER}" \
+              --description "auto-deploy from GitHub Actions"
+          fi
 
           # 4) 固定URLに ?page=login を付けて出力
           FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
