@@ -14,8 +14,6 @@ jobs:
       cancel-in-progress: true
 
     env:
-      # リポジトリのシークレットとして登録済み
-      # - secrets.GOOGLE_CREDENTIALS : サービスアカウント JSON (auth ステップで利用)
       GCP_PROJECT: gas-deploy-project
 
     steps:
@@ -37,13 +35,17 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+          create_credentials_file: true
+          export_environment_variables: true
+          cleanup_credentials: false   # ← false にして、認証ファイルを削除しない
 
+      # 4) gcloud CLI のセットアップ（プロジェクト指定など）
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ steps.auth.outputs.project_id }}
 
-      # 認証情報から環境変数をエクスポート
+      # 5) 認証情報から必要な環境変数をエクスポート
       - name: Export env vars
         run: |
           echo "GCP_PROJECT=${{ steps.auth.outputs.project_id }}" >> $GITHUB_ENV
@@ -52,11 +54,11 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
         id: set-env
 
-      # 4) clasp をインストール（最新の安定版を指定）
+      # 6) clasp をインストール（最新の安定版を指定）
       - name: Install clasp (stable)
         run: npm install --global @google/clasp@latest
 
-      # 5) clasp で Apps Script にデプロイ
+      # 7) clasp で Apps Script にデプロイ
       - name: Push to Apps Script
         run: |
           echo "=== Deploying to Apps Script via clasp ==="
