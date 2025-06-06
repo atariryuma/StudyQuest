@@ -14,8 +14,8 @@ jobs:
       cancel-in-progress: true
 
     env:
-      # GitHub リポジトリのシークレットとして登録済みの変数
-      # - secrets.GOOGLE_CREDENTIALS : サービスアカウント JSON (auth ステップで使用)
+      # リポジトリのシークレットとして登録済み
+      # - secrets.GOOGLE_CREDENTIALS : サービスアカウント JSON (auth ステップで利用)
       # - secrets.SCRIPT_ID          : デプロイ対象の Apps Script プロジェクトの Script ID
       GCP_PROJECT: gas-deploy-project
       SERVICE_ACCOUNT: gas-deploy-bot@gas-deploy-project.iam.gserviceaccount.com
@@ -27,13 +27,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-        
+
       # 2) Node.js をセットアップ（clasp は Node.js 上のツールなので必要）
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-        # ※ 以降のステップで env.SCRIPT_ID はそのまま参照できます
 
       # 3) Google への認証
       - id: auth
@@ -47,7 +46,7 @@ jobs:
         with:
           project_id: ${{ steps.auth.outputs.project_id }}
 
-      # 認証情報からプロジェクトIDとサービスアカウントを環境変数に設定
+      # 認証情報から環境変数をエクスポート
       - name: Export env vars
         run: |
           echo "GCP_PROJECT=${{ steps.auth.outputs.project_id }}" >> $GITHUB_ENV
@@ -56,24 +55,24 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
         id: set-env
 
+      # 4) 認証・権限まわりのチェック（任意）
       - name: Check Auth / Permissions (Debug)
         run: |
           chmod +x .github/scripts/check_auth.sh
           .github/scripts/check_auth.sh
 
-      # 4) clasp をインストール（最新の安定版を指定）
+      # 5) clasp をインストール（最新の安定版を指定）
       - name: Install clasp (stable)
         run: npm install --global @google/clasp@latest
 
-
-      # 5) .clasp.json を書き込み（SCRIPT_ID を設定）
+      # 6) .clasp.json を書き込み（SCRIPT_ID を設定）
       - name: Write .clasp.json
         run: |
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
-      # 6) デバッグ用のログ出力（念のためディレクトリ・ファイル構造や環境変数を表示）
-      - name: "Debug: List files and verify .clasp.json"
-        if: failure()
+      # 7) デバッグ用のログ出力（必要に応じて常に／失敗時のみ）
+      - name: Debug: List files and verify .clasp.json
+        if: always()    # ← 常に実行したい場合は always()、失敗時のみなら failure() のまま
         run: |
           echo "Current directory: $(pwd)"
           echo "Files in current directory:"
@@ -86,8 +85,14 @@ jobs:
           echo ""
           echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
 
-      # 7) clasp push で Apps Script にデプロイ
+      # 8) clasp で Apps Script にデプロイ
       - name: Push to Apps Script
         run: |
           echo "=== Deploying to Apps Script via clasp ==="
+          # ADC を使ってログイン
+          clasp login --creds "$GOOGLE_APPLICATION_CREDENTIALS"
+          # プッシュ実行
           clasp push --force --adc
+        env:
+          SCRIPT_ID: ${{ env.SCRIPT_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
