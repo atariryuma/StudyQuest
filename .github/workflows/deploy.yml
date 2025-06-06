@@ -50,10 +50,9 @@ jobs:
       # 認証情報からプロジェクトIDとサービスアカウントを環境変数に設定
       - name: Export env vars
         run: |
-          echo "GCP_PROJECT=${{ steps.auth.outputs.project_id }}" >> $GITHUB_ENV
-          echo "SERVICE_ACCOUNT=$(jq -r '.client_email' \"$GOOGLE_APPLICATION_CREDENTIALS\")" >> $GITHUB_ENV
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+          CREDENTIALS_FILE="${{ steps.auth.outputs.credentials_file_path }}"
+          echo "GCP_PROJECT=${{ steps.auth.outputs.project_id }}" >> "$GITHUB_ENV"
+          echo "SERVICE_ACCOUNT=$(jq -r '.client_email' "$CREDENTIALS_FILE")" >> "$GITHUB_ENV"
         id: set-env
 
       - name: Check Auth / Permissions (Debug)
