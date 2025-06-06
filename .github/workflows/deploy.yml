@@ -50,7 +50,7 @@ jobs:
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
       # 6) デバッグ用のログ出力（念のためディレクトリ・ファイル構造や環境変数を表示）
-      - name: Debug: List files and verify .clasp.json
+      - name: "Debug: List files and verify .clasp.json"
         if: failure()
         run: |
           echo "Current directory: $(pwd)"
