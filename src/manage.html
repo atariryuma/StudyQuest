@@ -161,25 +161,13 @@
     </section>
   </main>
 
-  <!-- テンプレート内に teacherCode を埋め込むスクリプト -->
+  <!-- teacherCode を window オブジェクトにセット（Apps Script から埋め込む場合は下記のように書き換え） -->
   <script>
-    <?!= "const teacherCode = '" + teacher + "';" ?>
+    // Apps Script から teacher 変数が埋め込まれている場合
+    window.teacherCode = typeof teacher !== 'undefined' ? teacher : '';
   </script>
 
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
-<script>
-  function renderIcons(scope) {
-    scope.querySelectorAll('[data-icon]').forEach(el => {
-      const iconName = el.getAttribute('data-icon');
-      if (window.lucide && typeof window.lucide[iconName] === 'function') {
-        el.innerHTML = window.lucide[iconName]().outerHTML;
-      }
-    });
-  }
-  document.addEventListener('DOMContentLoaded', () => {
-    renderIcons(document);
-  });
-</script>
 
   <script>
     // Lucide Icons を実際に SVG に置き換え
