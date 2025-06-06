@@ -484,3 +484,4 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 1. `CLASPRC_JSON` と `DEPLOYMENT_ID` をリポジトリのシークレットに登録します。
 2. `main` ブランチへ push するとワークフローが走り、`clasp push` と `clasp deploy` が自動実行されます。
 3. 完了後、ログに `https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec?page=login` の形式で公開 URL が表示されます。
+4. 初回のみ Apps Script エディタから Web アプリを手動作成し、得られた `DEPLOYMENT_ID` をシークレットに登録してください。`appsscript.json` に `webapp` 設定を追記し、ワークフローの `clasp deploy` では `--type webapp` オプションを付けて上書きデプロイします。

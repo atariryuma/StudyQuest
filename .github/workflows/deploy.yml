@@ -50,7 +50,8 @@ jobs:
           clasp deploy \
             --deploymentId "${DEPLOYMENT_ID}" \
             --versionNumber "${NEW_VER}" \
-            --description "auto-deploy from GitHub Actions"
+            --description "auto-deploy from GitHub Actions" \
+            --type webapp
 
           # 4) 固定URLに ?page=login を付けて出力
           FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
