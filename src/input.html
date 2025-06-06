@@ -151,6 +151,11 @@
   </script>
 
   <script>
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return text == null ? '' : text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+
     // Lucide Icons のレンダリング
     function renderIcons(scope) {
       scope.querySelectorAll('[data-icon]').forEach(el => {
@@ -299,7 +304,7 @@
           const item = document.createElement('div');
           item.className = 'bg-gray-700 p-3 rounded-md cursor-pointer hover:bg-gray-600';
           item.innerHTML = `
-            <p class="text-sm mb-1 text-white">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</p>
+            <p class="text-sm mb-1 text-white">【${escapeHtml(parsed.subject || '無題')}】 ${escapeHtml(parsed.question || '(質問なし)')}</p>
             <p class="text-xs text-gray-300">${q.date}</p>
           `;
           item.addEventListener('click', () => showQuestDetail(q, false, historyRows));
@@ -323,7 +328,7 @@
           const item = document.createElement('div');
           item.className = 'bg-gray-700 p-3 rounded-md cursor-pointer hover:bg-gray-600';
           item.innerHTML = `
-            <p class="text-sm line-through opacity-70 text-gray-300">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</p>
+            <p class="text-sm line-through opacity-70 text-gray-300">【${escapeHtml(parsed.subject || '無題')}】 ${escapeHtml(parsed.question || '(質問なし)')}</p>
             <p class="text-xs text-gray-400">${q.date}</p>
           `;
           item.addEventListener('click', () => showQuestDetail(q, true, historyRows));
@@ -346,7 +351,7 @@
 
       const detail = document.getElementById('detailContent');
       detail.innerHTML = `
-        <h3 class="text-lg font-bold mb-2 text-white">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</h3>
+        <h3 class="text-lg font-bold mb-2 text-white">【${escapeHtml(parsed.subject || '無題')}】 ${escapeHtml(parsed.question || '(質問なし)')}</h3>
         <div id="formArea" class="mt-2">
           <textarea id="detailAnswer" placeholder="ここに回答を入力…" class="w-full p-2 bg-gray-600 rounded text-sm text-gray-100 placeholder-gray-400"></textarea>
           <div class="mt-2 flex gap-2">
@@ -445,7 +450,7 @@
           div.className = 'bg-gray-700 p-2 rounded mb-1';
           div.innerHTML = `
             <p class="text-xs text-gray-400">${new Date(r[0]).toLocaleString()}</p>
-            <p class="text-sm text-gray-100">${r[3]}</p>
+            <p class="text-sm text-gray-100">${escapeHtml(r[3])}</p>
           `;
           container.appendChild(div);
         });
