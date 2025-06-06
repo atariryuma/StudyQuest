@@ -169,6 +169,11 @@
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
 
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
     // デバッグパネル閉じるボタン
     document.getElementById('debugClose').addEventListener('click', () => {
       document.getElementById('debugPanel').classList.add('hidden');
@@ -299,8 +304,8 @@
           const item = document.createElement('div');
           item.className = 'bg-gray-700 p-3 rounded-md cursor-pointer hover:bg-gray-600';
           item.innerHTML = `
-            <p class="text-sm mb-1 text-white">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</p>
-            <p class="text-xs text-gray-300">${q.date}</p>
+            <p class="text-sm mb-1 text-white">【${escapeHtml(parsed.subject || '無題')}】 ${escapeHtml(parsed.question || '(質問なし)')}</p>
+            <p class="text-xs text-gray-300">${escapeHtml(q.date)}</p>
           `;
           item.addEventListener('click', () => showQuestDetail(q, false, historyRows));
           ulUn.appendChild(item);
@@ -323,8 +328,8 @@
           const item = document.createElement('div');
           item.className = 'bg-gray-700 p-3 rounded-md cursor-pointer hover:bg-gray-600';
           item.innerHTML = `
-            <p class="text-sm line-through opacity-70 text-gray-300">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</p>
-            <p class="text-xs text-gray-400">${q.date}</p>
+            <p class="text-sm line-through opacity-70 text-gray-300">【${escapeHtml(parsed.subject || '無題')}】 ${escapeHtml(parsed.question || '(質問なし)')}</p>
+            <p class="text-xs text-gray-400">${escapeHtml(q.date)}</p>
           `;
           item.addEventListener('click', () => showQuestDetail(q, true, historyRows));
           ulAn.appendChild(item);
@@ -346,7 +351,7 @@
 
       const detail = document.getElementById('detailContent');
       detail.innerHTML = `
-        <h3 class="text-lg font-bold mb-2 text-white">【${parsed.subject || '無題'}】 ${parsed.question || '(質問なし)'}</h3>
+        <h3 class="text-lg font-bold mb-2 text-white">【${escapeHtml(parsed.subject || '無題')}】 ${escapeHtml(parsed.question || '(質問なし)')}</h3>
         <div id="formArea" class="mt-2">
           <textarea id="detailAnswer" placeholder="ここに回答を入力…" class="w-full p-2 bg-gray-600 rounded text-sm text-gray-100 placeholder-gray-400"></textarea>
           <div class="mt-2 flex gap-2">
@@ -440,15 +445,15 @@
         container.innerHTML = '<p class="text-gray-400 text-sm text-center">提出履歴がありません。</p>';
         debug('  [画面上] 提出履歴なし');
       } else {
-        rows.forEach(r => {
-          const div = document.createElement('div');
-          div.className = 'bg-gray-700 p-2 rounded mb-1';
-          div.innerHTML = `
-            <p class="text-xs text-gray-400">${new Date(r[0]).toLocaleString()}</p>
-            <p class="text-sm text-gray-100">${r[3]}</p>
-          `;
-          container.appendChild(div);
-        });
+          rows.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-700 p-2 rounded mb-1';
+            div.innerHTML = `
+              <p class="text-xs text-gray-400">${escapeHtml(new Date(r[0]).toLocaleString())}</p>
+              <p class="text-sm text-gray-100">${escapeHtml(r[3])}</p>
+            `;
+            container.appendChild(div);
+          });
         debug(`  [画面上] 提出履歴 ${rows.length} 件を表示`);
       }
       document.getElementById('historyModal').classList.remove('hidden');
