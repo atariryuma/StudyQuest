@@ -22,13 +22,15 @@
        HEADER
        ======================================== -->
   <header class="p-4 bg-gray-800 flex justify-between items-center shadow-md">
-    <h1 class="text-xl flex items-center gap-2">
-      <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
-      StudyQuest – 教師パネル
-    </h1>
+    <div class="flex items-center gap-4">
+      <a id="backToLogin" href="?page=login" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
+      <h1 class="text-xl flex items-center gap-2">
+        <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
+        StudyQuest – 教師パネル
+      </h1>
+    </div>
     <div class="flex items-center gap-4">
       <a id="boardLink" href="#" class="text-sm hover:text-pink-400">回答ボードを見る</a>
-      <a id="backToLogin" href="?page=login" class="text-sm hover:text-pink-400">ログイン画面へ</a>
       <span id="codeBadge" class="px-3 py-1 bg-pink-600 rounded-xl text-sm tracking-wider">
         <!-- ここに CODE: XXXX が入る -->
       </span>
