@@ -50,6 +50,29 @@ jobs:
         run: |
           gcloud services enable script.googleapis.com --project=$GCP_PROJECT
 
+      # 5b) Wait until the API is fully enabled before continuing
+      - name: Confirm Apps Script API enabled
+        run: |
+          echo "Waiting for script.googleapis.com to be ENABLED..."
+          for i in {1..10}; do
+            state=$(gcloud services list --project=$GCP_PROJECT \
+              --filter="config.name:script.googleapis.com" \
+              --format="value(state)" || true)
+            if [ "$state" = "ENABLED" ]; then
+              echo "Apps Script API is ENABLED"
+              break
+            fi
+            echo "Current state: $state (retrying)"
+            sleep 3
+          done
+          final_state=$(gcloud services list --project=$GCP_PROJECT \
+            --filter="config.name:script.googleapis.com" \
+            --format="value(state)")
+          if [ "$final_state" != "ENABLED" ]; then
+            echo "script.googleapis.com did not become ENABLED in time" >&2
+            exit 1
+          fi
+
       # 6) clasp をインストール（最新の安定版を指定）
       - name: Install clasp (stable)
         run: npm install --global @google/clasp@latest
