@@ -71,7 +71,7 @@ jobs:
           echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
 
       # 7) デバッグ用のログ出力（必要に応じて常に／失敗時のみ）
-      - name: Debug: List files and verify .clasp.json
+      - name: Debug:List files and verify .clasp.json
         if: always()    # ← 常に実行したい場合は always()、失敗時のみなら failure() のまま
         run: |
           echo "Current directory: $(pwd)"
