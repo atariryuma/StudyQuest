@@ -1,65 +1,97 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# FILE: .github/workflows/deploy.yml
-# DESCRIPTION: Push されたら自動的に Apps Script にデプロイするワークフロー
-# ─────────────────────────────────────────────────────────────────────────────
+# .github/workflows/deploy.yml
+name: Deploy GAS Project
 
-name: Deploy GAS via Clasp
-
-# main ブランチへの push をトリガーにして実行
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Deploy GAS Project
-    runs-on: ubuntu-latest
-    # リポジトリの Secrets に設定した環境変数を読み込む
+  deploy-gas:
+    name: Deploy GAS via clasp
+    runs-on: ubuntu-24.04
+
     env:
-      # サービスアカウントのJSONをBase64化した文字列を 
-      # 「GOOGLE_CREDENTIALS」という名前のリポジトリシークレットに登録しておく
+      # GitHub リポジトリのシークレットとして登録済みの変数
+      # - secrets.GOOGLE_CREDENTIALS : Base64 化されたサービスアカウント JSON
+      # - secrets.SCRIPT_ID          : デプロイ対象の Apps Script プロジェクトの Script ID
       GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-      # あらかじめ取得しておいた Apps Script のスクリプトID
-      # 「SCRIPT_ID」という名前のリポジトリシークレットに登録しておく
-      SCRIPT_ID:      ${{ secrets.SCRIPT_ID }}
+      SCRIPT_ID:          ${{ secrets.SCRIPT_ID }}
 
     steps:
-      # 1. リポジトリをチェックアウト
+      # 1) ソースコードをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Node.js をセットアップ（@google/clasp は Node 製のCLIなので Node が必要）
+      # 2) Node.js をセットアップ（clasp は Node.js 上のツールなので必要）
       - name: Setup Node.js (v20.x)
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: "20.x"
+        # ※ 以降のステップで env.GOOGLE_CREDENTIALS / env.SCRIPT_ID はそのまま参照できます
 
-      # 3. clasp をグローバルにインストール（安定版の最新を指定）
+      # 3) clasp をインストール（最新の安定版を指定）
       - name: Install clasp (stable)
-        run: |
-          # @google/clasp の安定版を指定
-          npm install --global @google/clasp@latest
+        run: npm install --global @google/clasp@latest
 
-      # 4. サービスアカウントJSONを復元してアプリデフォルト認証を有効化
+      # 4) サービスアカウント JSON を復元し、Application Default Credentials（ADC）を有効化
       - name: Authenticate with Google (ADC)
         run: |
-          # リポジトリシークレットから渡ってきた Base64 文字列を復元してファイルに出力
-          echo "${GOOGLE_CREDENTIALS}" | base64 -d > "$HOME/gcp-sa.json"
-          # 環境変数 GOOGLE_APPLICATION_CREDENTIALS を設定して
-          # clasp push が ADC (Application Default Credentials) で認証できるようにする
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-sa.json" >> $GITHUB_ENV
+          # --- サービスアカウント JSON を一時ディレクトリに出力 ---
+          mkdir -p "$HOME/.config/gcloud"
+          echo "${GOOGLE_CREDENTIALS}" | base64 -d > "$HOME/.config/gcloud/service-account.json"
 
-      # 5. .clasp.json を生成して、スクリプトID を書き込む
+          # --- 環境変数を設定（以降のステップで自動的に読み込まれる） ---
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/.config/gcloud/service-account.json" >> $GITHUB_ENV
+
+          # --- gcloud コマンドをインストールしている場合は、サービスアカウントで認証してもよい（オプション） ---
+          #  gcloud auth activate-service-account --key-file="$HOME/.config/gcloud/service-account.json"
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      # 5) 認証状況を確認（Apps Script API が有効か、サービスアカウントで認証できているか）
+      #    もし gcloud CLI がインストールされていない場合は飛ばしてもかまいませんが、CI 上で動作確認するなら入れておくと安心です。
+      - name: Verify Google Authentication (optional)
+        if: always()
+        run: |
+          echo "=== Verify that ADC is active ==="
+          # gcloud CLI が使えるなら…
+          if command -v gcloud &> /dev/null; then
+            gcloud auth list --filter="status:ACTIVE" --format="table(account)"
+            gcloud services list --enabled --filter="name:script.googleapis.com"
+          else
+            echo "gcloud CLI not found; skipping detailed checks"
+          fi
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      # 6) .clasp.json を書き込み（SCRIPT_ID を設定）
       - name: Write .clasp.json
         run: |
-          # SCRIPT_ID はリポジトリシークレットから渡されている
-          echo "{\"scriptId\":\"${SCRIPT_ID}\",\"rootDir\":\"src\"}" > .clasp.json
+          echo "{\"scriptId\":\"${SCRIPT_ID}\"}" > .clasp.json
+        env:
+          SCRIPT_ID: ${{ env.SCRIPT_ID }}
 
-      # 6. クラップ（clasp）で Apps Script にプッシュ
+      # 7) デバッグ用のログ出力（念のためディレクトリ・ファイル構造や環境変数を表示）
+      - name: Debug: List files and verify .clasp.json
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+
+          echo ""
+          echo "--- Contents of .clasp.json ---"
+          cat .clasp.json || echo "(not found)"
+
+          echo ""
+          echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      # 8) clasp push で Apps Script にデプロイ
       - name: Push to Apps Script
         run: |
-          # --force: 強制上書きプッシュ
-          # --adc: Application Default Credentials を使う
+          echo "=== Deploying to Apps Script via clasp ==="
           clasp push --force --adc
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
