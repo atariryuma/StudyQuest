@@ -48,6 +48,7 @@ jobs:
 
           # 3) “既存”のウェブアプリ (DEPLOYMENT_ID) に上書きデプロイ
           clasp deploy \
+            --type webapp
             --deploymentId "${DEPLOYMENT_ID}" \
             --versionNumber "${NEW_VER}" \
             --description "auto-deploy from GitHub Actions"
