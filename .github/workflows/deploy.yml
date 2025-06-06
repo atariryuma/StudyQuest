@@ -1,5 +1,4 @@
-# .github/workflows/deploy-gas.yml
-name: Deploy GAS Project
+name: Deploy GAS as Web App
 
 on:
   push:
@@ -7,69 +6,63 @@ on:
       - main
 
 jobs:
-  deploy-gas:
-    name: Deploy GAS via clasp (overwrite existing deployment)
+  deploy-gas-webapp:
+    name: Deploy GAS \u2192 overwrite existing Web App deployment
     runs-on: ubuntu-latest
 
     env:
-      # リポジトリの Secrets として登録済み
+      # 以下 2 つは GitHub リポジトリの Secrets に登録済み
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-      # 1) リポジトリをチェックアウト
+      # 1) コードをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      # 2) Node.js をセットアップ
+          
+      # 2) Node.js をセットアップ（clasp の動作に必要）
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       # 3) clasp をインストール
       - name: Install clasp (latest)
         run: |
           npm install --global @google/clasp@latest
 
-      # 4) シークレットの CLASPRC_JSON を ~/.clasprc.json に書き出し
-      - name: Configure ~/.clasprc.json for clasp
+      # 4) CLASPRC_JSON を ~/.clasprc.json に書き出し
+      - name: Configure ~/.clasprc.json for clasp authentication
         run: |
           mkdir -p ~/.config
           echo "${CLASPRC_JSON}" > ~/.clasprc.json
+        # CLASPRC_JSON は Secrets から渡ってくる証言 JSON 全文
 
-      # 5) clasp push → 新バージョンを作成 → 既存 deploymentId に上書きデプロイ
-      - name: Push & Deploy to Apps Script
-        id: deploy
+      # 5) push → 新バージョン作成 → 既存 deploymentId に上書きデプロイ（ウェブアプリ）
+      - name: Push & Deploy as Web App
         run: |
           set -eux
 
-          # 5-1) ソースを Apps Script 側に push（常に force）
+          # 5-1) ソースを Apps Script に強制プッシュ
           clasp push --force
 
-          # 5-2) 新しいバージョン番号を作成
-          #       「Created version number: X」を抽出して NEW_VER に入れる。
-          NEW_VER=$(clasp version "auto-$(date +%Y%m%d%H%M%S)" \
-            | grep 'Created version number:' | awk '{print $4}')
-          echo "→ 新しいバージョン番号: $NEW_VER"
-
-          # 5-3) 既存の DEPLOYMENT_ID を上書き更新する形でデプロイ
+          # 5-2) 新しいバージョンを作成し、番号を変数に入れる
+            NEW_VER=$(clasp version "auto-$(date +%Y%m%d%H%M%S)" | grep -oE "[0-9]+" | head -n1)
+            if [ -z "$NEW_VER" ]; then
+              echo "Failed to retrieve version number" >&2
+              exit 1
+            fi
+            echo "→ 新しいバージョン番号: ${NEW_VER}"
+          # 5-3) 既存の DEPLOYMENT_ID を使って上書きデプロイ
+          #        かならず --webapp を付けることで Web アプリと\u3057\u3066更新\u3055\u308c\u308b
           clasp deploy \
             --deploymentId "${DEPLOYMENT_ID}" \
-            --versionNumber "$NEW_VER" \
-            --description "auto-deploy from GitHub Actions"
+            --versionNumber "${NEW_VER}" \
+            --description "auto-deploy from GitHub Actions" \
+            --webapp
 
-          # 5-4) 最終的な Web アプリ URL に "?page=login" を付与して出力
+          # 5-4) 公開 URL を組み立て（?page=login を末尾に追加）
           FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
-          echo "✅ Web アプリ最新版の URL: ${FINAL_URL}"
-          # （必要であれば GitHub Actions の出力値にもセット可能）
-          echo "webapp_url=${FINAL_URL}" >> $GITHUB_OUTPUT
-
-      # 6) （必要に応じて）後続ステップで FINAL_URL を使う例
-      #    例えば Slack に通知するときなどに出力を使える
-      - name: Show "webapp_url" output
-        run: |
-          echo "==== 出力された webapp_url ===="
-          echo "${{ steps.deploy.outputs.webapp_url }}"
+          echo "\u2705 Web アプリ\u6700\u65b0\u7248\u306e URL: ${FINAL_URL}"
