@@ -6,10 +6,6 @@ if [[ -z "${GCP_PROJECT}" ]]; then
   echo "【ERROR】GCP_PROJECT が設定されていません。"
   exit 1
 fi
-if [[ -z "${SERVICE_ACCOUNT}" ]]; then
-  echo "【ERROR】SERVICE_ACCOUNT が設定されていません。"
-  exit 1
-fi
 if [[ -z "${SCRIPT_ID}" ]]; then
   echo "【ERROR】SCRIPT_ID が設定されていません。"
   exit 1
