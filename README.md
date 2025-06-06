@@ -482,7 +482,8 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 
 1. Google Cloud でサービスアカウントを作成し、Apps Script API を有効化します。
 2. 生成した JSON キーを `base64` エンコードし、リポジトリの `GOOGLE_CREDENTIALS` シークレットに登録します。
-3. `SCRIPT_ID` シークレットに次の ID を設定します: `1L93KJai_A5ZOir1fVXQLP2owfDWev6adn4e9SHF1WEe5EoDs6ErC1VDn`。
-4. `main` ブランチへ push するか、Actions タブから **Deploy GAS via Clasp** ワークフローを手動実行します。
-5. ワークフローが `clasp push` を実行し、`src/` 以下のファイルが Apps Script プロジェクトへ自動デプロイされます。
+3. サービスアカウントのメールアドレスを、このリポジトリと紐付いた Apps Script プロジェクトの編集者に追加します。
+4. `SCRIPT_ID` シークレットに次の ID を設定します: `1L93KJai_A5ZOir1fVXQLP2owfDWev6adn4e9SHF1WEe5EoDs6ErC1VDn`。
+5. `main` ブランチへ push するか、Actions タブから **Deploy GAS via Clasp** ワークフローを手動実行します。
+6. ワークフローが `clasp push` を実行し、`src/` 以下のファイルが Apps Script プロジェクトへ自動デプロイされます。
 
