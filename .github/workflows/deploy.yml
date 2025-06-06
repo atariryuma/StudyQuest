@@ -1,16 +1,17 @@
-name: Deploy GAS as Web App
-
+name: deploy-gas-webapp
 on:
   push:
     branches:
       - main
 
-# .github/workflows/deploy-gas-webapp.yml （抜粋）
 jobs:
   deploy-gas-webapp:
     runs-on: ubuntu-latest
     env:
+      # clasp の認証情報をシークレットに入れておく前提
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      # すでに「ウェブアプリとして一度だけ手動デプロイ」したときに得られた
+      # DEPLOYMENT_ID をリポジトリのシークレットとして登録しておく
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
@@ -40,12 +41,13 @@ jobs:
           # 1) ローカルのファイルを Apps Script に強制アップロード
           clasp push --force
 
-          # 2) 新しいバージョンを JSON 形式で作成し、versionNumber を抜き出す
+          # 2) 新しいバージョンを作成し、「数字だけ」を抜き出す
+          #    --json が使えない環境のため、
+          #    「Created version number: 9」などの出力から数字を grep で拾う
           NEW_VER=$(
-            clasp version "auto-$(date +%Y%m%d%H%M%S)" --json \
-              | jq -r '.versionNumber'
+            clasp version "auto-$(date +%Y%m%d%H%M%S)" \
+              | grep -oE "[0-9]+" | head -n1
           )
-          # もし NEW_VER が空だったらエラー扱い
           if [ -z "$NEW_VER" ]; then
             echo "Failed to retrieve version number" >&2
             exit 1
@@ -53,13 +55,12 @@ jobs:
           echo "→ 新しいバージョン番号: $NEW_VER"
 
           # 3) 既存の DEPLOYMENT_ID を使って上書きデプロイ
-          #    (--webapp や --type webapp は不要。初回作成時のみ --type webapp を実行済みの前提)
           clasp deploy \
             --deploymentId "${DEPLOYMENT_ID}" \
             --versionNumber "${NEW_VER}" \
             --description "auto-deploy from GitHub Actions"
 
-          # 4) 公開 URL を組み立て (?page=login を末尾に追加)
+          # 4) 公開 URL を組み立て (末尾に ?page=login を追加)
           FINAL_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login"
           echo "✅ Web アプリ最新版の URL: ${FINAL_URL}"
 
