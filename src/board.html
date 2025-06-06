@@ -22,10 +22,29 @@
   <div class="grid gap-4" id="answers" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));"></div>
 
   <script>
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    
     document.addEventListener('DOMContentLoaded', () => {
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
+      }
+
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
       const taskId = params.get('task');
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+      }
       if (!teacherCode) {
         alert('不正なアクセスです。');
         location.href = '?page=login';
@@ -52,10 +71,10 @@
           const card = document.createElement('div');
           card.className = 'p-4 bg-gray-800 rounded-xl shadow-md break-words opacity-0';
           card.innerHTML = `
-            <h3 class="text-pink-400 text-sm mb-1">${r.studentId}</h3>
-            <p class="text-gray-200 whitespace-pre-wrap">${r.answer}</p>
+            <h3 class="text-pink-400 text-sm mb-1">${escapeHtml(r.studentId)}</h3>
+            <p class="text-gray-200 whitespace-pre-wrap">${escapeHtml(r.answer)}</p>
             <p class="text-xs text-gray-400 mt-2">XP: ${r.earnedXp} (累計 ${r.totalXp}) Lv${r.level}</p>
-            <p class="text-xs text-gray-400">トロフィー: ${r.trophies}</p>
+            <p class="text-xs text-gray-400">トロフィー: ${escapeHtml(r.trophies)}</p>
             <p class="text-xs text-gray-400">AIヒント: ${r.aiCalls}/2 回, 回答: ${r.attempts}/3 回</p>
           `;
           container.appendChild(card);

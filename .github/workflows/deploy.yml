@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
+          
       # 2) Node.js をセットアップ（clasp の動作に必要）
       - name: Setup Node.js
         uses: actions/setup-node@v4
