@@ -471,12 +471,13 @@
       }
 
       function loadClassOptions() {
-        google.script.run.withSuccessHandler(map => {
-          registeredClasses = Object.keys(map).map(id => map[id].split('-'));
-          const area = document.getElementById('taskClassButtons');
-          if (area) {
-            area.innerHTML = '';
-            Object.keys(map).forEach(id => {
+        google.script.run
+          .withSuccessHandler(map => {
+            registeredClasses = Object.keys(map).map(id => map[id].split('-'));
+            const area = document.getElementById('taskClassButtons');
+            if (area) {
+              area.innerHTML = '';
+              Object.keys(map).forEach(id => {
               const label = document.createElement('label');
               label.className = 'flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer';
               const input = document.createElement('input');
@@ -489,7 +490,9 @@
             });
           }
           renderClassCards(map);
-        }).getClassIdMap(teacherCode);
+        })
+          .withFailureHandler(err => alert('取得に失敗: ' + err.message))
+          .getClassIdMap(teacherCode);
       }
 
       // Gemini 設定を保存
