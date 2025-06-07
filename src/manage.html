@@ -247,9 +247,11 @@
                                         <option value="短文">短文</option>
                                         <option value="長文">長文</option>
                                     </select>
+                                    <input type="number" id="choiceCount" min="1" value="3" class="w-16 p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm" />
                                     <button type="button" id="generateChoicesBtn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
                                 </div>
                                 <div id="optionInputs" class="space-y-2"></div>
+                                <div id="optionControls" class="flex gap-2 text-xs"></div>
                                 <div id="generationHistoryWrapper" class="hidden">
                                     <button type="button" id="toggleHistoryBtn" class="text-xs text-gray-400 hover:text-white">生成履歴を見る ▼</button>
                                     <div id="generationHistory" class="hidden mt-2 p-2 bg-gray-900/50 rounded-md space-y-2"></div>
@@ -380,6 +382,7 @@
         updateAiCreditDisplay();
 
         const choiceType = document.getElementById('aiChoiceType').value;
+        const count = parseInt(document.getElementById('choiceCount').value, 10) || 3;
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
         const persona = document.getElementById('personaSelect').value;
@@ -387,7 +390,7 @@
         container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
 
-        const typePrompt = choiceType === '単語' ? '単語を3つ' : choiceType === '短文' ? '短文を3つ' : '長文を3つ';
+        const typePrompt = `${choiceType}を${count}個`;
         const prompt = `${subject} の課題「${question}」に対する回答例として${typePrompt}箇条書きで提示してください。`;
 
         google.script.run
@@ -434,7 +437,24 @@
       });
 
       document.getElementById('optionInputs').addEventListener('click', e => {
-        if (e.target.closest('.removeOptionBtn')) e.target.closest('.flex').remove();
+        if (e.target.closest('.removeOptionBtn')) {
+          e.target.closest('.flex').remove();
+          const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
+          renderOptionInputs(values);
+        }
+      });
+
+      document.getElementById('optionControls').addEventListener('click', e => {
+        if (e.target.id === 'addOptionBtn') {
+          const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
+          values.push('');
+          renderOptionInputs(values);
+        }
+        if (e.target.id === 'removeOptionBtn') {
+          const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
+          values.pop();
+          renderOptionInputs(values);
+        }
       });
 
       // 5) 「新しい課題」フォーム送信時
@@ -700,15 +720,20 @@
 
       function resetOptionInputs() {
         const area = document.getElementById('optionInputs');
+        const controls = document.getElementById('optionControls');
         if (area) area.innerHTML = '';
+        if (controls) controls.innerHTML = '';
       }
 
       // 選択肢入力欄を動的生成
       function renderOptionInputs(choices = []) {
         const container = document.getElementById('optionInputs');
+        const controls = document.getElementById('optionControls');
         if (!container) return;
         container.innerHTML = '';
-        if (choices.length === 0) return;
+        if (controls) controls.innerHTML = '';
+        if (choices.length === 0) choices = [''];
+
         choices.forEach((choice, index) => {
           const div = document.createElement('div');
           div.className = 'flex items-center gap-2';
@@ -718,6 +743,14 @@
           `;
           container.appendChild(div);
         });
+
+        if (controls) {
+          controls.innerHTML = `
+            <button type="button" id="addOptionBtn" class="text-green-400 hover:text-green-300">+ 選択肢を追加</button>
+            <button type="button" id="removeOptionBtn" class="text-red-400 hover:text-red-300">- 最後を削除</button>
+          `;
+        }
+
         renderIcons(document);
       }
 
