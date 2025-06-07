@@ -255,6 +255,17 @@ function setClassIdMap(teacherCode, idsString) {
   return map;
 }
 
+function getClassIdMap_(teacherCode) {
+  const data = loadTeacherSettings_(teacherCode);
+  const map = {};
+  (data.classes || []).forEach((c, idx) => {
+    if (c && c[0] !== undefined && c[1] !== undefined) {
+      map[idx + 1] = `${c[0]}-${c[1]}`;
+    }
+  });
+  return map;
+}
+
 function setGeminiSettings(teacherCode, apiKey, persona) {
   const data = loadTeacherSettings_(teacherCode);
   if (apiKey !== undefined) data.apiKey = apiKey;
