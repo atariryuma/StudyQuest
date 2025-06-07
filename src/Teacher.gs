@@ -21,7 +21,7 @@ function generateTeacherCode() {
 function findLatestFolderByName_(name) {
   const q = `'root' in parents and title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
+    const res = Drive.Files.list({ q, orderBy: 'createdDate desc', maxResults: 1 });
     const items = res.items || [];
     return items.length ? DriveApp.getFolderById(items[0].id) : null;
   } catch (e) {
@@ -38,7 +38,7 @@ function findLatestFolderByName_(name) {
 function detectTeacherFolderOnDrive_() {
   const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' and title contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdTime desc' });
+    const res = Drive.Files.list({ q, orderBy: 'createdDate desc' });
     const items = res.items || [];
     for (let i = 0; i < items.length; i++) {
       const name = items[i].title || items[i].name || '';
@@ -229,7 +229,7 @@ function getTeacherRootFolder(teacherCode) {
   const q = `title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   let items = [];
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdTime asc' });
+    const res = Drive.Files.list({ q, orderBy: 'createdDate asc' });
     items = res.items || [];
   } catch (e) {
     logError_('getTeacherRootFolder', e);
