@@ -27,7 +27,7 @@ function createFolder_(parentId, name) {
  * findSubFolder_(parentId, name): 親フォルダ内で名前一致する最新フォルダを返す
  */
 function findSubFolder_(parentId, name) {
-  const q = `'${parentId}' in parents and name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const q = `'${parentId}' in parents and title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   try {
     const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
     const items = res.items || [];
@@ -48,7 +48,7 @@ function getOrCreateSubFolder_(parentFolder, name) {
  */
 function overwriteFile_(folder, name, content, mimeType) {
   const folderId = folder.getId();
-  const q = `'${folderId}' in parents and name='${name}' and trashed=false`;
+  const q = `'${folderId}' in parents and title='${name}' and trashed=false`;
   try {
     const res = Drive.Files.list({ q });
     (res.items || []).forEach(f => Drive.Files.trash(f.id));
@@ -64,7 +64,7 @@ function overwriteFile_(folder, name, content, mimeType) {
  */
 function readFileContent_(folder, name) {
   const folderId = folder.getId();
-  const q = `'${folderId}' in parents and name='${name}' and trashed=false`;
+  const q = `'${folderId}' in parents and title='${name}' and trashed=false`;
   try {
     const res = Drive.Files.list({ q, maxResults: 1 });
     const item = (res.items || [])[0];

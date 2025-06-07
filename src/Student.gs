@@ -141,7 +141,7 @@ function initStudent(teacherCode, grade, classroom, number) {
     const teacherFolder = getTeacherRootFolder(teacherCode);
     const studentsRoot  = getOrCreateSubFolder_(teacherFolder, 'Students');
     let stuFolder = getOrCreateSubFolder_(studentsRoot, stuFolderName);
-    const q = `'${stuFolder.getId()}' in parents and name='Responses_${studentId}.csv' and trashed=false`;
+    const q = `'${stuFolder.getId()}' in parents and title='Responses_${studentId}.csv' and trashed=false`;
     const res = Drive.Files.list({ q, maxResults: 1 });
     if (!res.items || res.items.length === 0) {
       try {
