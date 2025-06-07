@@ -87,6 +87,10 @@
         </div>
       </div>
       <a href="#" id="backLink" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2 flex-shrink-0"></a>
+      <button type="button" id="closeTaskBtn" class="game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center gap-2 flex-shrink-0 hidden">
+        <i data-lucide="square-x" class="w-4 h-4"></i>
+        <span>クエストを閉じる</span>
+      </button>
     </header>
 
     <section id="aiFollowupSection" class="glass-panel rounded-xl p-4 mb-4 shadow-lg hidden space-y-2">
@@ -191,6 +195,7 @@
         return;
       }
       const backLink = document.getElementById('backLink');
+      const closeBtn = document.getElementById('closeTaskBtn');
       const grade = params.get('grade');
       const classroom = params.get('class');
       const number = params.get('number');
@@ -210,6 +215,7 @@
       }
 
       if (taskId) {
+        if (closeBtn) closeBtn.classList.remove('hidden');
         document.getElementById('headingLabel').textContent = '課題別ボード';
         google.script.run.withSuccessHandler(tasks => {
           const t = tasks.find(x => x.id === taskId);
@@ -327,6 +333,19 @@
         historyBtn.addEventListener('click', e => {
           const hidden = historyDiv.classList.toggle('hidden');
           e.target.textContent = hidden ? '生成履歴を見る ▼' : '生成履歴を隠す ▲';
+        });
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          if (!confirm('このクエストを閉じますか？')) return;
+          google.script.run
+            .withSuccessHandler(() => {
+              closeBtn.disabled = true;
+              closeBtn.textContent = '閉じました';
+            })
+            .withFailureHandler(err => alert('クエストを閉じられません: ' + err.message))
+            .closeTask(teacherCode, taskId);
         });
       }
 
