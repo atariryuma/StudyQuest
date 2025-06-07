@@ -57,8 +57,7 @@ clasp push && clasp open
 - 必要に応じて、ファイルは `Code.gs`、`Utils.gs` など役割ごとに分割
 - 関数名は `camelCase`
 - コメントは JSDoc 形式 (`/** ... */`)
-- スクリプトプロパティは教師コードと対応するフォルダ ID の保存にのみ使用する。
-  学習データはすべて中央の `StudyQuest_DB` に集約して管理する。
+- 学習データはすべて中央の `StudyQuest_DB` に集約して管理する。
 
 ## ▶ CI/CD
 
