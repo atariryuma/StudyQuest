@@ -158,7 +158,7 @@ function initTeacher(passcode) {
   tocSheet.autoResizeColumn(2);
 
   props.setProperty(newCode, folderInstance.getId());
-  saveTeacherSettings_(newCode, { apiKey: '', persona: '', classes: [] });
+  saveTeacherSettings_(newCode, { persona: '', classes: [] });
   return {
     status: 'new',
     teacherCode: newCode,
@@ -198,11 +198,6 @@ function ensureSettingsSheet_(ss) {
 }
 
 function saveTeacherSettings_(teacherCode, obj) {
-  const props = PropertiesService.getScriptProperties();
-  if (obj.apiKey !== undefined) {
-    const encoded = Utilities.base64Encode(obj.apiKey || '');
-    props.setProperty(`${teacherCode}_apiKey`, encoded);
-  }
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
   const sheet = ensureSettingsSheet_(ss);
@@ -215,11 +210,8 @@ function saveTeacherSettings_(teacherCode, obj) {
 }
 
 function loadTeacherSettings_(teacherCode) {
-  const props = PropertiesService.getScriptProperties();
-  const encoded = props.getProperty(`${teacherCode}_apiKey`) || '';
-  const apiKey = encoded ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString() : '';
   const ss = getSpreadsheetByTeacherCode(teacherCode);
-  const data = { apiKey, persona: '', classes: [] };
+  const data = { persona: '', classes: [] };
   if (ss) {
     const sheet = ss.getSheetByName(SHEET_SETTINGS);
     if (sheet) {
@@ -328,8 +320,8 @@ function getClassIdMap(teacherCode) {
 }
 
 function setGeminiSettings(teacherCode, apiKey, persona) {
+  if (apiKey !== undefined) setGlobalGeminiApiKey(apiKey);
   const data = loadTeacherSettings_(teacherCode);
-  if (apiKey !== undefined) data.apiKey = apiKey;
   if (persona !== undefined) data.persona = persona;
   saveTeacherSettings_(teacherCode, data);
 }
@@ -339,7 +331,19 @@ function setGeminiSettings(teacherCode, apiKey, persona) {
  */
 function getGeminiSettings(teacherCode) {
   const data = loadTeacherSettings_(teacherCode);
-  return { apiKey: data.apiKey || '', persona: data.persona || '' };
+  return { apiKey: getGlobalGeminiApiKey(), persona: data.persona || '' };
+}
+
+function setGlobalGeminiApiKey(apiKey) {
+  const props = PropertiesService.getScriptProperties();
+  const encoded = Utilities.base64Encode(apiKey || '');
+  props.setProperty('geminiApiKey', encoded);
+}
+
+function getGlobalGeminiApiKey() {
+  const props = PropertiesService.getScriptProperties();
+  const encoded = props.getProperty('geminiApiKey') || '';
+  return encoded ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString() : '';
 }
 
 /**

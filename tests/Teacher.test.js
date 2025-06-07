@@ -74,7 +74,7 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB');
 });
 
-test('saveTeacherSettings persists values correctly', () => {
+test('saveTeacherSettings persists values correctly and global key handling', () => {
   const props = {};
   const sheetData = [['type', 'value1', 'value2']];
   const sheetStub = {
@@ -103,12 +103,17 @@ test('saveTeacherSettings persists values correctly', () => {
   };
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
-  context.saveTeacherSettings_('ABC', { apiKey: 'xyz', persona: 'P1', classes: [[1, 'A']] });
-  expect(props['ABC_apiKey']).toBe(Buffer.from('xyz').toString('base64'));
+  context.saveTeacherSettings_('ABC', { persona: 'P1', classes: [[1, 'A']] });
+  expect(props['ABC_apiKey']).toBeUndefined();
   const loaded = context.loadTeacherSettings_('ABC');
-  expect(loaded.apiKey).toBe('xyz');
   expect(loaded.persona).toBe('P1');
   expect(loaded.classes).toEqual([[1, 'A']]);
+  // test global key functions
+  context.setGeminiSettings('ABC', 'xyz', 'P2');
+  expect(props['geminiApiKey']).toBe(Buffer.from('xyz').toString('base64'));
+  const settings = context.getGeminiSettings('ABC');
+  expect(settings.apiKey).toBe('xyz');
+  expect(settings.persona).toBe('P2');
   expect(sheetStub.appendRow).toHaveBeenCalledWith(['persona', 'P1', '']);
   expect(sheetStub.appendRow).toHaveBeenCalledWith(['class', 1, 'A']);
 });
