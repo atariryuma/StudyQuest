@@ -90,3 +90,26 @@ StudyQuest_<TeacherCode>/
 -   **データ操作**: すべてのデータは `SpreadsheetApp` サービスを通じて `StudyQuest_DB` スプレッドシートに直接読み書きします。
 -   **データ集計**: `QUERY`などのスプレッドシート関数を最大限に活用し、GAS側での複雑なデータ処理を避けます。
 -   **フロントエンド構造**: `include()` を活用し、UIパーツ（ヘッダー、フッターなど）を共通化します。
+
+## 8. Gemini API キーの共有管理
+
+Gemini API キーは教師全体で 1 つを共有し、Apps Script のスクリプトプロパティ
+`geminiApiKey` として Base64 形式で保存されます。設定画面から入力したキーは
+`setGlobalGeminiApiKey` により保存され、`getGlobalGeminiApiKey` で取得できます。
+
+`Settings` シートの列構成 (`type`, `value1`, `value2`) は変更せず、保存される
+エントリは `persona` と `class` のみです。過去バージョンで使用されていた
+`\${teacherCode}_apiKey` プロパティは不要になったため、以下のスクリプトを一度
+実行して削除してください。
+
+```javascript
+// 移行用: 旧キーを削除
+function deleteLegacyApiKeys() {
+  const props = PropertiesService.getScriptProperties();
+  (props.getKeys() || []).forEach(k => {
+    if (/_apiKey$/.test(k) && k !== 'geminiApiKey') {
+      props.deleteProperty(k);
+    }
+  });
+}
+```
