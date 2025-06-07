@@ -28,6 +28,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
       - name: Install clasp
         run: npm install --global @google/clasp@latest
 
