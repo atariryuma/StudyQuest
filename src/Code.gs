@@ -580,22 +580,6 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
     console.warn(`「${SHEET_GLOBAL_ANSWERS}」シートが見つかりません。`);
   }
 
-  // Drive 上の history.json にも追記
-  try {
-    appendStudentHistoryJson_(teacherCode, studentId, {
-      timestamp: new Date().toISOString(),
-      taskId: taskId,
-      answer: answer,
-      earnedXp: earnedXp,
-      totalXp: totalXp,
-      level: level,
-      trophies: trophies || '',
-      aiCalls: aiCalls,
-      attempt: attemptCount
-    });
-  } catch (e) {
-    console.error('history.json update failed: ' + e.message);
-  }
 }
 
 /**
@@ -859,107 +843,58 @@ function getClassFolder(teacherCode, classId) {
 }
 
 /**
- * exportClassCache(teacherCode, classId, spreadsheetId): シートを CSV/JSON で保存
+ * exportCacheToTabs(teacherCode):
+ * 各クラスのデータシートを `_cache_data_<classId>` にコピーし summary を更新
  */
-function exportClassCache(teacherCode, classId, spreadsheetId) {
-  const folder = getClassFolder(teacherCode, classId);
-  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName('データシート');
-  if (!sheet) return;
-  const csv = convertRangeToCsv_(sheet.getDataRange());
-  const json = convertRangeToJson_(sheet);
-  overwriteFile_(folder, 'data.csv', csv, MimeType.CSV);
-  overwriteFile_(folder, 'data.json', JSON.stringify(json));
-}
+function exportCacheToTabs(teacherCode) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return;
 
-/**
- * exportSummary(teacherCode): 全クラス統合 CSV 作成
- */
-function exportSummary(teacherCode) {
-  const root = getTeacherRootFolder(teacherCode);
-  const tIter = root.getFoldersByName(TEACHER_DATA_FOLDER);
-  if (!tIter.hasNext()) return;
-  const teacherData = tIter.next();
-  const allData = [];
-  const classFolders = teacherData.getFolders();
-  while (classFolders.hasNext()) {
-    const f = classFolders.next();
-    const csvFileIter = f.getFilesByName('data.csv');
-    if (!csvFileIter.hasNext()) continue;
-    const rows = Utilities.parseCsv(csvFileIter.next().getBlob().getDataAsString());
-    const classId = f.getName();
-    rows.slice(1).forEach(r => allData.push([classId, ...r]));
-  }
-  if (allData.length === 0) return;
-  const header = ['classId'].concat(Utilities.parseCsv(teacherData.getFolders().next().getFilesByName('data.csv').next().getBlob().getDataAsString())[0]);
-  const summaryCsv = [header, ...allData].map(r => r.join(',')).join('\n');
-  overwriteFile_(teacherData, 'summary.csv', summaryCsv, MimeType.CSV);
-}
+  const props = PropertiesService.getScriptProperties();
+  const map = JSON.parse(props.getProperty(`classIdMap_${teacherCode}`) || '{}');
+  const summarySheet = ss.getSheetByName('summary') || ss.insertSheet('summary');
+  summarySheet.clear();
 
-/**
- * getStudentDataFolder_(teacherCode, studentId):
- * STUDYQUEST_<code>/student_data/<studentId> を取得/作成
- */
-function getStudentDataFolder_(teacherCode, studentId) {
-  const studentRoot = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), STUDENT_DATA_FOLDER);
-  const found = findSubFolder_(studentRoot.getId(), studentId);
-  return found || createFolder_(studentRoot.getId(), studentId);
-}
+  let summaryHeader = null;
+  const summaryRows = [];
 
-/**
- * readStudentHistoryJson_(teacherCode, studentId): history.json を読み込み
- */
-function readStudentHistoryJson_(teacherCode, studentId) {
-  const folder = getStudentDataFolder_(teacherCode, studentId);
-  const q = `'${folder.getId()}' in parents and name='history.json' and trashed=false`;
-  try {
-    const res = Drive.Files.list({ q, maxResults: 1 });
-    const items = res.items || [];
-    if (items.length === 0) return [];
-    return JSON.parse(DriveApp.getFileById(items[0].id).getBlob().getDataAsString());
-  } catch (e) {
-    logError_('readStudentHistoryJson_', e);
-    return [];
-  }
-}
+  Object.keys(map).forEach(id => {
+    const cacheName = `_cache_data_${id}`;
+    const cacheSheet = ss.getSheetByName(cacheName) || ss.insertSheet(cacheName);
+    cacheSheet.clear();
+    const src = ss.getSheetByName('class_' + id);
+    if (!src) return;
+    const values = src.getDataRange().getValues();
+    if (!values.length) return;
+    cacheSheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    cacheSheet.hideSheet();
 
-/**
- * writeStudentHistoryJson_(teacherCode, studentId, data): history.json を上書き
- */
-function writeStudentHistoryJson_(teacherCode, studentId, data) {
-  const folder = getStudentDataFolder_(teacherCode, studentId);
-  const json = JSON.stringify(data);
-  const q = `'${folder.getId()}' in parents and name='history.json' and trashed=false`;
-  try {
-    const res = Drive.Files.list({ q });
-    const items = res.items || [];
-    if (items.length > 0) {
-      Drive.Files.update({ title: 'history.json' }, items[0].id, Utilities.newBlob(json, MimeType.PLAIN_TEXT, 'history.json'));
-      items.slice(1).forEach(i => Drive.Files.trash(i.id));
-    } else {
-      Drive.Files.insert({ title: 'history.json', parents: [{ id: folder.getId() }] }, Utilities.newBlob(json, MimeType.PLAIN_TEXT, 'history.json'));
+    if (!summaryHeader) {
+      summaryHeader = ['classId'].concat(values[0]);
     }
-  } catch (e) {
-    logError_('writeStudentHistoryJson_', e);
+    for (let i = 1; i < values.length; i++) {
+      summaryRows.push([id].concat(values[i]));
+    }
+  });
+
+  if (summaryHeader) {
+    summarySheet.getRange(1, 1, 1, summaryHeader.length).setValues([summaryHeader]);
+    if (summaryRows.length) {
+      summarySheet.getRange(2, 1, summaryRows.length, summaryHeader.length).setValues(summaryRows);
+    }
+    summarySheet.hideSheet();
   }
 }
 
 /**
- * appendStudentHistoryJson_(teacherCode, studentId, record): history.json に追記
+ * getCacheData(teacherCode, classId): `_cache_data_<classId>` から値を取得
  */
-function appendStudentHistoryJson_(teacherCode, studentId, record) {
-  const history = readStudentHistoryJson_(teacherCode, studentId);
-  history.push(record);
-  writeStudentHistoryJson_(teacherCode, studentId, history);
-}
-
-/**
- * GAS wrapper: getStudentHistoryFile
- * @param {string} teacherCode
- * @param {string} studentId
- * @return {Object[]} history array
- */
-function getStudentHistoryFile(teacherCode, studentId) {
-  return readStudentHistoryJson_(teacherCode, studentId);
+function getCacheData(teacherCode, classId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return [];
+  const sheet = ss.getSheetByName(`_cache_data_${classId}`);
+  if (!sheet) return [];
+  return sheet.getDataRange().getValues();
 }
 
 /**
