@@ -12,7 +12,7 @@ const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シート
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
 const TEACHER_DATA_FOLDER   = 'teacher_data';
 const STUDENT_DATA_FOLDER   = 'student_data';
-const SQ_VERSION           = 'v1.0.11';
+const SQ_VERSION           = 'v1.0.12';
 
 /**
  * logError_(where, error): 詳細なエラーログを出力
@@ -675,7 +675,7 @@ function getStatistics(teacherCode) {
 /**
  * callGeminiAPI_GAS(prompt, persona): Gemini API を呼び出してフィードバックを取得
  */
-function callGeminiAPI_GAS(prompt, persona) {
+function callGeminiAPI_GAS(teacherCode, prompt, persona) {
   const personaMap = {
     '小学生向け': 'あなたは小学校高学年以上向けの優しい先生です。',
     '中学生向け': 'あなたは中学生向けの適切な言葉遣いをする先生です。',
@@ -683,7 +683,8 @@ function callGeminiAPI_GAS(prompt, persona) {
   };
   const base = personaMap[persona] || '';
   const finalPrompt = base + '\n' + prompt;
-  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  const settings = getGeminiSettings(teacherCode);
+  const apiKey = settings.apiKey;
   if (!apiKey) return 'APIキーが設定されていません';
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey;
   const payload = { contents: [{ parts: [{ text: finalPrompt }] }] };
@@ -737,6 +738,25 @@ function overwriteFile_(folder, name, content, mimeType) {
 }
 
 /**
+ * readFileContent_(folder, name): 指定ファイルの内容を取得
+ */
+function readFileContent_(folder, name) {
+  const folderId = folder.getId();
+  const q = `'${folderId}' in parents and name='${name}' and trashed=false`;
+  try {
+    const res = Drive.Files.list({ q, maxResults: 1 });
+    const item = (res.items || [])[0];
+    if (item) {
+      const file = DriveApp.getFileById(item.id);
+      return file.getBlob().getDataAsString();
+    }
+  } catch (e) {
+    logError_('readFileContent_', e);
+  }
+  return null;
+}
+
+/**
  * convertRangeToCsv_(range): Range を CSV 文字列に変換
  */
 function convertRangeToCsv_(range) {
@@ -787,8 +807,8 @@ function getTeacherRootFolder(teacherCode) {
  * initializeFolders(teacherCode, classList):
  * StudyQuest_<TeacherCode> 配下に teacher_data / student_data
  * および class_1, class_2 ... サブフォルダを作成し、
- * 作成したクラス番号と学年・組の対応表を Script Properties に保存
- */
+ * 作成したクラス番号と学年・組の対応表を Drive 上に保存
+*/
 function initializeFolders(teacherCode, classList) {
   const root = getTeacherRootFolder(teacherCode);
 
@@ -809,7 +829,7 @@ function initializeFolders(teacherCode, classList) {
     if (!findSubFolder_(studentData.getId(), name)) createFolder_(studentData.getId(), name);
   });
 
-  PropertiesService.getScriptProperties().setProperty(`classIdMap_${teacherCode}`, JSON.stringify(map));
+  overwriteFile_(teacherData, 'class_map.json', JSON.stringify(map), MimeType.PLAIN_TEXT);
   return map;
 }
 
@@ -848,10 +868,11 @@ function getClassFolder(teacherCode, classId) {
  * @return {Object} クラスIDとシート名のマップ
  */
 function getClassIdMap_(teacherCode) {
-  const prop = PropertiesService.getScriptProperties().getProperty(`classIdMap_${teacherCode}`);
-  if (!prop) return {};
+  const teacherData = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), TEACHER_DATA_FOLDER);
+  const content = readFileContent_(teacherData, 'class_map.json');
+  if (!content) return {};
   try {
-    return JSON.parse(prop);
+    return JSON.parse(content);
   } catch (e) {
     return {};
   }
@@ -929,8 +950,7 @@ function exportCacheToTabs(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
 
-  const props = PropertiesService.getScriptProperties();
-  const map = JSON.parse(props.getProperty(`classIdMap_${teacherCode}`) || '{}');
+  const map = getClassIdMap_(teacherCode);
   const summarySheet = ss.getSheetByName('summary') || ss.insertSheet('summary');
   summarySheet.clear();
 
@@ -987,21 +1007,32 @@ function include(filename) {
 /**
  * Gemini 設定を保存
  */
-function setGeminiSettings(apiKey, persona) {
-  const props = PropertiesService.getScriptProperties();
-  if (apiKey !== undefined) props.setProperty('GEMINI_API_KEY', apiKey);
-  if (persona !== undefined) props.setProperty('GEMINI_PERSONA', persona);
+function setGeminiSettings(teacherCode, apiKey, persona) {
+  const folder = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), TEACHER_DATA_FOLDER);
+  let obj = {};
+  const current = readFileContent_(folder, 'gemini_settings.json');
+  if (current) {
+    try { obj = JSON.parse(current); } catch(e) {}
+  }
+  if (apiKey !== undefined) obj.apiKey = Utilities.base64Encode(apiKey);
+  if (persona !== undefined) obj.persona = persona;
+  overwriteFile_(folder, 'gemini_settings.json', JSON.stringify(obj), MimeType.PLAIN_TEXT);
 }
 
 /**
  * Gemini 設定を取得
  */
-function getGeminiSettings() {
-  const props = PropertiesService.getScriptProperties();
-  return {
-    apiKey: props.getProperty('GEMINI_API_KEY') || '',
-    persona: props.getProperty('GEMINI_PERSONA') || ''
-  };
+function getGeminiSettings(teacherCode) {
+  const folder = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), TEACHER_DATA_FOLDER);
+  const content = readFileContent_(folder, 'gemini_settings.json');
+  if (!content) return { apiKey: '', persona: '' };
+  try {
+    const obj = JSON.parse(content);
+    const key = obj.apiKey ? Utilities.newBlob(Utilities.base64Decode(obj.apiKey)).getDataAsString() : '';
+    return { apiKey: key, persona: obj.persona || '' };
+  } catch(e) {
+    return { apiKey: '', persona: '' };
+  }
 }
 
 /**
