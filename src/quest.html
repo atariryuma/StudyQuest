@@ -237,8 +237,7 @@ async function openTask(task, history) {
   updateProgressBar();
   updateSendButton();
   const link = document.getElementById('viewAnswersBtn');
-  const baseUrl = window.location.origin + window.location.pathname;
-  link.href = `${baseUrl}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
+  link.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
 }
 
 function renderInputForStep(q, attempt) {
