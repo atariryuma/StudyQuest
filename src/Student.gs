@@ -142,9 +142,10 @@ function initStudent(teacherCode, grade, classroom, number) {
   if (subsSheet && tasksSheet) {
     const last = tasksSheet.getLastRow();
     if (last >= 2) {
-      const rows = tasksSheet.getRange(2, 1, last - 1, 7).getValues();
+      const rows = tasksSheet.getRange(2, 1, last - 1, 8).getValues();
       rows.forEach(r => {
         if (String(r[6] || '').toLowerCase() === 'closed') return;
+        if (String(r[7] || '') === '1') return;
         const taskId = r[0];
         const createdAt = r[3];
         subsSheet.appendRow([createdAt, studentId, taskId, '', 0, 0, 0, '', 0, 0]);
@@ -174,9 +175,10 @@ function initStudent(teacherCode, grade, classroom, number) {
         Object.keys(map).forEach(id => {
           if (map[id] === `${grade}-${classroom}`) classId = id;
         });
-        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 7).getValues();
+        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 8).getValues();
         taskData.forEach(row => {
           if (String(row[6] || '').toLowerCase() === 'closed') return;
+          if (String(row[7] || '') === '1') return;
           if (classId && String(row[1]) !== String(classId)) return;
           const taskId        = row[0];
           const payloadAsJson = row[2];

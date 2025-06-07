@@ -265,6 +265,10 @@
                             <i data-lucide="wand-sparkles" class="w-5 h-5"></i>
                             <span>クエストを作成する</span>
                         </button>
+                        <button type="button" id="deleteDraftBtn" class="w-full game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 text-base mt-2 flex items-center justify-center gap-2">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            <span>下書きを削除</span>
+                        </button>
                     </form>
                 </section>
 
@@ -331,6 +335,7 @@
 
       let aiCredits = 3;
       let generationHistory = [];
+      let draftTaskId = null;
       updateAiCreditDisplay();
 
       // 2) 右上バッジをセット
@@ -353,6 +358,19 @@
       document.getElementById('personaInput').addEventListener('change', saveGeminiSettings);
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
       document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
+      document.getElementById('deleteDraftBtn').addEventListener('click', () => {
+        if (!draftTaskId) {
+          resetForm();
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(() => {
+            resetForm();
+            draftTaskId = null;
+          })
+          .withFailureHandler(err => alert('削除に失敗しました: ' + err.message))
+          .deleteDraftTask(teacherCode, draftTaskId);
+      });
 
       // 3) 回答タイプ選択時に AI ツールを表示 / 非表示
       Array.from(document.getElementsByName('ansType')).forEach(radio => {
@@ -364,6 +382,13 @@
 
       document.getElementById('generateChoicesBtn').addEventListener('click', () => {
         if (aiCredits <= 0) return;
+
+        const clsRadio = document.querySelector('input[name="taskClassRadio"]:checked');
+        const cls = clsRadio ? clsRadio.value : '';
+        const subject = document.getElementById('subject').value.trim();
+        const q = document.getElementById('question').value.trim();
+        const draftPayload = JSON.stringify({ classId: cls, subject, question: q });
+        google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
 
         aiCredits--;
         updateAiCreditDisplay();
@@ -401,6 +426,10 @@
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
         const persona = document.getElementById('personaInput').value;
+        const clsRadio = document.querySelector('input[name="taskClassRadio"]:checked');
+        const cls = clsRadio ? clsRadio.value : '';
+        const draftPayload = JSON.stringify({ classId: cls, subject, question });
+        google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
         container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
 
@@ -503,6 +532,10 @@
             addSubjectHistory(subject);
             resetForm();
             clearDraft();
+            if (draftTaskId) {
+              google.script.run.deleteDraftTask(teacherCode, draftTaskId);
+              draftTaskId = null;
+            }
           })
           .withFailureHandler(err => {
             alert('課題作成中にエラーが発生しました: ' + err.message);
