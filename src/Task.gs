@@ -97,6 +97,34 @@ function duplicateTask(teacherCode, taskId) {
 }
 
 /**
+ * getTask(teacherCode, taskId):
+ * 指定した課題オブジェクトを返す
+ */
+function getTask(teacherCode, taskId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return null;
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return null;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+  const data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === taskId) {
+      return {
+        id: data[i][0],
+        classId: data[i][1],
+        q: data[i][2],
+        selfEval: data[i][3],
+        date: Utilities.formatDate(new Date(data[i][4]), 'JST', 'yyyy/MM/dd HH:mm'),
+        persona: data[i][5] || '',
+        closed: String(data[i][6] || '').toLowerCase() === 'closed'
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * closeTask(teacherCode, taskId):
  * 課題を完了状態としてマーク
  */

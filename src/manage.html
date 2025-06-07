@@ -185,21 +185,23 @@
                             <div class="space-y-2 text-sm">
                                 <input type="password" id="apiKeyInput" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="共有APIキーを入力">
                                 <p class="text-xs text-gray-400">Gemini APIキーは全教師で共有されます。</p>
-                                <select id="personaSelect" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                                    <option value="">-- 選択 --</option>
-                                    <option value="小学生向け">小学生向け</option>
-                                    <option value="中学生向け">中学生向け</option>
-                                    <option value="教師向け">教師向け</option>
-                                </select>
-                                <button id="saveApiBtn" class="w-full game-btn bg-pink-600 text-white px-4 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 text-sm flex items-center justify-center gap-2">
-                                    <i data-lucide="save" class="w-4 h-4"></i>
-                                    <span>設定を保存</span>
-                                </button>
+                                <input id="personaInput" list="personaOptions" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="ペルソナを入力">
+                                <datalist id="personaOptions">
+                                    <option value="小学生向け"></option>
+                                    <option value="中学生向け"></option>
+                                    <option value="教師向け"></option>
+                                </datalist>
                                 <span id="apiStatus" class="text-green-400 text-xs hidden"></span>
                             </div>
                         </div>
                     </div>
                 </section>
+
+            <!-- Quest List Panel (Moved Here) -->
+            <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i><span>公開中のクエスト一覧</span></h2>
+                <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
+            </section>
             </div>
 
             <!-- Right Column: Quest Management -->
@@ -273,19 +275,8 @@
                     </form>
                 </section>
 
-                <!-- Quest List Panel -->
-                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
-                        <i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i>
-                        <span>公開中のクエスト一覧</span>
-                    </h2>
-                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
-                </section>
             </div>
         </main>
-        <div id="tasksContainer" class="grid gap-4 text-base">
-          <!-- JavaScript でカードを埋める -->
-        </div>
       </div>
     </section>
   </main>
@@ -363,7 +354,8 @@
       loadGeminiSettings();
       loadClassOptions();
       loadSubjectHistory();
-      document.getElementById('saveApiBtn').addEventListener('click', saveGeminiSettings);
+      document.getElementById('apiKeyInput').addEventListener('change', saveGeminiSettings);
+      document.getElementById('personaInput').addEventListener('change', saveGeminiSettings);
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
       document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
 
@@ -385,7 +377,7 @@
         const count = parseInt(document.getElementById('choiceCount').value, 10) || 3;
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
-        const persona = document.getElementById('personaSelect').value;
+        const persona = document.getElementById('personaInput').value;
         const container = document.getElementById('optionInputs');
         container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
@@ -413,7 +405,7 @@
         const container = document.getElementById('followupSuggestions');
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
-        const persona = document.getElementById('personaSelect').value;
+        const persona = document.getElementById('personaInput').value;
         container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
 
@@ -467,7 +459,7 @@
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
-        const persona = document.getElementById('personaSelect').value;
+        const persona = document.getElementById('personaInput').value;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
           alert('回答タイプを選択してください。');
@@ -534,14 +526,14 @@
         if (copy) {
           const id = copy.dataset.id;
           google.script.run
-            .withSuccessHandler(() => {
-              loadTasks();
-              updateWidgets();
+            .withSuccessHandler(task => {
+              loadTaskIntoForm(task);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             })
             .withFailureHandler(err => {
-              alert('複製中にエラーが発生しました: ' + err.message);
+              alert('取得に失敗しました: ' + err.message);
             })
-            .duplicateTask(teacherCode, id);
+            .getTask(teacherCode, id);
           return;
         }
 
@@ -587,19 +579,23 @@
         google.script.run
           .withSuccessHandler(key => {
             const keyInput = document.getElementById('apiKeyInput');
+            const status = document.getElementById('apiStatus');
             if (key) {
               keyInput.value = '';
               keyInput.placeholder = '********';
+              status.textContent = 'APIキー登録済み';
             } else {
               keyInput.value = '';
               keyInput.placeholder = '';
+              status.textContent = 'APIキー未登録';
             }
+            status.classList.remove('hidden');
           })
           .getGlobalGeminiApiKey();
 
         google.script.run
           .withSuccessHandler(persona => {
-            document.getElementById('personaSelect').value = persona || '';
+            document.getElementById('personaInput').value = persona || '';
             document.getElementById('apiStatus').classList.add('hidden');
           })
           .getGeminiPersona(teacherCode);
@@ -634,12 +630,10 @@
       // Gemini 設定を保存
       function saveGeminiSettings() {
         const key = document.getElementById('apiKeyInput').value.trim();
-        const persona = document.getElementById('personaSelect').value;
+        const persona = document.getElementById('personaInput').value;
 
         const showDone = () => {
-          const status = document.getElementById('apiStatus');
-          status.textContent = '保存しました';
-          status.classList.remove('hidden');
+          loadGeminiSettings();
         };
 
         const savePersona = () => {
@@ -752,6 +746,28 @@
         }
 
         renderIcons(document);
+      }
+
+      // 既存課題をフォームに読み込む
+      function loadTaskIntoForm(task) {
+        if (!task) return;
+        let data;
+        try { data = JSON.parse(task.q); } catch (_) { return; }
+        resetForm();
+        document.getElementById('subject').value = data.subject || '';
+        document.getElementById('question').value = data.question || '';
+        const radio = document.querySelector(`input[name="ansType"][value="${data.type}"]`);
+        if (radio) radio.checked = true;
+        if (data.type !== 'text') {
+          document.getElementById('aiToolsSection').classList.remove('hidden');
+          renderOptionInputs(data.choices || []);
+        }
+        const clsRadio = document.querySelector(`#taskClassButtons input[value="${task.classId}"]`);
+        if (clsRadio) clsRadio.checked = true;
+        selectedClassId = task.classId || null;
+        document.querySelectorAll('#currentClassCard .class-card').forEach(c => {
+          c.classList.toggle('selected', c.dataset.id === String(task.classId));
+        });
       }
 
       /**
