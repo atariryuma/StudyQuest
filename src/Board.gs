@@ -60,6 +60,16 @@ function getStatistics(teacherCode) {
   const taskSheet    = ss.getSheetByName(SHEET_TASKS);
   const studentSheet = ss.getSheetByName(SHEET_STUDENTS);
   const taskCount    = taskSheet ? Math.max(0, taskSheet.getLastRow() - 1) : 0;
-  const studentCount = studentSheet ? Math.max(0, studentSheet.getLastRow() - 1) : 0;
+
+  let studentCount = 0;
+  if (studentSheet) {
+    const lastRow = studentSheet.getLastRow();
+    if (lastRow > 1) {
+      const ids = studentSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      const unique = new Set(ids.flat().filter(v => v !== '' && v !== null && v !== undefined));
+      studentCount = unique.size;
+    }
+  }
+
   return { taskCount, studentCount };
 }
