@@ -173,8 +173,7 @@ function loadTeacherSettings_(teacherCode) {
   const csv = readFileContent_(folder, 'settings.csv');
   return parseSettingsCsv_(csv);
 }
- * getTeacherRootFolder(teacherCode): 教師用ルートフォルダを取得
- */
+
 /**
  * getTeacherRootFolder(teacherCode):
  * 同名フォルダが複数存在する場合は最古の1件を残し、
