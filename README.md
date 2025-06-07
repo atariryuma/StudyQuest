@@ -101,6 +101,27 @@ Gemini APIキーは、アプリケーション全体で1つを共有します。
 * API利用時には `getGlobalGeminiApiKey` 関数で安全に呼び出されます。
 * スクリプトプロパティに保存する際のプロパティ名は `geminiApiKey` です。
 
+#### Gemini API 呼び出し例
+
+以下のように `curl` コマンドを使って Gemini API を呼び出すこともできます。
+
+```bash
+curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=GEMINI_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -X POST \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "Explain how AI works in a few words"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
 ## 9. テスト実行
 
 1. 依存インストール
