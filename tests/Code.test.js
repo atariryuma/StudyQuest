@@ -1,5 +1,5 @@
-const { getGasVersion } = require('../src/Code.gs');
+const { getSqVersion } = require('../src/Code.gs');
 
-test('getGasVersion returns correct version', () => {
-  expect(getGasVersion()).toBe('v1.0.0');
+test('getSqVersion returns correct version', () => {
+  expect(getSqVersion()).toBe('v1.0.0');
 });

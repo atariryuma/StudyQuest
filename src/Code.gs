@@ -10,7 +10,7 @@ const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
 const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const SQ_VERSION           = '0.1.0-test';
+const SQ_VERSION           = 'v1.0.0';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
@@ -23,7 +23,7 @@ function doGet(e) {
   template.grade       = (e && e.parameter && e.parameter.grade)     ? e.parameter.grade     : '';
   template.classroom   = (e && e.parameter && e.parameter['class'])  ? e.parameter['class']  : '';
   template.number      = (e && e.parameter && e.parameter.number)    ? e.parameter.number    : '';
-  template.version     = getGasVersion();
+  template.version     = getSqVersion();
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -423,6 +423,30 @@ function deleteTask(teacherCode, taskId) {
 }
 
 /**
+ * duplicateTask(teacherCode, taskId):
+ * 指定した課題を複製して新しいIDで追加
+ */
+function duplicateTask(teacherCode, taskId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return;
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === taskId) {
+      const newId = Utilities.getUuid();
+      const payload = data[i][1];
+      const selfEval = data[i][2];
+      const persona = data[i][4] || '';
+      sheet.appendRow([newId, payload, selfEval, new Date(), persona]);
+      break;
+    }
+  }
+}
+
+/**
  * getRecommendedTask(teacherCode, studentId):
  * その生徒の“未回答”最新タスクを返す
  */
@@ -670,11 +694,11 @@ function getGeminiSettings() {
 /**
  * 現在の バージョンを返す
  */
-function getGasVersion() {
+function getSqVersion() {
   return SQ_VERSION;
 }
 
 // Export for testing in Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getGasVersion };
+  module.exports = { getSqVersion };
 }
