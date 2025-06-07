@@ -21,7 +21,7 @@
   <!-- ========================================
        HEADER
        ======================================== -->
-  <header class="p-4 bg-gray-800 flex justify-between items-center shadow-md">
+  <header class="p-4 bg-gray-800 flex flex-col md:flex-row md:justify-between md:items-center gap-4 shadow-md">
     <div class="flex items-center gap-4">
       <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
       <h1 class="text-xl flex items-center gap-2">
@@ -43,27 +43,26 @@
         <span id="totalStudents">0</span> 名
       </span>
     </div>
+    <div id="geminiSettings" class="flex flex-col sm:flex-row items-end gap-2">
+      <div>
+        <label for="apiKeySetting" class="text-xs">Gemini APIキー</label>
+        <input id="apiKeySetting" type="password" class="mt-1 p-1 rounded bg-gray-700 focus:outline-none text-sm" placeholder="保存済みの場合は空白" />
+      </div>
+      <div>
+        <label for="personaSetting" class="text-xs">ペルソナ</label>
+        <select id="personaSetting" class="mt-1 p-1 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+          <option value="">-- 選択 --</option>
+          <option value="小学生向け">小学生向け</option>
+          <option value="中学生向け">中学生向け</option>
+          <option value="教師向け">教師向け</option>
+        </select>
+      </div>
+      <button id="saveGeminiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
+      <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
+    </div>
   </header>
-  <!-- Gemini 設定エリア -->
-  <section class="p-4 bg-gray-900 flex flex-col md:flex-row gap-4 items-end" id="geminiSettings">
-    <div class="flex-1">
-      <label for="apiKeySetting" class="text-xs">Gemini APIキー</label>
-      <input id="apiKeySetting" type="password" class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-sm" placeholder="保存済みの場合は空白" />
-    </div>
-    <div>
-      <label for="personaSetting" class="text-xs">ペルソナ</label>
-      <select id="personaSetting" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
-        <option value="">-- 選択 --</option>
-        <option value="小学生向け">小学生向け</option>
-        <option value="中学生向け">中学生向け</option>
-        <option value="教師向け">教師向け</option>
-      </select>
-    </div>
-    <button id="saveGeminiBtn" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
-    <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
-  </section>
   <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-3xl font-bold"></div>
+    <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
   </div>
 
   <!-- ========================================
@@ -284,11 +283,26 @@
         gsap.fromTo(btn, { scale: 1.1 }, { scale: 1, duration: 0.2 });
       });
 
-      // 7) 課題削除ボタン押下時
+      // 7) 課題削除・複製ボタン押下時
       document.addEventListener('click', e => {
-        const btn = e.target.closest('.deleteBtn');
-        if (btn) {
-          const id = btn.dataset.id;
+        const copy = e.target.closest('.copyBtn');
+        if (copy) {
+          const id = copy.dataset.id;
+          google.script.run
+            .withSuccessHandler(() => {
+              loadTasks();
+              updateWidgets();
+            })
+            .withFailureHandler(err => {
+              alert('複製中にエラーが発生しました: ' + err.message);
+            })
+            .duplicateTask(teacherCode, id);
+          return;
+        }
+
+        const del = e.target.closest('.deleteBtn');
+        if (del) {
+          const id = del.dataset.id;
           if (confirm('この課題を削除しますか？')) {
             google.script.run
               .withSuccessHandler(() => {
@@ -419,12 +433,15 @@
           card.innerHTML = `
             ${detailHtml}
             <p class="text-sm text-gray-400 mt-2">${x.date}</p>
+            <button class="copyBtn absolute top-2 right-8 text-indigo-400 hover:text-indigo-300" data-id="${x.id}">
+              <svg data-icon="Copy" class="w-4 h-4"></svg>
+            </button>
             <button class="deleteBtn absolute top-2 right-2 text-red-400 hover:text-red-300" data-id="${x.id}">
               <svg data-icon="Trash2" class="w-4 h-4"></svg>
             </button>
           `;
           card.addEventListener('click', e => {
-            if (!e.target.closest('.deleteBtn')) {
+            if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
               location.href = `?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${x.id}`;
             }
           });
@@ -433,24 +450,6 @@
 
         // アイコン描画
         renderIcons(document);
-
-        // 削除ボタンにイベントをバインド
-        document.querySelectorAll('.deleteBtn').forEach(btn => {
-          btn.addEventListener('click', e => {
-            const id = e.currentTarget.getAttribute('data-id');
-            if (!id) return;
-            if (!confirm('この課題を削除しますか？')) return;
-            google.script.run
-              .withSuccessHandler(() => {
-                loadTasks();
-                updateWidgets();
-              })
-              .withFailureHandler(err => {
-                alert('削除に失敗しました: ' + err.message);
-              })
-              .deleteTask(teacherCode, id);
-          });
-        });
       }
 
       /**
