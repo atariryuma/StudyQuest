@@ -46,3 +46,14 @@ jobs:
 
       - name: Show URL
         run: echo "${{ steps.deploy.outputs.webapp_url }}"
+      - name: Bump version and push
+        if: success()
+        run: |
+          set -eux
+          npm version patch --no-git-tag-version
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add package.json src/Code.gs tests/Code.test.js
+          git commit -m "Bump version to v$(node -p 'require(\"./package.json\").version') [skip ci]"
+          git push
+
