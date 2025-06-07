@@ -87,6 +87,7 @@ function initTeacher(passcode) {
   const newCode    = generateTeacherCode();
   const folderName = FOLDER_NAME_PREFIX + newCode;
   const folderInstance = createFolder_('root', folderName);
+  props.setProperty(newCode, folderInstance.getId());
   initializeFolders(newCode, [], folderInstance);
 
   const ss       = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
