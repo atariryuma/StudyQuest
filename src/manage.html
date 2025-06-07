@@ -177,7 +177,8 @@
                         <div>
                             <h3 class="font-bold text-pink-400 mb-2">Gemini API 設定</h3>
                             <div class="space-y-2 text-sm">
-                                <input type="password" id="apiKeyInput" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="APIキーを入力 (保存済み)">
+                                <input type="password" id="apiKeyInput" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="共有APIキーを入力">
+                                <p class="text-xs text-gray-400">Gemini APIキーは全教師で共有されます。</p>
                                 <select id="personaSelect" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
                                     <option value="">-- 選択 --</option>
                                     <option value="小学生向け">小学生向け</option>
@@ -555,19 +556,24 @@
       // Gemini 設定を取得して表示
       function loadGeminiSettings() {
         google.script.run
-          .withSuccessHandler(data => {
+          .withSuccessHandler(key => {
             const keyInput = document.getElementById('apiKeyInput');
-            if (data.apiKey) {
+            if (key) {
               keyInput.value = '';
               keyInput.placeholder = '********';
             } else {
               keyInput.value = '';
               keyInput.placeholder = '';
             }
-            document.getElementById('personaSelect').value = data.persona || '';
+          })
+          .getGlobalGeminiApiKey();
+
+        google.script.run
+          .withSuccessHandler(persona => {
+            document.getElementById('personaSelect').value = persona || '';
             document.getElementById('apiStatus').classList.add('hidden');
           })
-          .getGeminiSettings(teacherCode);
+          .getGeminiPersona(teacherCode);
       }
 
       function loadClassOptions() {
@@ -597,16 +603,29 @@
 
       // Gemini 設定を保存
       function saveGeminiSettings() {
-          const key = document.getElementById('apiKeyInput').value.trim();
-          const persona = document.getElementById('personaSelect').value;
+        const key = document.getElementById('apiKeyInput').value.trim();
+        const persona = document.getElementById('personaSelect').value;
+
+        const showDone = () => {
+          const status = document.getElementById('apiStatus');
+          status.textContent = '保存しました';
+          status.classList.remove('hidden');
+        };
+
+        const savePersona = () => {
           google.script.run
-            .withSuccessHandler(() => {
-              const status = document.getElementById('apiStatus');
-              status.textContent = '保存しました';
-              status.classList.remove('hidden');
-            })
-            .setGeminiSettings(teacherCode, key, persona);
+            .withSuccessHandler(showDone)
+            .setGeminiPersona(teacherCode, persona);
+        };
+
+        if (key) {
+          google.script.run
+            .withSuccessHandler(savePersona)
+            .setGlobalGeminiApiKey(key);
+        } else {
+          savePersona();
         }
+      }
 
       function loadSubjectHistory() {
         const list = document.getElementById('subjectHistory');
