@@ -238,7 +238,7 @@
                         <div id="aiToolsSection" class="space-y-4 hidden">
                             <div class="p-3 rounded-lg ai-tool-panel space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-4 h-4"></i>AIで選択肢を生成</label>
+                                    <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-4 h-4"></i>Geminiで選択肢を生成</label>
                                     <div id="aiCredit" class="text-sm text-amber-300 font-bold">生成クレジット: 💎 💎 💎</div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -256,7 +256,7 @@
                                 </div>
                             </div>
                             <div class="p-3 rounded-lg ai-tool-panel space-y-3">
-                                <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>AIによる深掘りの質問例</label>
+                                <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>Geminiによる深掘りの質問例</label>
                                 <button type="button" id="generateFollowupBtn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">質問を生成</button>
                                 <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
                             </div>
@@ -384,7 +384,7 @@
         const subject = document.getElementById('subject').value.trim();
         const persona = document.getElementById('personaSelect').value;
         const container = document.getElementById('optionInputs');
-        container.innerHTML = `<div class="text-center text-sm p-4">AIが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
+        container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
 
         const typePrompt = choiceType === '単語' ? '単語を3つ' : choiceType === '短文' ? '短文を3つ' : '長文を3つ';
@@ -411,7 +411,7 @@
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
         const persona = document.getElementById('personaSelect').value;
-        container.innerHTML = `AIが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
+        container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
 
         const prompt = `${subject} の課題「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
