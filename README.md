@@ -1,225 +1,154 @@
+````markdown
 # StudyQuest
+
+> 小学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
 
 ## 1. プロジェクト概要
 
-**1.1 プロジェクト名**
-StudyQuest（仮称） – 小学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
+**StudyQuest** は、Google Workspace（Drive, Spreadsheet, Apps Script）を活用し、
+小学校の生徒向けにゲーミフィケーション要素を取り入れた課題管理・学習支援を実現するWebアプリです。
 
-**1.2 背景・目的**
+- **教師側**: テンプレートフォルダとスプレッドシートを自動生成し、課題の作成・配信・統計分析を行う管理パネルを提供
+- **生徒側**: XPバー、レベル、トロフィーなどでモチベーションを可視化し、未回答クエストの閲覧・回答送信を行うクエストボードを提供
+- **回答ボード**: 全体回答ログをリアルタイムに閲覧できる共有ボード機能
+- **AIフィードバック**: Gemini API連携でヒントや気づきを提示（課題ごと2回まで）
 
-* **背景**
 
-  * 小学校における生徒の課題（クエスト）管理と学習意欲向上のため、ゲーミフィケーション要素を取り入れたWebアプリ導入を検討。
-  * 既存のGoogle Workspace（Drive、Spreadsheet、Apps Script）を活用し、低コストかつ柔軟に運用できるシステムを構築。
-  * 生徒が自ら進んで課題に取り組み、教師側は進捗と学習履歴を一元管理したい。
+## 2. 機能要件
 
-* **目的**
+### 2.1 教師モード（`manage.html`）
 
-  1. **教師側**は「教師コード（6桁英数字）」を取得／入力し、自動生成された専用フォルダ・スプレッドシート上で課題の作成・配信・統計分析が可能。
-  2. **生徒側**は教師から共有された「教師コード」と「学年・組・番号」を入力し、自分専用の“クエストボード”画面から未回答クエストを確認し、回答を送信できる。回答ごとにXPが加算され、XPバーやレベル、獲得トロフィーを可視化。
-  3. **回答ボード**機能を通じて、他の生徒の取り組みや教師のフィードバック状況をリアルタイムに把握可能。
-  4. \*\*Google Apps Script（GAS）\*\*をバックエンド処理として用い、データは専用フォルダに保存。Webアプリとして動作する。
-  5. \*\*AIフィードバック機能（Gemini API連携）\*\*を実装し、児童の回答に対してゲーム的な演出でヒントや気づきを提供。
-  6. **教師コードと対応するフォルダ ID** をスクリプトプロパティに保存し、複数の教師が同一 Web アプリを利用してもデータが混在しない設計とする。
+1. **ログイン／初期設定**
+   - パスコード入力（固定: `kyoushi`）
+   - `initTeacher(passcode)` 呼び出し
+   - 初回: `StudyQuest_<TeacherCode>` フォルダ、各クラス用スプレッドシート自動生成
+   - 2回目以降: 既存 `TeacherCode` に紐づくダッシュボードへ遷移
 
----
+2. **管理パネル**
+   - 課題作成フォーム: クラス選択、科目、問題文、回答タイプ、Gemini設定
+   - 課題一覧カード: 編集・削除機能、統計情報取得
+   - 主なGAS呼び出し: `createTask`, `listTasks`, `deleteTask`, `getStatistics`
 
-## 2. ステークホルダー（ユーザー）
 
-1. **教師（管理者）**
+### 2.2 生徒モード（`input.html`）
 
-   * 初回ログイン時：「kyoushi」を入力 → Google Drive上に `StudyQuest_<TeacherCode>` フォルダを自動作成。
-   * 2回目以降ログイン：教師コードのみで既存フォルダ／ファイルにアクセス。
-   * 各学年・各クラスごとに独立したスプレッドシート（データベース）を持つ。管理に必要な情報は、scvファイルに保存。
-   * 課題の作成・編集・削除、統計情報の参照、生徒一覧管理、グローバル回答ボードの閲覧などを行う。
+1. **ログイン／初期設定**
+   - 教師コード、学年、組、番号を入力してバリデーション
+   - `initStudent(...)` 呼び出しで専用クエストボード初期化
 
-2. **生徒（利用者）**
+2. **クエストボード画面**
+   - XPバー + レベル表示
+   - 未回答／完了済みクエスト一覧
+   - 回答入力エリア、AIフィードバックボタン、履歴表示
+   - 主なGAS呼び出し: `listTasks`, `getStudentHistory`, `submitAnswer`, `callGeminiAPI_GAS`
 
-   * ログイン時に教師コード・学年（1～6）・組（英数字1文字）・番号（1～99）を入力。
 
-   * 未回答クエストをカード表示で確認し、回答を送信。
+### 2.3 回答ボード（`board.html`）
 
-   * 回答ごとに「付与XP」「累積XP」「レベル」「獲得トロフィー」を自動計算し、可視化。
+- 教師コードを渡して全体回答ログを取得 (`listBoard(teacherCode)`)し、カードグリッドで表示
 
-   * AIフィードバックは各課題につき2回まで、課題への回答チャンスは最大3回。
 
-3. **ソーシャルゲームクリエイター（デザインコンサル）**
+## 3. データ構造とキャッシュ設計
 
-   * ゲーム的なUI/UX設計のアドバイスを提供。
+- **1 ファイル完結構成**: `StudyQuest_<TeacherCode>_Log` スプレッドシート
+  - `_cache_data_<classId>` タブ: クラス別キャッシュ
+  - `summary` タブ: 集計データ
+  - `生徒_<ID>` タブ: 学習履歴
 
----
+- **バッチ更新**: 深夜 1 時の時間駆動トリガーで `exportCacheToTabs()` を実行
+- **手動更新**: 管理画面にキャッシュ更新ボタンを配置
 
-## 3. 概要機能要件
 
-### 3.1 教師モード（管理パネル：`manage.html`）
+## 4. 技術スタック
 
-#### 3.1.1 ログイン／初期設定
+- Google Apps Script (GAS)
+- HTML + TailwindCSS + GSAP (フロントエンド)
+- Gemini API (AIフィードバック)
+- GitHub Actions + clasp (CI / CD)
 
-* **入力項目**
 
-  * パスコード（固定：`kyoushi`）テキストボックスには非表示、非公開。
-* **処理フロー**
+## 5. セットアップ
 
-  1. パスコード検証後、`initTeacher(passcode)`を実行。
-  2. 初回ログイン：フォルダを自動生成し、教師コードを返却。
-  3. 2回目以降ログイン：既存コードを取得し、ダッシュボードへ遷移。
+1. **リポジトリをクローン**
+   ```bash
+   git clone <リポジトリURL>
+   cd studyquest
+````
 
-#### 3.1.2 管理パネル（`manage.html`）
+2. **Clasp 認証**
 
-* **画面構成**
+   ```bash
+   npm install -g @google/clasp
+   clasp login --creds <path/to/credentials.json>
+   ```
 
-  * ヘッダー：ロゴ、教師コード表示、Gemini API設定など
-  * メイン：課題作成フォーム（クラス設定、クラス選択、科目選択、問題文、回答タイプ、Gemini設定）／課題一覧カード
+3. **.clasp.json 設定**
 
-* **主要GAS呼び出し**
+   ```json
+   {
+     "scriptId": "<GAS Script ID>",
+     "rootDir": "src"
+   }
+   ```
 
-  * `createTask(...)`, `listTasks(...)`, `deleteTask(...)`, `getStatistics(...)`
+4. **package.json の deploy スクリプト**
 
----
+   ```json
+   "scripts": {
+     "deploy": "clasp push --force && clasp deploy --deploymentId $DEPLOYMENT_ID"
+   }
+   ```
 
-### 3.2 生徒モード（クエストボード：`input.html`）
+5. **GitHub Actions シークレット設定**
 
-#### 3.2.1 ログイン／初期設定
+   * `CLASPRC_JSON`: clasp の認証情報
+   * `DEPLOYMENT_ID`: デプロイ先の Deployment ID
 
-* **入力項目**
-  教師コード、学年、組、番号
-* **処理フロー**
+6. **依存インストール**
 
-  1. クライアントでバリデーション
-  2. 教師コードのあるDriveフォルダで検索／作成 → `initStudent(...)` 呼び出し
-  3. 必要な情報は全て教師コードで紐づいているフォルダ、ファイルにアクセス、読み込み、書き込み
+   ```bash
+   npm install
+   ```
 
-#### 3.2.2 クエストボード画面
+## 6. CI / CD (GitHub Actions)
 
-* **画面構成**
+`.github/workflows/deploy.yml`:
 
-  * XPバー＋レベル表示
-  * 未回答／完了済みクエスト一覧＋詳細・入力エリア
-  * AIフィードバックボタン、履歴表示ボタン、回答制限表示
-
-* **主要GAS呼び出し**
-
-  * `listTasks(...)`, `getStudentHistory(...)`, `submitAnswer(...)`, `callGeminiAPI_GAS(...)`
-
----
-
-### 3.3 回答ボード（`board.html`）
-
-* `listBoard(teacherCode)` → 全体回答ログ取得 → カードグリッド表示（自動更新）
-
----
-
-## 4. データ取得とキャッシュ (最終設計)
-
-```
-Drive/
-└── StudyQuest_<TeacherCode>_Log  (Spreadsheet)
-    ├── 既存のデータシート群
-    ├── _cache_data_<classId>  (hidden)
-    ├── summary               (hidden)
-    └── 生徒_<ID>              (履歴保持)
-```
-
-キャッシュはすべてスプレッドシート内の隠しタブに集約し、CSV/JSON ファイルを生成せずに済む構成とする。
-
-### A. キャッシュをスプレッドシート内タブで一元化
-
-- `teacher_data` / `student_data` フォルダは不要。
-- 各クラスのデータシートを `_cache_data_<classId>` に複製。
-- `summary.csv` 相当の内容は `summary` タブで管理。
-- 1 ファイル完結のため Drive 操作が減り、権限設定や誤削除リスクを低減。
-
-### B. 生徒履歴の管理
-
-- `history.json` を廃止し、`生徒_<ID>` シートに履歴を保持。
-- 外部ファイルを扱わないことで可用性とセキュリティを向上。
-
-### C. バッチ・トリガーの簡素化
-
-- 夜間 (例: 深夜 1 時) の時間駆動型トリガーで `exportCacheToTabs()` を実行し、全クラスのキャッシュタブと `summary` を更新。
-- クラス数が多い場合はループを分割して実行時間 (6 分) に収める。
-- 管理画面から手動で同関数を呼び出す "キャッシュ更新" ボタンも用意可能。
-
-### D. クライアント取得方法
-
-```javascript
-// classId ごとに複数 fetch する必要はない
-const cacheValues = google.script.run
-  .withSuccessHandler(renderCache)
-  .getCacheData(teacherCode, classId);
+```yaml
+name: deploy-gas-webapp
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm test        # プルリクエストでのテスト実行
+      - run: npm install -g @google/clasp
+      - name: Configure clasp
+        run: |
+          echo "$CLASPRC_JSON" > ~/.clasprc.json
+      - run: npm run deploy
 ```
 
-クライアントは Apps Script から返却されるキャッシュデータを描画するだけで済み、ネットワーク負荷を抑えられる。
+## 7. テスト
 
-```javascript
-function exportCacheToTabs() {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
-  Object.keys(classIdMap).forEach(id => {
-    const sheetName = `_cache_data_${id}`;
-    const cacheSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
-    cacheSheet.clear();
-    const src = getSheetByClassId(id);
-    const values = src.getDataRange().getValues();
-    cacheSheet.getRange(1, 1, values.length, values[0].length).setValues(values);
-    cacheSheet.hideSheet();
-  });
-  // summary タブも同様に更新
-}
+* `tests/` フォルダに Jest または Mocha テストを配置
+* `npm test` でユニットテストを実行
+
+## 8. 開発ガイドライン
+
+* **Apps Script WebApp**: `executeAs: USER_ACCESSING`, `access: ANYONE` か `DOMAIN`
+* **OAuth Scope**: drive.file, scripts.external\_request など最小権限
+* **フォルダ操作**: Advanced Drive Service (`Files.list`) を推奨
+* **キャッシュ更新**: UIをブロックしない非同期実行
+* **フロントエンド構造**: `include()` で共通パーツをDRY化
 ```
-
----
-
-## 5. GitHub Actions による GAS デプロイ
-
-* `.github/workflows/deploy.yml` で `main` への push をトリガーに `clasp push`／`clasp deploy` を実行。
-* 必要シークレット：`CLASPRC_JSON`, `DEPLOYMENT_ID`
-
----
-
-以上。README をご確認ください。
-
----
-
-## 6. 技術的指示
-
-以下の技術的要件を満たすよう実装してください。
-
-1. **Apps Script ウェブアプリ設定**
-
-   * `appsscript.json` の `webapp` 設定を適切に構成し、`executeAs`: `USER_ACCESSING`、`access`: `ANYONE` もしくは `DOMAIN` に設定。
-   * OAuth スコープは最小限（`drive.file`, `scripts.external_request` など）を指定。
-
-2. **Clasp 設定**
-
-   * `.clasp.json` に `scriptId` と `rootDir` を明示。
-   * `package.json` に `deploy` スクリプトを追加：
-
-     ```json
-     "scripts": {
-       "deploy": "clasp push --force && clasp deploy --deploymentId $DEPLOYMENT_ID"
-     }
-     ```
-
-3. **フォルダ操作**
-
-   * `DriveApp` ではなく、可能な限り `Advanced Drive Service` (Drive API) を利用し、エラー時の詳細ログをキャッチ。
-   * フォルダ検索は `Drive` サービスの `Files.list` メソッドで `q: "name='StudyQuest_<TeacherCode>' and mimeType='application/vnd.google-apps.folder'"` を用いる。
-
-4. **データキャッシュ**
-
-   * CSV/JSON 出力関数は非同期的に実行し、ユーザー操作をブロックしない（Promise パターン or コンソールログで完了通知）。
-
-5. **フロントエンド**
-
-   * `manage.html`, `input.html`, `board.html` は各々のスクリプトタグで `include('...')` を利用し、コードのDRY化を図る。
-   * UI コンポーネントは TailwindCSS + GSAP で実装し、共通コンポーネント化を検討。
-
-6. **テスト**
-
-   * Node.js 環境下で `npm test` が実行できるよう、`tests/` フォルダを整備し、`jest` または `mocha` でユニットテストを記述。
-   * テスト実行前に `npm install` で依存パッケージをインストールしてください。Codex 環境では `scripts/setup-codex.sh` を実行すると自動でインストールされます。
-
-7. **CI 設定**
-
-   * GitHub Actions (`deploy.yml`) に `clasp version` を追加して自動バージョン管理。
-   * プルリクエストごとに `npm test` が実行されるジョブを定義。
