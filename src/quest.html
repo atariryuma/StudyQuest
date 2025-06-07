@@ -216,6 +216,15 @@ function renderLists(tasks, history) {
     div.addEventListener('click', () => openTask(t, history));
     anEl.appendChild(div);
   });
+  const link = document.getElementById('viewAnswersBtn');
+  const firstTask = unanswered[0] || answered[0];
+  if (link) {
+    if (firstTask) {
+      link.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${firstTask.id}&grade=${grade}&class=${classroom}&number=${number}`;
+    } else {
+      link.href = '#';
+    }
+  }
   if (!currentTask && unanswered.length) openTask(unanswered[0], history);
 }
 
