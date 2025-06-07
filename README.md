@@ -55,6 +55,16 @@
 - **バッチ更新**: 深夜 1 時の時間駆動トリガーで `exportCacheToTabs()` を実行
 - **手動更新**: 管理画面にキャッシュ更新ボタンを配置
 
+### フォルダ構成
+
+```
+StudyQuest_<TeacherCode>/
+├── StudyQuest_<TeacherCode>_Log
+└── Students/
+    └── StudyQuest_Stu_<TeacherCode>_<StudentID>/
+        └── Responses_<StudentID>.csv
+```
+
 ## 4. 技術スタック
 
 - Google Apps Script (GAS)
