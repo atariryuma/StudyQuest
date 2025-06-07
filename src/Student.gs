@@ -1,4 +1,5 @@
- * findStudentSheet_(ss, studentId):
+/**
+* findStudentSheet_(ss, studentId):
  * 学年・組・番号の組み合わせから既存シートを柔軟に探索し、
  * 必要に応じて正規化した名前へリネームして返す
  */
