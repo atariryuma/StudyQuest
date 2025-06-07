@@ -10,6 +10,8 @@ const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
 const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
+const TEACHER_DATA_FOLDER   = 'teacher_data';
+const STUDENT_DATA_FOLDER   = 'student_data';
 const SQ_VERSION           = 'v1.0.5';
 
 /**
@@ -661,6 +663,114 @@ function logToSpreadsheet(logData) {
     logData.answer || '',
     logData.feedback || ''
   ]);
+}
+
+/**
+ * overwriteFile_(folder, name, content, mimeType):
+ * 同名ファイルを削除して新規作成するユーティリティ
+ */
+function overwriteFile_(folder, name, content, mimeType) {
+  const iter = folder.getFilesByName(name);
+  while (iter.hasNext()) {
+    iter.next().setTrashed(true);
+  }
+  folder.createFile(name, content, mimeType || MimeType.PLAIN_TEXT);
+}
+
+/**
+ * convertRangeToCsv_(range): Range を CSV 文字列に変換
+ */
+function convertRangeToCsv_(range) {
+  const values = range.getValues();
+  return values
+    .map(row =>
+      row
+        .map(val => {
+          if (val === null || val === undefined) return '';
+          const str = String(val);
+          if (/[,"\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        })
+        .join(',')
+    )
+    .join('\n');
+}
+
+/**
+ * convertRangeToJson_(sheet): シートのデータを配列オブジェクト化
+ */
+function convertRangeToJson_(sheet) {
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const result = [];
+  for (let i = 1; i < values.length; i++) {
+    const rowObj = {};
+    for (let j = 0; j < headers.length; j++) {
+      rowObj[headers[j]] = values[i][j];
+    }
+    result.push(rowObj);
+  }
+  return result;
+}
+
+/**
+ * getTeacherRootFolder(teacherCode): 教師用ルートフォルダを取得
+ */
+function getTeacherRootFolder(teacherCode) {
+  const name = FOLDER_NAME_PREFIX + teacherCode;
+  const folder = findLatestFolderByName_(name);
+  return folder || DriveApp.createFolder(name);
+}
+
+/**
+ * getClassFolder(teacherCode, classId): クラス用フォルダ取得/作成
+ */
+function getClassFolder(teacherCode, classId) {
+  const root = getTeacherRootFolder(teacherCode);
+  const tIter = root.getFoldersByName(TEACHER_DATA_FOLDER);
+  const teacherData = tIter.hasNext() ? tIter.next() : root.createFolder(TEACHER_DATA_FOLDER);
+  const cName = 'class_' + classId;
+  const cIter = teacherData.getFoldersByName(cName);
+  return cIter.hasNext() ? cIter.next() : teacherData.createFolder(cName);
+}
+
+/**
+ * exportClassCache(teacherCode, classId, spreadsheetId): シートを CSV/JSON で保存
+ */
+function exportClassCache(teacherCode, classId, spreadsheetId) {
+  const folder = getClassFolder(teacherCode, classId);
+  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName('データシート');
+  if (!sheet) return;
+  const csv = convertRangeToCsv_(sheet.getDataRange());
+  const json = convertRangeToJson_(sheet);
+  overwriteFile_(folder, 'data.csv', csv, MimeType.CSV);
+  overwriteFile_(folder, 'data.json', JSON.stringify(json));
+}
+
+/**
+ * exportSummary(teacherCode): 全クラス統合 CSV 作成
+ */
+function exportSummary(teacherCode) {
+  const root = getTeacherRootFolder(teacherCode);
+  const tIter = root.getFoldersByName(TEACHER_DATA_FOLDER);
+  if (!tIter.hasNext()) return;
+  const teacherData = tIter.next();
+  const allData = [];
+  const classFolders = teacherData.getFolders();
+  while (classFolders.hasNext()) {
+    const f = classFolders.next();
+    const csvFileIter = f.getFilesByName('data.csv');
+    if (!csvFileIter.hasNext()) continue;
+    const rows = Utilities.parseCsv(csvFileIter.next().getBlob().getDataAsString());
+    const classId = f.getName();
+    rows.slice(1).forEach(r => allData.push([classId, ...r]));
+  }
+  if (allData.length === 0) return;
+  const header = ['classId'].concat(Utilities.parseCsv(teacherData.getFolders().next().getFilesByName('data.csv').next().getBlob().getDataAsString())[0]);
+  const summaryCsv = [header, ...allData].map(r => r.join(',')).join('\n');
+  overwriteFile_(teacherData, 'summary.csv', summaryCsv, MimeType.CSV);
 }
 
 /**
