@@ -97,6 +97,7 @@ function initTeacher(passcode) {
   const newCode        = generateTeacherCode();
   const folderName     = FOLDER_NAME_PREFIX + newCode;
   const folderInstance = DriveApp.createFolder(folderName);
+  initializeFolders(newCode, []);
 
   const ss     = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
   const ssFile = DriveApp.getFileById(ss.getId());
@@ -722,6 +723,38 @@ function getTeacherRootFolder(teacherCode) {
   const name = FOLDER_NAME_PREFIX + teacherCode;
   const folder = findLatestFolderByName_(name);
   return folder || DriveApp.createFolder(name);
+}
+
+/**
+ * initializeFolders(teacherCode, classList):
+ * StudyQuest_<TeacherCode> 配下に teacher_data / student_data
+ * および class_1, class_2 ... サブフォルダを作成し、
+ * 作成したクラス番号と学年・組の対応表を Script Properties に保存
+ */
+function initializeFolders(teacherCode, classList) {
+  const root = getTeacherRootFolder(teacherCode);
+
+  // ensure base folders
+  const teacherIter = root.getFoldersByName(TEACHER_DATA_FOLDER);
+  const teacherData = teacherIter.hasNext() ? teacherIter.next() : root.createFolder(TEACHER_DATA_FOLDER);
+  const studentIter = root.getFoldersByName(STUDENT_DATA_FOLDER);
+  const studentData = studentIter.hasNext() ? studentIter.next() : root.createFolder(STUDENT_DATA_FOLDER);
+
+  const map = {};
+  (classList || []).forEach((cls, idx) => {
+    const grade = Array.isArray(cls) ? cls[0] : cls.grade;
+    const klass = Array.isArray(cls) ? cls[1] : (cls.class || cls.classroom);
+    const id = idx + 1;
+    if (grade !== undefined && klass !== undefined) {
+      map[id] = `${grade}-${klass}`;
+    }
+    const name = 'class_' + id;
+    if (!teacherData.getFoldersByName(name).hasNext()) teacherData.createFolder(name);
+    if (!studentData.getFoldersByName(name).hasNext()) studentData.createFolder(name);
+  });
+
+  PropertiesService.getScriptProperties().setProperty(`classIdMap_${teacherCode}`, JSON.stringify(map));
+  return map;
 }
 
 /**
