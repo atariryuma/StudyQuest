@@ -1,4 +1,3 @@
-````markdown
 # StudyQuest
 
 > 小学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
@@ -151,4 +150,4 @@ jobs:
 * **フォルダ操作**: Advanced Drive Service (`Files.list`) を推奨
 * **キャッシュ更新**: UIをブロックしない非同期実行
 * **フロントエンド構造**: `include()` で共通パーツをDRY化
-```
+
