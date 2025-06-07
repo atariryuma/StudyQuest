@@ -414,7 +414,7 @@
           .withFailureHandler(err => {
             alert('AIフィードバック取得失敗: ' + err.message);
           })
-          .callGeminiAPI_GAS(`回答: ${text}`, '小学生向け');
+          .callGeminiAPI_GAS(teacherCode, `回答: ${text}`, '小学生向け');
       });
       debug('  [画面上] AIボタンに click イベントを設定');
     }

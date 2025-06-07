@@ -66,10 +66,11 @@
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
   </div>
   <div id="classSettingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-gray-800 text-gray-200 p-6 rounded-xl space-y-4 w-72">
-      <p class="text-sm">クラスIDを「学年,組;学年,組」の形式で入力 (最大8件)</p>
-      <textarea id="classIdInput" rows="3" class="w-full p-2 rounded bg-gray-700 focus:outline-none text-sm" placeholder="例: 6,1;6,2"></textarea>
-      <div class="flex justify-end gap-2">
+    <div class="bg-gray-800 text-gray-200 p-6 rounded-xl space-y-4 w-80">
+      <p class="text-sm">担当クラスを追加 (最大8件)</p>
+      <div id="classListArea" class="space-y-2"></div>
+      <button id="addClassRow" class="px-2 py-1 bg-gray-700 rounded text-xs">+ 追加</button>
+      <div class="flex justify-end gap-2 pt-2">
         <button id="cancelClassBtn" class="px-3 py-1 bg-gray-600 rounded text-sm">キャンセル</button>
         <button id="confirmClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded text-sm">保存</button>
       </div>
@@ -213,15 +214,43 @@
       // Gemini 設定読み込み
       loadGeminiSettings();
       document.getElementById('saveGeminiBtn').addEventListener('click', saveGeminiSettings);
+      function renderClassRows(list) {
+        const area = document.getElementById('classListArea');
+        area.innerHTML = '';
+        if (!list || !list.length) list = [['','']];
+        list.forEach(item => addRow(item[0], item[1]));
+      }
+      function addRow(g='', c='') {
+        const area = document.getElementById('classListArea');
+        const div = document.createElement('div');
+        div.className = 'flex gap-2';
+        div.innerHTML = `
+          <input type="number" class="w-14 p-1 rounded bg-gray-700 text-sm" placeholder="学年" value="${g}">
+          <input type="text" class="w-14 p-1 rounded bg-gray-700 text-sm" placeholder="組" value="${c}">
+          <button type="button" class="removeRow px-2 bg-gray-600 rounded text-xs">&#8722;</button>
+        `;
+        div.querySelector('.removeRow').onclick = () => div.remove();
+        area.appendChild(div);
+      }
+      document.getElementById('addClassRow').addEventListener('click', () => addRow());
       document.getElementById('classSettingBtn').addEventListener('click', () => {
-        document.getElementById('classSettingModal').classList.remove('hidden');
+        google.script.run.withSuccessHandler(map => {
+          const list = Object.keys(map).map(id => map[id].split('-'));
+          renderClassRows(list);
+          document.getElementById('classSettingModal').classList.remove('hidden');
+        }).getClassIdMap_(teacherCode);
       });
       document.getElementById('cancelClassBtn').addEventListener('click', () => {
         document.getElementById('classSettingModal').classList.add('hidden');
       });
       document.getElementById('confirmClassBtn').addEventListener('click', () => {
-        const input = document.getElementById('classIdInput').value.trim();
-        if (input.split(';').filter(x => x.trim()).length > 8) {
+        const rows = Array.from(document.querySelectorAll('#classListArea div'));
+        const list = rows.map(div => {
+          const g = div.children[0].value.trim();
+          const c = div.children[1].value.trim();
+          return g && c ? [g,c] : null;
+        }).filter(Boolean);
+        if (list.length > 8) {
           alert('最大8件まで入力できます。');
           return;
         }
@@ -230,7 +259,7 @@
             document.getElementById('classSettingModal').classList.add('hidden');
           })
           .withFailureHandler(err => alert('更新に失敗: ' + err.message))
-          .setClassIdMap(teacherCode, input);
+          .setClassIdMap(teacherCode, list.map(p => p.join(',')).join(';'));
       });
 
       // 3) 回答タイプ選択時に optionsArea を表示／非表示
@@ -373,7 +402,7 @@
             document.getElementById('personaSetting').value = data.persona || '';
             document.getElementById('geminiStatus').classList.toggle('hidden', !data.apiKey);
           })
-          .getGeminiSettings();
+          .getGeminiSettings(teacherCode);
       }
 
       // Gemini 設定を保存
@@ -384,7 +413,7 @@
           .withSuccessHandler(() => {
             document.getElementById('geminiStatus').classList.remove('hidden');
           })
-          .setGeminiSettings(key, persona);
+          .setGeminiSettings(teacherCode, key, persona);
       }
 
       // 9) フォームリセットヘルパー
