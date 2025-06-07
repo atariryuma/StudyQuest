@@ -11,7 +11,8 @@ const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const GAS_VERSION           = 'v1.0.0';
+// GAS スクリプトのテストバージョン
+const GAS_VERSION           = '0.1.0-test';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
@@ -672,5 +673,5 @@ function getGeminiSettings() {
  * 現在の GAS バージョンを返す
  */
 function getGasVersion() {
-  return GAS_VERSION;
+  return `GAS v${GAS_VERSION}`;
 }
