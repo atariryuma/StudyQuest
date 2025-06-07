@@ -17,7 +17,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
     const obj = JSON.parse(payloadAsJson);
     classId = obj.classId || '';
   } catch (e) {}
-  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '']);
+  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '', '']);
 }
 
 /**
@@ -31,8 +31,10 @@ function listTasks(teacherCode) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
-  return data.reverse().map(row => ({
+  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  return data.filter(r => String(r[7] || '') !== '1')
+             .reverse()
+             .map(row => ({
     id: row[0],
     classId: row[1],
     q: row[2],
@@ -82,7 +84,7 @@ function duplicateTask(teacherCode, taskId) {
   if (!sheet) return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
-  const data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === taskId) {
       const newId = Utilities.getUuid();
@@ -90,7 +92,7 @@ function duplicateTask(teacherCode, taskId) {
       const payload = data[i][2];
       const selfEval = data[i][3];
       const persona = data[i][5] || '';
-      sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona, '']);
+      sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona, '', '']);
       break;
     }
   }
@@ -107,9 +109,9 @@ function getTask(teacherCode, taskId) {
   if (!sheet) return null;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
-  const data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
   for (let i = 0; i < data.length; i++) {
-    if (data[i][0] === taskId) {
+    if (data[i][0] === taskId && String(data[i][7] || '') !== '1') {
       return {
         id: data[i][0],
         classId: data[i][1],
@@ -230,4 +232,47 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
     console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
   }
 
+}
+
+/**
+ * saveDraftTask(teacherCode, payloadJson):
+ * 下書きとして課題を保存
+ */
+function saveDraftTask(teacherCode, payloadJson) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) {
+    throw new Error('ドラフト保存失敗: 教師のスプレッドシートが見つかりません。');
+  }
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) {
+    throw new Error(`システムエラー: 「${SHEET_TASKS}」シートが見つかりません。`);
+  }
+  const id = Utilities.getUuid();
+  let classId = '';
+  try {
+    const obj = JSON.parse(payloadJson);
+    classId = obj.classId || '';
+  } catch (e) {}
+  sheet.appendRow([id, classId, payloadJson, '', new Date(), '', '', 1]);
+  return id;
+}
+
+/**
+ * deleteDraftTask(teacherCode, taskId):
+ * draft=1 の行のみ削除
+ */
+function deleteDraftTask(teacherCode, taskId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return;
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return;
+  const last = sheet.getLastRow();
+  if (last < 2) return;
+  const data = sheet.getRange(2, 1, last - 1, 8).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === taskId && String(data[i][7] || '') === '1') {
+      sheet.deleteRow(i + 2);
+      break;
+    }
+  }
 }

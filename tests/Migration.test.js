@@ -21,3 +21,23 @@ test('deleteLegacyApiKeys removes *_apiKey properties', () => {
   context.deleteLegacyApiKeys();
   expect(props).toEqual({ geminiApiKey: 'xyz' });
 });
+
+test('addDraftColumn inserts column when missing', () => {
+  let headers = ['id','class','q','self','date','persona','closed'];
+  const sheetStub = {
+    getLastColumn: jest.fn(() => headers.length),
+    getRange: jest.fn((r, c, num, cols) => {
+      if (num && cols) return { getValues: () => [headers] };
+      return { setValue: v => { headers[c - 1] = v; } };
+    }),
+    insertColumnAfter: jest.fn(pos => { headers.splice(pos, 0, ''); })
+  };
+  const ssStub = { getSheetByName: jest.fn(() => sheetStub) };
+  const context = {
+    SHEET_TASKS: 'Tasks',
+    getSpreadsheetByTeacherCode: () => ssStub
+  };
+  loadMigration(context);
+  context.addDraftColumn('ABC');
+  expect(headers[7]).toBe('draft');
+});

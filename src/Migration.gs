@@ -11,3 +11,20 @@ function deleteLegacyApiKeys() {
     }
   });
 }
+
+/**
+ * addDraftColumn(teacherCode):
+ * 課題シートに draft 列が無ければ追加
+ */
+function addDraftColumn(teacherCode) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return false;
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return false;
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  if (headers.includes('draft')) return true;
+  sheet.insertColumnAfter(Math.max(7, lastCol));
+  sheet.getRange(1, Math.max(8, lastCol + 1)).setValue('draft');
+  return true;
+}
