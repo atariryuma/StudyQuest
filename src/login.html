@@ -343,7 +343,9 @@
       const isTeacher = document.getElementById('teacherMode').checked;
       const loading = document.getElementById('loading');
       const btn = document.getElementById('loginBtn');
+      const label = btn.querySelector('span');
       loading.classList.remove('hidden');
+      if (label) label.classList.add('hidden');
       btn.disabled = true;
 
       // ボタンバウンド
@@ -357,6 +359,7 @@
         if (passcode !== 'kyoushi') {
           alert('パスコードが違います。');
           loading.classList.add('hidden');
+          if (label) label.classList.remove('hidden');
           btn.disabled = false;
           return;
         }
@@ -386,12 +389,14 @@
               // error
               alert(message || 'エラーが発生しました。');
               loading.classList.add('hidden');
+              if (label) label.classList.remove('hidden');
               btn.disabled = false;
             }
           })
           .withFailureHandler(err => {
             alert('教師ログインでエラー: ' + err.message);
             loading.classList.add('hidden');
+            if (label) label.classList.remove('hidden');
             btn.disabled = false;
           })
           .initTeacher(passcode);
@@ -406,12 +411,14 @@
         if (!teacherCode) {
           alert('教師コードを入力してください。');
           loading.classList.add('hidden');
+          if (label) label.classList.remove('hidden');
           btn.disabled = false;
           return;
         }
         if (!grade || !classroom || !number) {
           alert('学年・組・番号を正しく入力してください。');
           loading.classList.add('hidden');
+          if (label) label.classList.remove('hidden');
           btn.disabled = false;
           return;
         }
@@ -423,17 +430,8 @@
           teacher: teacherCode
         }).toString();
 
-        google.script.run
-          .withSuccessHandler(() => {
-            addHistory(teacherCode);
-            window.top.location.href = SCRIPT_URL + '?page=quest&' + studentParams;
-          })
-          .withFailureHandler(err => {
-            alert('児童ログインに失敗: ' + err.message);
-            loading.classList.add('hidden');
-            btn.disabled = false;
-          })
-          .initStudent(teacherCode, grade, classroom, number);
+        addHistory(teacherCode);
+        window.top.location.href = SCRIPT_URL + '?page=quest&' + studentParams;
       }
 
       // フォーカス移動設定
