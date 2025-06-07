@@ -352,7 +352,13 @@ function setGlobalGeminiApiKey(apiKey) {
 function getGlobalGeminiApiKey() {
   const props = PropertiesService.getScriptProperties();
   const encoded = props.getProperty('geminiApiKey') || '';
-  return encoded ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString() : '';
+  if (!encoded) return '';
+  try {
+    return Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString();
+  } catch (e) {
+    console.warn('Failed to decode Gemini API key: ' + e.message);
+    return '';
+  }
 }
 
 function setGeminiPersona(teacherCode, persona) {
