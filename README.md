@@ -112,20 +112,59 @@ StudyQuest（仮称） – 小学校向けゲーミフィケーション型課�
 
 ```
 Drive/
-└── StudyQuest_<TeacherCode>/
-    ├── teacher_data/
-    │   ├── class_1/
-    │   │   ├── data_sheet
-    │   │   ├── data.csv
-    │   │   └── data.json
-    │   └── summary.csv
-    └── student_data/
-        └── <学年-組-番号>/
-            └── history.json
+└── StudyQuest_<TeacherCode>_Log  (Spreadsheet)
+    ├── 既存のデータシート群
+    ├── _cache_data_<classId>  (hidden)
+    ├── summary               (hidden)
+    └── 生徒_<ID>              (履歴保持)
 ```
 
-* Apps Scriptは各クラスのシート内容を `data.csv`／`data.json` に出力し、夜間バッチで `summary.csv` を生成。
-* 生徒履歴は教師のDrive上で `history.json` として管理、改ざん防止のためApps Script経由でのみ更新。
+キャッシュはすべてスプレッドシート内の隠しタブに集約し、CSV/JSON ファイルを生成せずに済む構成とする。
+
+### A. キャッシュをスプレッドシート内タブで一元化
+
+- `teacher_data` / `student_data` フォルダは不要。
+- 各クラスのデータシートを `_cache_data_<classId>` に複製。
+- `summary.csv` 相当の内容は `summary` タブで管理。
+- 1 ファイル完結のため Drive 操作が減り、権限設定や誤削除リスクを低減。
+
+### B. 生徒履歴の管理
+
+- `history.json` を廃止し、`生徒_<ID>` シートに履歴を保持。
+- 外部ファイルを扱わないことで可用性とセキュリティを向上。
+
+### C. バッチ・トリガーの簡素化
+
+- 夜間 (例: 深夜 1 時) の時間駆動型トリガーで `exportCacheToTabs()` を実行し、全クラスのキャッシュタブと `summary` を更新。
+- クラス数が多い場合はループを分割して実行時間 (6 分) に収める。
+- 管理画面から手動で同関数を呼び出す "キャッシュ更新" ボタンも用意可能。
+
+### D. クライアント取得方法
+
+```javascript
+// classId ごとに複数 fetch する必要はない
+const cacheValues = google.script.run
+  .withSuccessHandler(renderCache)
+  .getCacheData(teacherCode, classId);
+```
+
+クライアントは Apps Script から返却されるキャッシュデータを描画するだけで済み、ネットワーク負荷を抑えられる。
+
+```javascript
+function exportCacheToTabs() {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  Object.keys(classIdMap).forEach(id => {
+    const sheetName = `_cache_data_${id}`;
+    const cacheSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    cacheSheet.clear();
+    const src = getSheetByClassId(id);
+    const values = src.getDataRange().getValues();
+    cacheSheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    cacheSheet.hideSheet();
+  });
+  // summary タブも同様に更新
+}
+```
 
 ---
 
