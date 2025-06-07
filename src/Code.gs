@@ -11,6 +11,8 @@ const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
+// GAS スクリプトのテストバージョン
+const GAS_VERSION           = '0.1.0-test';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
@@ -23,6 +25,7 @@ function doGet(e) {
   template.grade       = (e && e.parameter && e.parameter.grade)     ? e.parameter.grade     : '';
   template.classroom   = (e && e.parameter && e.parameter['class'])  ? e.parameter['class']  : '';
   template.number      = (e && e.parameter && e.parameter.number)    ? e.parameter.number    : '';
+  template.version     = getGasVersion();
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -664,4 +667,11 @@ function getGeminiSettings() {
     apiKey: props.getProperty('GEMINI_API_KEY') || '',
     persona: props.getProperty('GEMINI_PERSONA') || ''
   };
+}
+
+/**
+ * 現在の GAS バージョンを返す
+ */
+function getGasVersion() {
+  return `GAS v${GAS_VERSION}`;
 }
