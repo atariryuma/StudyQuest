@@ -183,3 +183,23 @@ test('saveTeacherSettings persists values correctly and global key handling', ()
   expect(sheetStub.appendRow).toHaveBeenCalledWith(['class', 1, 'A']);
   expect(sheetData[0]).toEqual(['type', 'value1', 'value2']);
 });
+
+test('getGlobalGeminiApiKey handles invalid value gracefully', () => {
+  const props = { geminiApiKey: 'invalid' };
+  const context = {
+    PropertiesService: {
+      getScriptProperties: () => ({
+        getProperty: k => props[k]
+      })
+    },
+    Utilities: {
+      base64Decode: jest.fn(() => { throw new Error('bad base64'); }),
+      newBlob: () => ({ getDataAsString: () => 'x' })
+    },
+    console: { warn: jest.fn() }
+  };
+  loadTeacher(context);
+  expect(() => context.getGlobalGeminiApiKey()).not.toThrow();
+  expect(context.getGlobalGeminiApiKey()).toBe('');
+  expect(context.Utilities.base64Decode).toHaveBeenCalled();
+});
