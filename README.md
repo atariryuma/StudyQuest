@@ -119,10 +119,36 @@ Drive/
     └── 生徒_<ID>              (履歴保持)
 ```
 
-* Drive 内に複数フォルダを作成せず、1つのスプレッドシート上にキャッシュ用タブを集約。
-* `exportCacheToTabs()` を夜間トリガーで実行し、各クラスシートの内容を `_cache_data_<classId>` タブへ複製、同時に `summary` タブを更新。
-* 生徒履歴は `生徒_<ID>` シートで一元管理。`history.json` など外部ファイルは使用しない。
-* クライアントは Apps Script 経由で対象タブを読み取るだけで済むため、ファイル数増加によるパフォーマンス低下を防げる。
+キャッシュはすべてスプレッドシート内の隠しタブに集約し、CSV/JSON ファイルを生成せずに済む構成とする。
+
+### A. キャッシュをスプレッドシート内タブで一元化
+
+- `teacher_data` / `student_data` フォルダは不要。
+- 各クラスのデータシートを `_cache_data_<classId>` に複製。
+- `summary.csv` 相当の内容は `summary` タブで管理。
+- 1 ファイル完結のため Drive 操作が減り、権限設定や誤削除リスクを低減。
+
+### B. 生徒履歴の管理
+
+- `history.json` を廃止し、`生徒_<ID>` シートに履歴を保持。
+- 外部ファイルを扱わないことで可用性とセキュリティを向上。
+
+### C. バッチ・トリガーの簡素化
+
+- 夜間 (例: 深夜 1 時) の時間駆動型トリガーで `exportCacheToTabs()` を実行し、全クラスのキャッシュタブと `summary` を更新。
+- クラス数が多い場合はループを分割して実行時間 (6 分) に収める。
+- 管理画面から手動で同関数を呼び出す "キャッシュ更新" ボタンも用意可能。
+
+### D. クライアント取得方法
+
+```javascript
+// classId ごとに複数 fetch する必要はない
+const cacheValues = google.script.run
+  .withSuccessHandler(renderCache)
+  .getCacheData(teacherCode, classId);
+```
+
+クライアントは Apps Script から返却されるキャッシュデータを描画するだけで済み、ネットワーク負荷を抑えられる。
 
 ```javascript
 function exportCacheToTabs() {
