@@ -19,11 +19,18 @@ function generateTeacherCode() {
  * 同名フォルダが複数ある場合、作成日が最新のものを返す
  */
 function findLatestFolderByName_(name) {
-  const q = `'root' in parents and title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const q = "mimeType='application/vnd.google-apps.folder' " +
+            `and name='${name}' and 'root' in parents and trashed=false`;
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdDate desc', maxResults: 1 });
-    const items = res.items || [];
-    return items.length ? DriveApp.getFolderById(items[0].id) : null;
+    const it = DriveApp.searchFolders(q);
+    let latest = null;
+    while (it.hasNext()) {
+      const f = it.next();
+      if (!latest || f.getDateCreated() > latest.getDateCreated()) {
+        latest = f;
+      }
+    }
+    return latest;
   } catch (e) {
     logError_('findLatestFolderByName_', e);
     return null;
@@ -36,21 +43,31 @@ function findLatestFolderByName_(name) {
  * 最も新しいものの教師コードとIDを返す
  */
 function detectTeacherFolderOnDrive_() {
-  const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' and title contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
+  const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' ` +
+            `and name contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdDate desc' });
-    const items = res.items || [];
-    for (let i = 0; i < items.length; i++) {
-      const name = items[i].title || items[i].name || '';
+    const it = DriveApp.searchFolders(q);
+    let newest = null;
+    let newestDate = null;
+    let code = null;
+    while (it.hasNext()) {
+      const folder = it.next();
+      const name = folder.getName();
       const m = name.match(new RegExp('^' + FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
       if (m) {
-        return { code: m[1], id: items[i].id };
+        const date = folder.getDateCreated();
+        if (!newestDate || date > newestDate) {
+          newest = folder;
+          newestDate = date;
+          code = m[1];
+        }
       }
     }
+    return newest ? { code: code, id: newest.getId() } : null;
   } catch (e) {
     logError_('detectTeacherFolderOnDrive_', e);
+    return null;
   }
-  return null;
 }
 
 /**
