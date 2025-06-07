@@ -91,28 +91,15 @@ StudyQuest_<TeacherCode>/
 -   **データ集計**: `QUERY`などのスプレッドシート関数を最大限に活用し、GAS側での複雑なデータ処理を避けます。
 -   **フロントエンド構造**: `include()` を活用し、UIパーツ（ヘッダー、フッターなど）を共通化します。
 
-## 8. Gemini API キーの共有管理
+## 8. Gemini APIキーの管理とアプリケーション設定
 
-Gemini API キーは教師全体で 1 つを共有し、Apps Script のスクリプトプロパティ
-`geminiApiKey` として Base64 形式で保存されます。設定画面から入力したキーは
-`setGlobalGeminiApiKey` により保存され、`getGlobalGeminiApiKey` で取得できます。スクリプトプロパティの名前は **geminiApiKey** 固定です。
+### **APIキーの管理 (スクリプトプロパティ)**
 
-`Settings` シートの列構成 (`type`, `value1`, `value2`) は変更せず、保存される
-エントリは `persona` と `class` のみです。過去バージョンで使用されていた
-`\${teacherCode}_apiKey` プロパティは不要になったため、以下のスクリプトを一度
-実行して削除してください。
+Gemini APIキーは、アプリケーション全体で1つを共有します。セキュリティを確保するため、キーはスプレッドシート上ではなく、GASのサーバーサイドに安全に保存される**スクリプトプロパティ (Script Properties)** を使用します。
 
-```javascript
-// 移行用: 旧キーを削除
-function deleteLegacyApiKeys() {
-  const props = PropertiesService.getScriptProperties();
-  (props.getKeys() || []).forEach(k => {
-    if (/_apiKey$/.test(k) && k !== 'geminiApiKey') {
-      props.deleteProperty(k);
-    }
-  });
-}
-```
+* 設定画面から入力されたキーは `setGlobalGeminiApiKey` 関数によってスクリプトプロパティに保存されます。
+* API利用時には `getGlobalGeminiApiKey` 関数で安全に呼び出されます。
+* スクリプトプロパティに保存する際のプロパティ名は `geminiApiKey` です。
 
 ## 9. テスト実行
 
