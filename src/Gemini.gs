@@ -6,7 +6,7 @@ function callGeminiAPI_GAS(teacherCode, prompt, persona) {
   };
   const base = personaMap[persona] || '';
   const finalPrompt = base + '\n' + prompt;
-  const apiKey = GeminiApiKey();
+  const apiKey = getGlobalGeminiApiKey();
   if (!apiKey) return 'APIキーが設定されていません';
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey;
   const payload = { contents: [{ parts: [{ text: finalPrompt }] }] };
