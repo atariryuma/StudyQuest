@@ -433,10 +433,10 @@
           card.innerHTML = `
             ${detailHtml}
             <p class="text-sm text-gray-400 mt-2">${x.date}</p>
-            <button class="copyBtn absolute top-2 right-8 text-indigo-400 hover:text-indigo-300" data-id="${x.id}">
+            <button class="copyBtn absolute top-2 right-12 bg-indigo-600 hover:bg-indigo-500 text-white p-1 rounded" data-id="${x.id}">
               <svg data-icon="Copy" class="w-4 h-4"></svg>
             </button>
-            <button class="deleteBtn absolute top-2 right-2 text-red-400 hover:text-red-300" data-id="${x.id}">
+            <button class="deleteBtn absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1 rounded" data-id="${x.id}">
               <svg data-icon="Trash2" class="w-4 h-4"></svg>
             </button>
           `;
