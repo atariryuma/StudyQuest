@@ -22,8 +22,7 @@
   <style>
     body {
       font-family: 'DotGothic16', sans-serif;
-      background-color: #1a1b26;
-      overflow: hidden;
+      overflow: hidden; /* Prevent scrollbars from the canvas */
     }
     #particleCanvas {
       position: fixed;
@@ -115,7 +114,7 @@
     }
   </style>
 </head>
-<body class="text-gray-200">
+<body class="text-gray-200 bg-gradient-to-br from-purple-800 to-indigo-700">
 
   <canvas id="particleCanvas"></canvas>
 
