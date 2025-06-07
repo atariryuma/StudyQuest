@@ -118,8 +118,8 @@
         const container = document.getElementById('answers');
         container.innerHTML = '';
         document.getElementById('answerCount').textContent = `(${rows.length}件)`;
-        if (!rows.length) {
-          container.innerHTML = '<p class="text-gray-500 text-center">まだ回答がありません。</p>';
+        if (rows.length == 0) {
+          container.innerHTML = '<p class="text-center text-gray-500">まだ提出されていません。</p>';
           return;
         }
         rows.forEach((r, i) => {
