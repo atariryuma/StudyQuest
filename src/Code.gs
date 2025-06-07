@@ -527,6 +527,23 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
   } else {
     console.warn(`「${SHEET_GLOBAL_ANSWERS}」シートが見つかりません。`);
   }
+
+  // Drive 上の history.json にも追記
+  try {
+    appendStudentHistoryJson_(teacherCode, studentId, {
+      timestamp: new Date().toISOString(),
+      taskId: taskId,
+      answer: answer,
+      earnedXp: earnedXp,
+      totalXp: totalXp,
+      level: level,
+      trophies: trophies || '',
+      aiCalls: aiCalls,
+      attempt: attemptCount
+    });
+  } catch (e) {
+    console.error('history.json update failed: ' + e.message);
+  }
 }
 
 /**
@@ -804,6 +821,66 @@ function exportSummary(teacherCode) {
   const header = ['classId'].concat(Utilities.parseCsv(teacherData.getFolders().next().getFilesByName('data.csv').next().getBlob().getDataAsString())[0]);
   const summaryCsv = [header, ...allData].map(r => r.join(',')).join('\n');
   overwriteFile_(teacherData, 'summary.csv', summaryCsv, MimeType.CSV);
+}
+
+/**
+ * getStudentDataFolder_(teacherCode, studentId):
+ * STUDYQUEST_<code>/student_data/<studentId> を取得/作成
+ */
+function getStudentDataFolder_(teacherCode, studentId) {
+  const rootIter = getTeacherRootFolder(teacherCode).getFoldersByName(STUDENT_DATA_FOLDER);
+  const studentRoot = rootIter.hasNext() ? rootIter.next() : getTeacherRootFolder(teacherCode).createFolder(STUDENT_DATA_FOLDER);
+  const iter = studentRoot.getFoldersByName(studentId);
+  return iter.hasNext() ? iter.next() : studentRoot.createFolder(studentId);
+}
+
+/**
+ * readStudentHistoryJson_(teacherCode, studentId): history.json を読み込み
+ */
+function readStudentHistoryJson_(teacherCode, studentId) {
+  const folder = getStudentDataFolder_(teacherCode, studentId);
+  const fileIter = folder.getFilesByName('history.json');
+  if (!fileIter.hasNext()) return [];
+  try {
+    return JSON.parse(fileIter.next().getBlob().getDataAsString());
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * writeStudentHistoryJson_(teacherCode, studentId, data): history.json を上書き
+ */
+function writeStudentHistoryJson_(teacherCode, studentId, data) {
+  const folder = getStudentDataFolder_(teacherCode, studentId);
+  const json = JSON.stringify(data);
+  const fileIter = folder.getFilesByName('history.json');
+  if (fileIter.hasNext()) {
+    const f = fileIter.next();
+    f.setContent(json);
+    while (fileIter.hasNext()) fileIter.next().setTrashed(true);
+  } else {
+    folder.createFile('history.json', json, MimeType.PLAIN_TEXT);
+  }
+}
+
+/**
+ * appendStudentHistoryJson_(teacherCode, studentId, record): history.json に追記
+ */
+function appendStudentHistoryJson_(teacherCode, studentId, record) {
+  const history = readStudentHistoryJson_(teacherCode, studentId);
+  history.push(record);
+  writeStudentHistoryJson_(teacherCode, studentId, history);
+}
+
+/**
+ * GAS wrapper: getStudentHistoryFile
+ * @param {string} teacherCode
+ * @param {string} studentId
+ * @return {Object[]} history array
+ */
+function getStudentHistoryFile(teacherCode, studentId) {
+  return readStudentHistoryJson_(teacherCode, studentId);
 }
 
 /**
