@@ -1,10 +1,15 @@
 name: deploy-gas-webapp
+
 on:
   push:
     branches:
       - main
     paths:
       - 'src/**'         # src 以下のファイル・フォルダに変更があったときのみ
+
+# ここで GITHUB_TOKEN に contents: write を与える
+permissions:
+  contents: write
 
 jobs:
   deploy:
@@ -16,6 +21,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # persist-credentials: true が既定ですが、念のため明示的に
+          persist-credentials: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
