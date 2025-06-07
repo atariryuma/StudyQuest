@@ -29,7 +29,7 @@ function createFolder_(parentId, name) {
 function findSubFolder_(parentId, name) {
   const q = `'${parentId}' in parents and title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
+    const res = Drive.Files.list({ q, orderBy: 'createdDate desc', maxResults: 1 });
     const items = res.items || [];
     return items.length ? DriveApp.getFolderById(items[0].id) : null;
   } catch (e) {
