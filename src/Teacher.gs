@@ -19,7 +19,7 @@ function generateTeacherCode() {
  * 同名フォルダが複数ある場合、作成日が最新のものを返す
  */
 function findLatestFolderByName_(name) {
-  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const q = `'root' in parents and name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   try {
     const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
     const items = res.items || [];
@@ -62,6 +62,11 @@ function initTeacher(passcode) {
     return { status: 'error', message: 'パスコードが違います。' };
   }
   const props = PropertiesService.getScriptProperties();
+  const info = detectTeacherFolderOnDrive_();
+  if (info) {
+    props.setProperty(info.code, info.id);
+    return { status: 'ok', teacherCode: info.code };
+  }
   const existingCodes = props.getKeys().filter(key => key.match(/^[A-Z0-9]{6}$/));
   let foundCode = null;
   let foundDate = null;
@@ -75,13 +80,6 @@ function initTeacher(passcode) {
       }
     }
   });
-  if (!foundCode) {
-    const info = detectTeacherFolderOnDrive_();
-    if (info) {
-      props.setProperty(info.code, info.id);
-      return { status: 'ok', teacherCode: info.code };
-    }
-  }
   if (foundCode) {
     return { status: 'ok', teacherCode: foundCode };
   }
