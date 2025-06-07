@@ -107,7 +107,7 @@ function initTeacher(passcode) {
     {
       name: SHEET_TASKS,
       color: "ff9900",
-      header: ['ID', '問題データ(JSON)', '自己評価許可', '作成日時', 'ペルソナ'],
+      header: ['ID', 'ClassID', '問題データ(JSON)', '自己評価許可', '作成日時', 'ペルソナ'],
       description: "作成された課題の一覧です。"
     },
     {

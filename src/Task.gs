@@ -12,7 +12,12 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
     throw new Error(`システムエラー: 「${SHEET_TASKS}」シートが見つかりません。`);
   }
   const taskId = Utilities.getUuid();
-  taskSheet.appendRow([taskId, payloadAsJson, selfEval, new Date(), persona || '']);
+  let classId = '';
+  try {
+    const obj = JSON.parse(payloadAsJson);
+    classId = obj.classId || '';
+  } catch (e) {}
+  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '']);
 }
 
 /**
@@ -26,14 +31,27 @@ function listTasks(teacherCode) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
   return data.reverse().map(row => ({
     id: row[0],
-    q: row[1],
-    selfEval: row[2],
-    date: Utilities.formatDate(new Date(row[3]), 'JST', 'yyyy/MM/dd HH:mm'),
-    persona: row[4] || ''
+    classId: row[1],
+    q: row[2],
+    selfEval: row[3],
+    date: Utilities.formatDate(new Date(row[4]), 'JST', 'yyyy/MM/dd HH:mm'),
+    persona: row[5] || ''
   }));
+}
+
+function listTasksForClass(teacherCode, grade, classroom) {
+  grade = String(grade || '').trim();
+  classroom = String(classroom || '').trim();
+  const map = getClassIdMap(teacherCode);
+  let classId = null;
+  Object.keys(map).forEach(id => {
+    if (map[id] === `${grade}-${classroom}`) classId = id;
+  });
+  if (!classId) return [];
+  return listTasks(teacherCode).filter(t => String(t.classId) === String(classId));
 }
 
 /**
@@ -63,14 +81,15 @@ function duplicateTask(teacherCode, taskId) {
   if (!sheet) return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
-  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === taskId) {
       const newId = Utilities.getUuid();
-      const payload = data[i][1];
-      const selfEval = data[i][2];
-      const persona = data[i][4] || '';
-      sheet.appendRow([newId, payload, selfEval, new Date(), persona]);
+      const classId = data[i][1];
+      const payload = data[i][2];
+      const selfEval = data[i][3];
+      const persona = data[i][5] || '';
+      sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona]);
       break;
     }
   }
@@ -87,6 +106,15 @@ function getRecommendedTask(teacherCode, studentId) {
   const tasks = listTasks(teacherCode);
   if (!tasks || tasks.length === 0) return null;
 
+  const parts = studentId.split('-');
+  let classId = null;
+  if (parts.length >= 2) {
+    const map = getClassIdMap(teacherCode);
+    Object.keys(map).forEach(id => {
+      if (map[id] === `${parts[0]}-${parts[1]}`) classId = id;
+    });
+  }
+
   const studentSheet = findStudentSheet_(ss, studentId);
   const answeredIds      = [];
   if (studentSheet) {
@@ -102,6 +130,7 @@ function getRecommendedTask(teacherCode, studentId) {
 
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
+    if (classId && String(t.classId) !== String(classId)) continue;
     if (!answeredIds.includes(t.id)) {
       return { id: t.id, q: t.q, selfEval: t.selfEval };
     }
@@ -126,21 +155,21 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
 
   // 常に新規行追加
   let questionText = '';
-    const taskSheet = ss.getSheetByName(SHEET_TASKS);
-    if (taskSheet) {
-      const allTasks = taskSheet.getDataRange().getValues();
-      for (let j = 1; j < allTasks.length; j++) {
-        if (allTasks[j][0] === taskId) {
-          try {
-            const parsedQ = JSON.parse(allTasks[j][1]);
-            questionText = parsedQ.question || allTasks[j][1];
-          } catch (e) {
-            questionText = allTasks[j][1];
-          }
-          break;
+  const taskSheet = ss.getSheetByName(SHEET_TASKS);
+  if (taskSheet) {
+    const allTasks = taskSheet.getDataRange().getValues();
+    for (let j = 1; j < allTasks.length; j++) {
+      if (allTasks[j][0] === taskId) {
+        try {
+          const parsedQ = JSON.parse(allTasks[j][2]);
+          questionText = parsedQ.question || allTasks[j][2];
+        } catch (e) {
+          questionText = allTasks[j][2];
         }
+        break;
       }
     }
+  }
   studentSheet.appendRow([new Date(), taskId, questionText, answer, earnedXp, totalXp, level, trophies || '', attemptCount]);
 
   // 全体ログにも追記
