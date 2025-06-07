@@ -69,7 +69,7 @@
 ## 5. セットアップ
 
 1. **リポジトリをクローン**
-   ```bash
+```bash
    git clone <リポジトリURL>
    cd studyquest
 ````
