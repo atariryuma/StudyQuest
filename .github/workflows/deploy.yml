@@ -4,7 +4,55 @@ on:
     branches: [ main ]
 
 jobs:
+  deploy:name: deploy-gas-webapp
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'         # src 以下のファイル・フォルダに変更があったときのみ
+
+jobs:
   deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install clasp
+        run: npm install --global @google/clasp@latest
+
+      - name: Configure clasp auth
+        run: |
+          mkdir -p ~/.config
+          echo "${CLASPRC_JSON}" > ~/.clasprc.json
+
+      - name: Push & Update Web App
+        id: deploy
+        run: |
+          set -eux
+          clasp push --force
+          NEW_VER=$(clasp version "auto-$(date +%Y%m%d%H%M%S)" \
+            | grep -oE "[0-9]+" | head -n1)
+          [ -n "$NEW_VER" ] || { echo "Failed to retrieve version" >&2; exit 1; }
+          clasp update-deployment "${DEPLOYMENT_ID}" \
+            --versionNumber "${NEW_VER}" \
+            --description "auto-deploy from GitHub Actions"
+          echo "webapp_url=https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Show URL
+        run: echo "${{ steps.deploy.outputs.webapp_url }}"
+
     runs-on: ubuntu-latest
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
