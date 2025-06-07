@@ -25,7 +25,7 @@ test('initTeacher returns existing code if already stored', () => {
       })
     },
     FOLDER_NAME_PREFIX: 'StudyQuest_',
-    DriveApp: { getFolderById: jest.fn(()=>({})), searchFolders: jest.fn() },
+    DriveApp: { getFolderById: jest.fn(()=>({})) },
     logError_: () => {}
   };
   loadTeacher(context);
