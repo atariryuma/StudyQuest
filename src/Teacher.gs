@@ -57,41 +57,31 @@ function detectTeacherFolderOnDrive_() {
  * initTeacher(passcode):
  * 教師用初回ログイン or 2回目以降の判定 → スプレッドシートを生成 or 取得
  */
-function initTeacher(passcode) {
+function initTeacher(passcode, teacherCode) {
   if (passcode !== 'kyoushi') {
     return { status: 'error', message: 'パスコードが違います。' };
   }
-  const props = PropertiesService.getScriptProperties();
-  const existingCodes = props.getKeys().filter(key => key.match(/^[A-Z0-9]{6}$/));
-  let foundCode = null;
-  let foundDate = null;
-  existingCodes.forEach(code => {
-    const folder = findLatestFolderByName_(FOLDER_NAME_PREFIX + code);
-    if (folder) {
-      const d = folder.getDateCreated();
-      if (!foundDate || d > foundDate) {
-        foundDate = d;
-        foundCode = code;
-      }
-    }
-  });
-  if (!foundCode) {
-    const info = detectTeacherFolderOnDrive_();
-    if (info) {
-      props.setProperty(info.code, info.id);
-      return { status: 'ok', teacherCode: info.code };
-    }
-  }
-  if (foundCode) {
-    return { status: 'ok', teacherCode: foundCode };
-  }
-  // 新規作成
-  const newCode    = generateTeacherCode();
-  const folderName = FOLDER_NAME_PREFIX + newCode;
-  const folderInstance = createFolder_('root', folderName);
-  initializeFolders(newCode, [], folderInstance);
 
-  const ss       = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
+  teacherCode = String(teacherCode || '').toUpperCase();
+
+  const props = PropertiesService.getScriptProperties();
+  const folderId = props.getProperty(teacherCode);
+  if (folderId) {
+    return { status: 'ok', teacherCode };
+  }
+
+  const info = detectTeacherFolderOnDrive_();
+  if (info && info.code === teacherCode) {
+    props.setProperty(teacherCode, info.id);
+    return { status: 'ok', teacherCode };
+  }
+
+  // 新規作成
+  const folderName = FOLDER_NAME_PREFIX + teacherCode;
+  const folderInstance = createFolder_('root', folderName);
+  initializeFolders(teacherCode, [], folderInstance);
+
+  const ss       = SpreadsheetApp.create(`StudyQuest_${teacherCode}_Log`);
   const ssId     = ss.getId();
   try {
     Drive.Files.update({}, ssId, null, {
@@ -160,11 +150,11 @@ function initTeacher(passcode) {
   tocSheet.autoResizeColumn(1);
   tocSheet.autoResizeColumn(2);
 
-  props.setProperty(newCode, folderInstance.getId());
-  saveTeacherSettings_(newCode, { apiKey: '', persona: '', classes: [] });
+  props.setProperty(teacherCode, folderInstance.getId());
+  saveTeacherSettings_(teacherCode, { apiKey: '', persona: '', classes: [] });
   return {
     status: 'new',
-    teacherCode: newCode,
+    teacherCode: teacherCode,
     message: `初回ログインありがとうございます。Drive 上に「${folderName}」フォルダとスプレッドシートを作成しました。`
   };
 }
