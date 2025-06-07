@@ -177,6 +177,7 @@ Drive/
 6. **テスト**
 
    * Node.js 環境下で `npm test` が実行できるよう、`tests/` フォルダを整備し、`jest` または `mocha` でユニットテストを記述。
+   * テスト実行前に `npm install` で依存パッケージをインストールしてください。Codex 環境では `scripts/setup-codex.sh` を実行すると自動でインストールされます。
 
 7. **CI 設定**
 
