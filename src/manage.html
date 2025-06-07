@@ -497,19 +497,16 @@
 
       // Gemini 設定を保存
       function saveGeminiSettings() {
-        const key = document.getElementById('apiKeyInput').value.trim();
-        const persona = document.getElementById('personaSelect').value;
-        google.script.run
-          .withSuccessHandler(() => {
-            const status = document.getElementById('apiStatus');
-            status.textContent = '保存しました';
-            status.classList.remove('hidden');
-            if (key) {
-              alert('設定内容(APIキー・担当クラス)は教師フォルダ内の settings.csv に保存されます。Gemini API は生徒の回答からヒントを生成する目的でのみ利用されます。');
-            }
-          })
-          .setGeminiSettings(teacherCode, key, persona);
-      }
+          const key = document.getElementById('apiKeyInput').value.trim();
+          const persona = document.getElementById('personaSelect').value;
+          google.script.run
+            .withSuccessHandler(() => {
+              const status = document.getElementById('apiStatus');
+              status.textContent = '保存しました';
+              status.classList.remove('hidden');
+            })
+            .setGeminiSettings(teacherCode, key, persona);
+        }
 
       function loadSubjectHistory() {
         const list = document.getElementById('subjectHistory');

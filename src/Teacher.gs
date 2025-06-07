@@ -127,6 +127,12 @@ function initTeacher(passcode) {
       color: "ff4444",
       header: ['日時', '生徒ID', '課題ID', '回答回数', 'AI呼び出し回数', '回答本文', 'フィードバック内容'],
       description: "Gemini API からのフィードバックログです。"
+    },
+    {
+      name: SHEET_SETTINGS,
+      color: "aaaaaa",
+      header: ['type', 'value1', 'value2'],
+      description: "各種設定 (APIキー・クラス等) を保存します。"
     }
   ];
   tocSheet.appendRow(['']);
@@ -182,22 +188,50 @@ function getSpreadsheetByTeacherCode(teacherCode) {
     return null;
   }
 }
+function ensureSettingsSheet_(ss) {
+  let sheet = ss.getSheetByName(SHEET_SETTINGS);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_SETTINGS);
+    sheet.appendRow(['type', 'value1', 'value2']);
+  }
+  return sheet;
+}
+
 function saveTeacherSettings_(teacherCode, obj) {
   const props = PropertiesService.getScriptProperties();
-  const lines = [];
-  if (obj.apiKey !== undefined) lines.push(['apiKey', Utilities.base64Encode(obj.apiKey)]);
-  if (obj.persona !== undefined) lines.push(['persona', obj.persona]);
-  if (Array.isArray(obj.classes)) {
-    obj.classes.forEach(c => lines.push(['class', c[0], c[1]]));
+  if (obj.apiKey !== undefined) {
+    const encoded = Utilities.base64Encode(obj.apiKey || '');
+    props.setProperty(`${teacherCode}_apiKey`, encoded);
   }
-  const csv = lines.map(arr => arr.join(',')).join('\n');
-  props.setProperty(`${teacherCode}_settingsCsv`, csv);
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return;
+  const sheet = ensureSettingsSheet_(ss);
+  sheet.clear();
+  sheet.appendRow(['type', 'value1', 'value2']);
+  if (obj.persona !== undefined) sheet.appendRow(['persona', obj.persona, '']);
+  if (Array.isArray(obj.classes)) {
+    obj.classes.forEach(c => sheet.appendRow(['class', c[0], c[1]]));
+  }
 }
 
 function loadTeacherSettings_(teacherCode) {
   const props = PropertiesService.getScriptProperties();
-  const csv = props.getProperty(`${teacherCode}_settingsCsv`) || '';
-  return parseSettingsCsv_(csv);
+  const encoded = props.getProperty(`${teacherCode}_apiKey`) || '';
+  const apiKey = encoded ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString() : '';
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  const data = { apiKey, persona: '', classes: [] };
+  if (ss) {
+    const sheet = ss.getSheetByName(SHEET_SETTINGS);
+    if (sheet) {
+      const values = sheet.getDataRange().getValues();
+      for (let i = 1; i < values.length; i++) {
+        const row = values[i];
+        if (row[0] === 'persona') data.persona = row[1] || '';
+        else if (row[0] === 'class') data.classes.push([row[1], row[2]]);
+      }
+    }
+  }
+  return data;
 }
 
 /**
