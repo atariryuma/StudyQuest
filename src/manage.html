@@ -89,17 +89,17 @@
           新しい課題
         </h2>
         <form id="taskForm" class="space-y-4 text-base">
-          <!-- ■ 教科選択 ドロップダウン -->
+          <!-- ■ 担当クラス -->
           <div>
-            <label for="subject" class="text-sm">■ 教科を選択</label>
-            <select id="subject" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base">
-              <option value="">-- 教科を選んでください --</option>
-              <option value="国語">国語</option>
-              <option value="算数">算数</option>
-              <option value="理科">理科</option>
-              <option value="社会">社会</option>
-              <option value="英語">英語</option>
-            </select>
+            <label for="taskClass" class="text-sm">■ 担当クラス</label>
+            <select id="taskClass" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base"></select>
+          </div>
+
+          <!-- ■ 教科入力 -->
+          <div>
+            <label for="subject" class="text-sm">■ 教科を入力</label>
+            <input id="subject" type="text" list="subjectHistory" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base" />
+            <datalist id="subjectHistory"></datalist>
           </div>
 
           <!-- ■ 問題文 -->
@@ -114,10 +114,7 @@
             <label class="text-sm">■ 回答タイプ</label>
             <div class="mt-1 flex gap-2 text-sm">
               <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="short" checked> 短文回答
-              </label>
-              <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="long"> 段落回答
+                <input type="radio" name="ansType" value="text" checked> テキスト回答
               </label>
               <label class="flex items-center gap-1">
                 <input type="radio" name="ansType" value="radio"> 選択式 (ラジオ)
@@ -213,6 +210,8 @@
 
       // Gemini 設定読み込み
       loadGeminiSettings();
+      loadClassOptions();
+      loadSubjectHistory();
       document.getElementById('saveGeminiBtn').addEventListener('click', saveGeminiSettings);
       function renderClassRows(list) {
         const area = document.getElementById('classListArea');
@@ -224,9 +223,11 @@
         const area = document.getElementById('classListArea');
         const div = document.createElement('div');
         div.className = 'flex gap-2';
+        const gradeOpts = [1,2,3,4,5,6].map(n => `<option value="${n}" ${n==g? 'selected':''}>${n}</option>`).join('');
+        const classOpts = ['A','B','C','D','E'].map(ch => `<option value="${ch}" ${ch==c? 'selected':''}>${ch}</option>`).join('');
         div.innerHTML = `
-          <input type="number" class="w-14 p-1 rounded bg-gray-700 text-sm" placeholder="学年" value="${g}">
-          <input type="text" class="w-14 p-1 rounded bg-gray-700 text-sm" placeholder="組" value="${c}">
+          <select class="w-14 p-1 rounded bg-gray-700 text-sm">${gradeOpts}</select>
+          <select class="w-14 p-1 rounded bg-gray-700 text-sm">${classOpts}</select>
           <button type="button" class="removeRow px-2 bg-gray-600 rounded text-xs">&#8722;</button>
         `;
         div.querySelector('.removeRow').onclick = () => div.remove();
@@ -257,6 +258,7 @@
         google.script.run
           .withSuccessHandler(() => {
             document.getElementById('classSettingModal').classList.add('hidden');
+            loadClassOptions();
           })
           .withFailureHandler(err => alert('更新に失敗: ' + err.message))
           .setClassIdMap(teacherCode, list.map(p => p.join(',')).join(';'));
@@ -287,7 +289,8 @@
       taskForm.addEventListener('submit', e => {
         e.preventDefault();
 
-        const subject = document.getElementById('subject').value;
+        const cls = document.getElementById('taskClass').value;
+        const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
         const persona = document.getElementById('personaSetting').value;
@@ -298,8 +301,12 @@
         }
         const ansType = checkedRadio.value;
 
+        if (!cls) {
+          alert('クラスを選択してください。');
+          return;
+        }
         if (!subject) {
-          alert('教科を選択してください。');
+          alert('教科を入力してください。');
           return;
         }
         if (!q) {
@@ -309,8 +316,8 @@
 
         // ペイロードをタイプ別に組み立て
         let payload;
-        if (ansType === 'short' || ansType === 'long') {
-          payload = JSON.stringify({ subject, question: q, type: ansType });
+        if (ansType === 'text') {
+          payload = JSON.stringify({ classId: cls, subject, question: q, type: 'text' });
         } else {
           const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
                               .map(inp => inp.value.trim());
@@ -319,6 +326,7 @@
             return;
           }
           payload = JSON.stringify({
+            classId: cls,
             subject,
             question: q,
             type: ansType,
@@ -331,6 +339,7 @@
           .withSuccessHandler(() => {
             loadTasks();
             updateWidgets();
+            addSubjectHistory(subject);
             resetForm();
           })
           .withFailureHandler(err => {
@@ -405,6 +414,20 @@
           .getGeminiSettings(teacherCode);
       }
 
+      function loadClassOptions() {
+        google.script.run.withSuccessHandler(map => {
+          const select = document.getElementById('taskClass');
+          if (!select) return;
+          select.innerHTML = '<option value="">-- クラスを選択 --</option>';
+          Object.keys(map).forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = map[id];
+            select.appendChild(opt);
+          });
+        }).getClassIdMap_(teacherCode);
+      }
+
       // Gemini 設定を保存
       function saveGeminiSettings() {
         const key = document.getElementById('apiKeySetting').value.trim();
@@ -416,12 +439,32 @@
           .setGeminiSettings(teacherCode, key, persona);
       }
 
+      function loadSubjectHistory() {
+        const list = document.getElementById('subjectHistory');
+        if (!list) return;
+        list.innerHTML = '';
+        const hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+        hist.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          list.appendChild(opt);
+        });
+      }
+
+      function addSubjectHistory(subj) {
+        let hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+        hist = hist.filter(s => s !== subj);
+        hist.unshift(subj);
+        if (hist.length > 8) hist = hist.slice(0,8);
+        localStorage.setItem('subjectHistory', JSON.stringify(hist));
+      }
+
       // 9) フォームリセットヘルパー
       function resetForm() {
         document.getElementById('subject').value = '';
         document.getElementById('question').value = '';
-        const shortRadio = document.querySelector('input[name="ansType"][value="short"]');
-        if (shortRadio) shortRadio.checked = true;
+        const textRadio = document.querySelector('input[name="ansType"][value="text"]');
+        if (textRadio) textRadio.checked = true;
         document.getElementById('optionsArea').classList.add('hidden');
         resetOptionInputs();
         document.getElementById('selfEval').checked = false;
@@ -519,8 +562,7 @@
        */
       function renderTypeLabel(type) {
         switch (type) {
-          case 'short':    return '短文回答';
-          case 'long':     return '段落回答';
+          case 'text':     return 'テキスト回答';
           case 'radio':    return '選択式（ラジオ）';
           case 'checkbox': return 'チェックボックス';
           default:         return '不明';
