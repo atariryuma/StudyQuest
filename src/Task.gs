@@ -144,7 +144,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
   studentSheet.appendRow([new Date(), taskId, questionText, answer, earnedXp, totalXp, level, trophies || '', attemptCount]);
 
   // 全体ログにも追記
-  const globalAnswerSheet = ss.getSheetByName(SHEET_GLOBAL_ANSWERS);
+  const globalAnswerSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (globalAnswerSheet) {
     let answerSummary = answer;
     if (typeof answer === 'string' && answer.length > 50) {
@@ -152,7 +152,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
     }
     globalAnswerSheet.appendRow([new Date(), studentId, taskId, answerSummary, earnedXp, totalXp, level, trophies || '', aiCalls, attemptCount]);
   } else {
-    console.warn(`「${SHEET_GLOBAL_ANSWERS}」シートが見つかりません。`);
+    console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
   }
 
 }

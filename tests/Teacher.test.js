@@ -7,26 +7,57 @@ function loadTeacher(context) {
   vm.runInNewContext(code, context);
 }
 
-test('initTeacher detects existing folder when script properties empty', () => {
+test('initTeacher creates StudyQuest_DB when none exists', () => {
   const props = {};
+  const dummyRange = {
+    setFontWeight: jest.fn().mockReturnThis(),
+    setFontSize: jest.fn().mockReturnThis(),
+    setHorizontalAlignment: jest.fn().mockReturnThis(),
+    mergeAcross: jest.fn()
+  };
+  const sheetStub = {
+    setName: jest.fn(),
+    clear: jest.fn(),
+    appendRow: jest.fn(),
+    getRange: jest.fn(() => dummyRange),
+    setColumnWidth: jest.fn(),
+    setTabColor: jest.fn(),
+    getSheetId: jest.fn(() => 1)
+  };
+  const ssStub = {
+    getId: jest.fn(() => 'sid'),
+    getSheets: jest.fn(() => [sheetStub]),
+    getUrl: jest.fn(() => 'url'),
+    insertSheet: jest.fn(() => ({ appendRow: jest.fn(), setTabColor: jest.fn(), getSheetId: jest.fn(() => 2) }))
+  };
   const context = {
     PropertiesService: {
       getScriptProperties: () => ({
-        setProperty: (k, v) => { props[k] = v; },
+        setProperty: (k,v)=>{ props[k]=v; },
         getKeys: () => Object.keys(props),
-        getProperty: (k) => props[k]
+        getProperty: (k)=> props[k]
       })
     },
     FOLDER_NAME_PREFIX: 'StudyQuest_',
-    Drive: {
-      Files: {
-        list: () => ({ items: [{ id: 'id123', title: 'StudyQuest_ABCDEF' }] })
-      }
+    SHEET_TOC: '📜 目次',
+    SHEET_TASKS: 'Tasks',
+    SHEET_STUDENTS: 'Students',
+    SHEET_SUBMISSIONS: 'Submissions',
+    SHEET_AI_FEEDBACK: 'AI',
+    STUDENT_SHEET_PREFIX: 'stu_',
+    DriveApp: {
+      createFolder: jest.fn(() => ({ getId: ()=>'fid' })),
+      getFileById: jest.fn(() => ({ moveTo: jest.fn() }))
     },
-    logError_: () => {},
+    SpreadsheetApp: { create: jest.fn(() => ssStub) },
+    logError_: () => {}
   };
+  context.generateTeacherCode = jest.fn(() => 'ABC123');
+  context.detectTeacherFolderOnDrive_ = jest.fn(() => null);
+  context.findLatestFolderByName_ = jest.fn(() => null);
   loadTeacher(context);
   const result = context.initTeacher('kyoushi');
-  expect(result).toEqual({ status: 'ok', teacherCode: 'ABCDEF' });
-  expect(props['ABCDEF']).toBe('id123');
+  expect(result.status).toBe('new');
+  expect(result.teacherCode).toBe('ABC123');
+  expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB');
 });

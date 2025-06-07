@@ -86,20 +86,12 @@ function initTeacher(passcode) {
   // 新規作成
   const newCode    = generateTeacherCode();
   const folderName = FOLDER_NAME_PREFIX + newCode;
-  const folderInstance = createFolder_('root', folderName);
+  const folderInstance = DriveApp.createFolder(folderName);
   props.setProperty(newCode, folderInstance.getId());
   initializeFolders(newCode, [], folderInstance);
 
-  const ss       = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
-  const ssId     = ss.getId();
-  try {
-    Drive.Files.update({}, ssId, null, {
-      addParents: folderInstance.getId(),
-      removeParents: 'root'
-    });
-  } catch (e) {
-    logError_('initTeacher-moveSheet', e);
-  }
+  const ss = SpreadsheetApp.create('StudyQuest_DB');
+  DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
   // 目次シート作成
   const tocSheet = ss.getSheets()[0];
@@ -125,7 +117,7 @@ function initTeacher(passcode) {
       description: "ログインした生徒の情報が記録されます。"
     },
     {
-      name: SHEET_GLOBAL_ANSWERS,
+      name: SHEET_SUBMISSIONS,
       color: "008080",
       header: ['日時', '生徒ID', '課題ID', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー', 'AI呼び出し回数', '回答回数'],
       description: "全生徒の回答の概要（ボード表示用）です。"
@@ -180,7 +172,7 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   if (!folderId) return null;
   try {
     const folder = DriveApp.getFolderById(folderId);
-    const files = folder.getFilesByName(`StudyQuest_${teacherCode}_Log`);
+    const files = folder.getFilesByName('StudyQuest_DB');
     if (files.hasNext()) {
       return SpreadsheetApp.openById(files.next().getId());
     }
@@ -191,7 +183,7 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   }
 }
 function saveTeacherSettings_(teacherCode, obj) {
-  const folder = getTeacherRootFolder(teacherCode);
+  const props = PropertiesService.getScriptProperties();
   const lines = [];
   if (obj.apiKey !== undefined) lines.push(['apiKey', Utilities.base64Encode(obj.apiKey)]);
   if (obj.persona !== undefined) lines.push(['persona', obj.persona]);
@@ -199,12 +191,12 @@ function saveTeacherSettings_(teacherCode, obj) {
     obj.classes.forEach(c => lines.push(['class', c[0], c[1]]));
   }
   const csv = lines.map(arr => arr.join(',')).join('\n');
-  overwriteFile_(folder, 'settings.csv', csv, MimeType.PLAIN_TEXT);
+  props.setProperty(`${teacherCode}_settingsCsv`, csv);
 }
 
 function loadTeacherSettings_(teacherCode) {
-  const folder = getTeacherRootFolder(teacherCode);
-  const csv = readFileContent_(folder, 'settings.csv');
+  const props = PropertiesService.getScriptProperties();
+  const csv = props.getProperty(`${teacherCode}_settingsCsv`) || '';
   return parseSettingsCsv_(csv);
 }
 
@@ -242,7 +234,7 @@ function getTeacherRootFolder(teacherCode) {
     props.setProperty(teacherCode, keep.id);
     return DriveApp.getFolderById(keep.id);
   }
-  const folder = createFolder_('root', name);
+  const folder = DriveApp.createFolder(name);
   props.setProperty(teacherCode, folder.getId());
   return folder;
 }
