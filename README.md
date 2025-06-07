@@ -75,6 +75,7 @@ scripts/setup-codex.sh
   1. パスコード検証後、`initTeacher(passcode)`を実行。
   2. 初回ログイン：フォルダを自動生成し、教師コードを返却。
   3. 2回目以降ログイン：既存コードを取得し、ダッシュボードへ遷移。
+  4. Gemini APIキーと担当クラスは教師フォルダ内の `settings.csv` に保存されます。
 
 #### 3.1.2 管理パネル（`manage.html`）
 

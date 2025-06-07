@@ -59,6 +59,7 @@
       </div>
       <button id="saveGeminiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
       <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>    </div>
+    <p class="text-xs text-gray-400 mt-1">設定内容(APIキー・担当クラス)は教師フォルダ内の settings.csv に保存されます。Gemini API は生徒の回答からヒントを生成する目的でのみ利用されます。</p>
   </header>
   <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
@@ -236,33 +237,12 @@
       }
       document.getElementById('addClassRow').addEventListener('click', () => addRow());
       document.getElementById('classSettingBtn').addEventListener('click', () => {
-        google.script.run.withSuccessHandler(map => {
-          const list = Object.keys(map).map(id => map[id].split('-'));
-          renderClassRows(list);
-          document.getElementById('classSettingModal').classList.remove('hidden');
-        }).getClassIdMap_(teacherCode);
-      });
-      document.getElementById('cancelClassBtn').addEventListener('click', () => {
-        document.getElementById('classSettingModal').classList.add('hidden');
-      });
-      document.getElementById('confirmClassBtn').addEventListener('click', () => {
-        const rows = Array.from(document.querySelectorAll('#classListArea div'));
-        const list = rows.map(div => {
-          const g = toHalf(div.querySelector('.gradeInput').value.replace(/[^0-9]/g,''));
-          const c = toHalf(div.querySelector('.classInput').value.replace(/[^0-9A-Za-z]/g,''));
-          return g && c ? [g, c.toUpperCase()] : null;
-        }).filter(Boolean);
-        if (list.length > 8) {
-          alert('最大8件まで入力できます。');
-          return;
-        }
+        const cur = prompt('担当クラスを "学年,組;学年,組" の形式で入力してください');
+        if (cur === null) return;
         google.script.run
-          .withSuccessHandler(() => {
-            document.getElementById('classSettingModal').classList.add('hidden');
-            loadClassOptions();
-          })
+          .withSuccessHandler(loadClassOptions)
           .withFailureHandler(err => alert('更新に失敗: ' + err.message))
-          .setClassIdMap(teacherCode, list.map(p => p.join(',')).join(';'));
+          .setClassIdMap(teacherCode, cur);
       });
 
       // 3) 回答タイプ選択時に optionsArea を表示／非表示
