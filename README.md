@@ -112,20 +112,33 @@ StudyQuest（仮称） – 小学校向けゲーミフィケーション型課�
 
 ```
 Drive/
-└── StudyQuest_<TeacherCode>/
-    ├── teacher_data/
-    │   ├── class_1/
-    │   │   ├── data_sheet
-    │   │   ├── data.csv
-    │   │   └── data.json
-    │   └── summary.csv
-    └── student_data/
-        └── <学年-組-番号>/
-            └── history.json
+└── StudyQuest_<TeacherCode>_Log  (Spreadsheet)
+    ├── 既存のデータシート群
+    ├── _cache_data_<classId>  (hidden)
+    ├── summary               (hidden)
+    └── 生徒_<ID>              (履歴保持)
 ```
 
-* Apps Scriptは各クラスのシート内容を `data.csv`／`data.json` に出力し、夜間バッチで `summary.csv` を生成。
-* 生徒履歴は教師のDrive上で `history.json` として管理、改ざん防止のためApps Script経由でのみ更新。
+* Drive 内に複数フォルダを作成せず、1つのスプレッドシート上にキャッシュ用タブを集約。
+* `exportCacheToTabs()` を夜間トリガーで実行し、各クラスシートの内容を `_cache_data_<classId>` タブへ複製、同時に `summary` タブを更新。
+* 生徒履歴は `生徒_<ID>` シートで一元管理。`history.json` など外部ファイルは使用しない。
+* クライアントは Apps Script 経由で対象タブを読み取るだけで済むため、ファイル数増加によるパフォーマンス低下を防げる。
+
+```javascript
+function exportCacheToTabs() {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  Object.keys(classIdMap).forEach(id => {
+    const sheetName = `_cache_data_${id}`;
+    const cacheSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    cacheSheet.clear();
+    const src = getSheetByClassId(id);
+    const values = src.getDataRange().getValues();
+    cacheSheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    cacheSheet.hideSheet();
+  });
+  // summary タブも同様に更新
+}
+```
 
 ---
 
