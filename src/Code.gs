@@ -758,6 +758,24 @@ function initializeFolders(teacherCode, classList) {
 }
 
 /**
+ * setClassIdMap(teacherCode, idsString):
+ * "6,1;6,2" のような文字列からクラス設定を更新
+ * initializeFolders を呼び出してフォルダを作成
+ */
+function setClassIdMap(teacherCode, idsString) {
+  const list = [];
+  if (idsString) {
+    idsString.split(';').forEach(t => {
+      const parts = t.split(',').map(p => p.trim());
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        list.push([parts[0], parts[1]]);
+      }
+    });
+  }
+  return initializeFolders(teacherCode, list);
+}
+
+/**
  * getClassFolder(teacherCode, classId): クラス用フォルダ取得/作成
  */
 function getClassFolder(teacherCode, classId) {
