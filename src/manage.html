@@ -14,6 +14,35 @@
     body {
       font-family: 'DotGothic16', monospace;
     }
+    /* デバッグパネル */
+    #debugPanel {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      width: 320px;
+      max-height: 200px;
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid #4b5563;
+      border-radius: 0.5rem;
+      overflow-y: auto;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      color: #d1d5db;
+      z-index: 50;
+    }
+    #debugPanelHeader {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #debugClose {
+      cursor: pointer;
+      color: #f87171;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col bg-gray-950 text-gray-200">
@@ -182,7 +211,27 @@
       return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
     }
 
+    // デバッグログ出力用
+    let debugContentElem;
+    function debug(msg) {
+      if (!debugContentElem) return;
+      const t = new Date().toLocaleTimeString();
+      debugContentElem.innerHTML += `<p>[${t}] ${msg}</p>`;
+      debugContentElem.scrollTop = debugContentElem.scrollHeight;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      debugContentElem = document.getElementById('debugContent');
+      const debugPanel = document.getElementById('debugPanel');
+      document.getElementById('debugClose').addEventListener('click', () => {
+        debugPanel.classList.add('hidden');
+      });
+      document.getElementById('versionInfo').addEventListener('click', () => {
+        debugPanel.classList.remove('hidden');
+      });
+
+      debug('🔄 ページ読み込み完了');
+      debug(`▶ teacherCode="${teacherCode}"`);
       // 1) teacherCode が null/空文字 ならログインページに戻す
       if (!teacherCode) {
         alert('不正なアクセスです。');
@@ -537,7 +586,16 @@
     });
   </script>
 
+  <!-- デバッグパネル（左下） -->
+  <div id="debugPanel" class="hidden">
+    <div id="debugPanelHeader">
+      <span>デバッグログ</span>
+      <span id="debugClose">✕</span>
+    </div>
+    <div id="debugContent"></div>
+  </div>
+
   <!-- バージョン表示 -->
-  <div class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
+  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
 </body>
 </html>

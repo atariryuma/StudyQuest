@@ -9,7 +9,40 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>body { font-family: 'DotGothic16', monospace; }</style>
+  <style>
+    body {
+      font-family: 'DotGothic16', monospace;
+    }
+    /* デバッグパネル */
+    #debugPanel {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      width: 320px;
+      max-height: 200px;
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid #4b5563;
+      border-radius: 0.5rem;
+      overflow-y: auto;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      color: #d1d5db;
+      z-index: 50;
+    }
+    #debugPanelHeader {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #debugClose {
+      cursor: pointer;
+      color: #f87171;
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-6">
   <header class="mb-6 flex justify-between items-center">
@@ -31,8 +64,25 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
-    
+
+    // デバッグログ出力用
+    let debugContentElem;
+    function debug(msg) {
+      if (!debugContentElem) return;
+      const t = new Date().toLocaleTimeString();
+      debugContentElem.innerHTML += `<p>[${t}] ${msg}</p>`;
+      debugContentElem.scrollTop = debugContentElem.scrollHeight;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      debugContentElem = document.getElementById('debugContent');
+      const debugPanel = document.getElementById('debugPanel');
+      document.getElementById('debugClose').addEventListener('click', () => {
+        debugPanel.classList.add('hidden');
+      });
+      document.getElementById('versionInfo').addEventListener('click', () => {
+        debugPanel.classList.remove('hidden');
+      });
       function escapeHtml(text) {
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
         return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
@@ -41,6 +91,9 @@
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
       const taskId = params.get('task');
+
+      debug('🔄 ページ読み込み完了');
+      debug(`▶ teacherCode="${teacherCode}", taskId="${taskId || ''}"`);
 
       function escapeHtml(text) {
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -96,7 +149,16 @@
     });
   </script>
 
+  <!-- デバッグパネル（左下） -->
+  <div id="debugPanel" class="hidden">
+    <div id="debugPanelHeader">
+      <span>デバッグログ</span>
+      <span id="debugClose">✕</span>
+    </div>
+    <div id="debugContent"></div>
+  </div>
+
   <!-- バージョン表示 -->
-  <div class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
+  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
 </body>
 </html>
