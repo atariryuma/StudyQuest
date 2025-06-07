@@ -391,7 +391,9 @@
 
         // ボタンアニメーション
         const btn = document.getElementById('createBtn');
-        gsap.fromTo(btn, { scale: 1.1 }, { scale: 1, duration: 0.2 });
+        if (window.gsap) {
+          gsap.fromTo(btn, { scale: 1.1 }, { scale: 1, duration: 0.2 });
+        }
       });
 
       // 7) 課題削除・複製ボタン押下時
@@ -630,13 +632,27 @@
         document.getElementById('modalClass').value = '';
         document.getElementById('classPreview').textContent = '';
         modal.classList.remove('hidden');
-        gsap.fromTo(modal, { opacity: 0 }, { opacity: 1, duration: 0.2 });
-        gsap.fromTo(modal.querySelector('.modal-content'), { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3 });
+        if (window.gsap) {
+          gsap.fromTo(modal, { opacity: 0 }, { opacity: 1, duration: 0.2 });
+          gsap.fromTo(
+            modal.querySelector('.modal-content'),
+            { scale: 0.8, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.3 }
+          );
+        }
       }
 
       function closeClassModal() {
         const modal = document.getElementById('classModal');
-        gsap.to(modal, { opacity: 0, duration: 0.2, onComplete: () => modal.classList.add('hidden') });
+        if (window.gsap) {
+          gsap.to(modal, {
+            opacity: 0,
+            duration: 0.2,
+            onComplete: () => modal.classList.add('hidden')
+          });
+        } else {
+          modal.classList.add('hidden');
+        }
       }
 
       document.getElementById('classModal').addEventListener('click', e => {
@@ -685,7 +701,9 @@
             card.classList.add('selected');
             const radio = document.querySelector(`#taskClassButtons input[value="${id}"]`);
             if (radio) radio.checked = true;
-            gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
+            if (window.gsap) {
+              gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
+            }
           });
           cont.appendChild(card);
         });
@@ -695,7 +713,9 @@
       // 10) 画面初回ロード
       loadTasks();
       updateWidgets();
-      gsap.from('main', { opacity: 0, y: 20, duration: 0.6 });
+      if (window.gsap) {
+        gsap.from('main', { opacity: 0, y: 20, duration: 0.6 });
+      }
     });
   </script>
 
