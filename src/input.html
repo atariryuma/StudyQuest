@@ -4,57 +4,102 @@
   <meta charset="UTF-8" />
   <title>StudyQuest – チャット</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
   <style>
-    body { font-family: 'DotGothic16', monospace; }
-    #chatLog { height: 60vh; overflow-y: auto; }
-    #particleCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-    @media (max-width: 768px) {
-      #layout { flex-direction: column; }
-      #leftPane, #rightPane { width: 100%; }
+    body {
+      font-family: 'DotGothic16', sans-serif;
+      background-color: #1a1b26;
     }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #2a2f4a; }
+    ::-webkit-scrollbar-thumb { background: #4a4f8a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #5a5f9a; }
+
+    /* Background pattern */
+    .pixel-bg {
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+
+    /* Glass style panels */
+    .glass-panel {
+      background: rgba(26, 27, 38, 0.6);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Game-like button */
+    .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
+    .game-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-purple-800 to-indigo-700 text-gray-100 flex flex-col p-4">
-<canvas id="particleCanvas"></canvas>
-<div class="w-full max-w-6xl mx-auto" id="layout">
-  <div id="leftPane" class="md:w-1/3 p-4 space-y-6">
-    <section>
-      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
-        <svg data-icon="Target" class="w-6 h-6 text-pink-400"></svg>未回答クエスト
-      </h2>
-      <div id="unanswered" class="bg-gray-800 p-3 rounded-lg space-y-2 min-h-[80px]"></div>
-    </section>
-    <section>
-      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
-        <svg data-icon="CheckCircle" class="w-6 h-6 text-indigo-400"></svg>完了済みクエスト
-      </h2>
-      <div id="answered" class="bg-gray-800 p-3 rounded-lg space-y-2 min-h-[80px]"></div>
-    </section>
-  </div>
-  <div id="rightPane" class="md:w-2/3 bg-gray-800 rounded-2xl p-4 flex flex-col">
-    <div id="chatLog" class="flex-1 space-y-3 overflow-y-auto"></div>
-    <div id="inputArea" class="mt-4 space-y-2">
-      <div id="answerInputs"></div>
-      <div class="flex items-center gap-2">
-        <button id="modeToggle" class="text-sm bg-gray-700 px-2 py-1 rounded">Gemini</button>
-        <button id="sendBtn" class="flex items-center gap-1 bg-pink-600 hover:bg-pink-500 text-white px-4 py-1 rounded shadow">提出</button>
+<body class="text-gray-200 min-h-screen p-4 pixel-bg">
+
+  <div class="max-w-7xl mx-auto h-[calc(100vh-2rem)] flex flex-col gap-4">
+    <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+      <div class="flex items-center gap-3">
+        <i data-lucide="swords" class="w-8 h-8 text-cyan-400"></i>
+        <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest</h1>
       </div>
-    </div>
+      <div class="w-full sm:w-1/2 lg:w-1/3">
+        <div class="flex justify-between items-center mb-1 text-sm text-gray-400">
+          <span>Lv. <span id="playerLevel">1</span></span>
+          <span><span id="studentId"></span></span>
+        </div>
+        <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden">
+          <div id="xpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0" style="transition: width 0.5s ease-in-out;"></div>
+        </div>
+        <div class="text-center text-xs mt-1 text-yellow-300">
+          <span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+      <aside class="w-full md:w-1/3 lg:w-1/4 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+          <i data-lucide="scroll-text" class="w-6 h-6 text-amber-400"></i>
+          クエストボード
+        </h2>
+        <div class="space-y-3 overflow-y-auto flex-grow">
+          <div>
+            <h3 class="text-sm font-bold text-pink-400 mb-2">未回答クエスト</h3>
+            <div id="unanswered" class="space-y-2"></div>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-cyan-400 mb-2">完了済みクエスト</h3>
+            <div id="answered" class="space-y-2"></div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="w-full md:w-2/3 lg:w-3/4 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden">
+        <div id="chatLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
+        <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
+          <div id="answerInputs" class="mb-3"></div>
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <button id="sendBtn" class="game-btn w-full sm:w-auto flex-grow bg-pink-600 text-white px-8 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 active:border-pink-700 flex items-center justify-center gap-2">
+              <i data-lucide="send-horizontal"></i>
+              <span>提出する</span>
+            </button>
+            <button id="modeToggle" class="game-btn w-full sm:w-auto bg-gray-600 text-gray-200 px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 active:border-gray-700 flex items-center justify-center gap-2">
+              <i data-lucide="sparkles"></i>
+              <span>Geminiにヒントを求める</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-</div>
-<div class="w-full max-w-3xl mx-auto mt-6">
-  <div class="flex justify-between items-center mb-1 text-sm">
-    <span>Level <span id="playerLevel">1</span></span>
-    <span><span id="xpCurrent">0</span> XP / <span id="xpNext">100</span> XP</span>
-  </div>
-  <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
-    <div id="xpFill" class="h-full bg-pink-400 w-0"></div>
-  </div>
-</div>
 <script>
 const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
 const teacherCode = '<?!= teacher ?>';
@@ -81,8 +126,6 @@ function renderIcons(scope) {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderIcons(document);
-  initParticles();
-  animateParticles();
   if (!teacherCode || !grade || !classroom || !number) {
     alert('不正なアクセス');
     return;
@@ -232,21 +275,6 @@ function updateXpBar() {
   const pct = Math.min((xp / (level * 100)) * 100, 100);
   gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
 }
-
-const canvas = document.getElementById('particleCanvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
-const maxParticles = 80;
-function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resizeCanvas); resizeCanvas();
-class Particle {
-  constructor() { this.reset(); }
-  reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3; this.size = Math.random() * 2 + 1; this.alpha = Math.random() * 0.5 + 0.3; }
-  update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) { this.reset(); this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; } }
-  draw() { ctx.beginPath(); ctx.fillStyle = `rgba(255,255,255,${this.alpha})`; ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
-}
-function initParticles() { particles = []; for (let i = 0; i < maxParticles; i++) { particles.push(new Particle()); } }
-function animateParticles() { ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{ p.update(); p.draw(); }); requestAnimationFrame(animateParticles); }
 </script>
 <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?!= version ?></div>
 </body>
