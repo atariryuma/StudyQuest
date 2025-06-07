@@ -138,9 +138,11 @@ function initStudent(teacherCode, grade, classroom, number) {
 
     // 生徒用 Drive フォルダ作成
     const stuFolderName = `StudyQuest_Stu_${teacherCode}_${studentId}`;
-    let stuFolder = findLatestFolderByName_(stuFolderName);
-    if (!stuFolder) {
-      stuFolder = createFolder_('root', stuFolderName);
+    const teacherFolder = getTeacherRootFolder(teacherCode);
+    let stuFolder = getOrCreateSubFolder_(teacherFolder, stuFolderName);
+    const q = `'${stuFolder.getId()}' in parents and name='Responses_${studentId}.csv' and trashed=false`;
+    const res = Drive.Files.list({ q, maxResults: 1 });
+    if (!res.items || res.items.length === 0) {
       try {
         Drive.Files.insert({ title: `Responses_${studentId}.csv`, parents: [{ id: stuFolder.getId() }] },
           Utilities.newBlob('timestamp,taskId,answer', MimeType.CSV, `Responses_${studentId}.csv`));
