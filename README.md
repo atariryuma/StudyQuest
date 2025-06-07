@@ -17,8 +17,8 @@
 ### 2.1 教師モード（`manage.html`）
 
 1. **ログイン／初期設定**
-   - パスコード入力（固定: `kyoushi`）
-   - `initTeacher(passcode)` 呼び出し
+   - パスコード入力（固定: `kyoushi`）と教師コードの入力
+   - `initTeacher(passcode, teacherCode)` 呼び出し
    - 初回: `StudyQuest_<TeacherCode>` フォルダ、各クラス用スプレッドシート自動生成
    - 2回目以降: スクリプトの設定が残っていない場合でも My ドライブ直下から
      `StudyQuest_<TeacherCode>` フォルダを検索して既存コードを復元
