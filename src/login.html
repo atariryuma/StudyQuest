@@ -426,7 +426,7 @@
         google.script.run
           .withSuccessHandler(() => {
             addHistory(teacherCode);
-            window.top.location.href = SCRIPT_URL + '?page=input&' + studentParams;
+            window.top.location.href = SCRIPT_URL + '?page=quest&' + studentParams;
           })
           .withFailureHandler(err => {
             alert('児童ログインに失敗: ' + err.message);

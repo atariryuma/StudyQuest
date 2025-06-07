@@ -203,7 +203,7 @@
 
       if (grade && classroom && number) {
         if (followupSection) followupSection.classList.add('hidden');
-        backLink.href = `?page=input&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
+        backLink.href = `?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
       } else {
         if (followupSection) {
