@@ -485,3 +485,21 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 2. `main` ブランチへ push するとワークフローが走り、`clasp push` と `clasp deploy` が自動実行されます。
 3. 初回のみ Apps Script エディタから Web アプリを手動作成し、得られた `DEPLOYMENT_ID` をシークレットに登録してください。`appsscript.json` に `webapp` 設定を追記します。
 4. デプロイが成功するとワークフロー内で `npm version patch --no-git-tag-version` が実行され、`src/Code.gs` とテストのバージョン定数も更新されます。この自動コミットには `[skip ci]` が付与されるため、デプロイ後に再度ワークフローが起動することはありません。
+
+## 5. データ取得とキャッシュ (最終設計)
+
+```
+Drive/
+└── StudyQuest_<TeacherCode>/
+    ├── teacher_data/
+    │   ├── class_1/
+    │   │   ├── data_sheet
+    │   │   ├── data.csv
+    │   │   └── data.json
+    │   └── summary.csv
+    └── student_data/
+        └── <学年-組-番号>/
+            └── history.json
+```
+
+Apps Script は各クラスのシート内容を `data.csv` と `data.json` に書き出します。夜間バッチで全クラスを走査し `summary.csv` を生成し、教師ダッシュボードから高速に参照できます。生徒ごとの提出履歴は `student_data` フォルダに `history.json` として保存し、改ざん防止のため教師権限でのみ更新します。
