@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "deploy": "clasp push --force --no-open",
-    "test": "jest",
+    "test": "node scripts/check-deps.js && jest",
     "postversion": "node scripts/postversion.js"
   },
   "devDependencies": {
