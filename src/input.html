@@ -162,12 +162,13 @@
 
     // Lucide Icons のレンダリング
     function renderIcons(scope) {
-      scope.querySelectorAll('[data-icon]').forEach(el => {
-        const iconName = el.getAttribute('data-icon');
-        if (window.lucide && typeof window.lucide[iconName] === 'function') {
-          el.innerHTML = window.lucide[iconName]().outerHTML;
-        }
-      });
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons({
+          nameAttr: 'data-icon',
+          attrs: {},
+          icons: window.lucide.icons
+        });
+      }
     }
 
     // デバッグログ出力用

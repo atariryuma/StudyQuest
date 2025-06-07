@@ -169,14 +169,15 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
 
   <script>
-    // Lucide Icons を実際に SVG に置き換え
+    // Lucide Icons を SVG に置き換える
     function renderIcons(scope) {
-      scope.querySelectorAll('[data-icon]').forEach(el => {
-        const iconName = el.getAttribute('data-icon');
-        if (window.lucide && typeof window.lucide[iconName] === 'function') {
-          el.innerHTML = window.lucide[iconName]().outerHTML;
-        }
-      });
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons({
+          nameAttr: 'data-icon',
+          attrs: {},
+          icons: window.lucide.icons
+        });
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
