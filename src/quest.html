@@ -171,13 +171,14 @@ function initStudent() {
     .initStudent(teacherCode, grade, classroom, number);
 }
 
-function loadTasks() {
+function loadTasks(callback) {
   google.script.run.withSuccessHandler(tasks => {
     google.script.run
       .withSuccessHandler(history => {
         history = Array.isArray(history) ? history : [];
         renderLists(tasks || [], history);
         hideLoadingOverlay();
+        if (typeof callback === 'function') callback();
       })
       .withFailureHandler(e => {
         alert('履歴取得失敗: ' + e.message);
@@ -318,9 +319,10 @@ async function handleSend() {
   } else if (questStep === QuestStep.FINAL_ANSWER) {
     addXp(xpPerQuest);
     google.script.run.withSuccessHandler(() => {
-      loadTasks();
-      document.getElementById('earnedXp').textContent = `+${xpPerQuest}`;
-      document.getElementById('resultScreen').classList.remove('hidden');
+      loadTasks(() => {
+        document.getElementById('earnedXp').textContent = `+${xpPerQuest}`;
+        document.getElementById('resultScreen').classList.remove('hidden');
+      });
     }).submitAnswer(
       teacherCode,
       studentId,
