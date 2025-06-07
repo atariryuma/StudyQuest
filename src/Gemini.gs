@@ -1,3 +1,10 @@
+/**
+ * Gemini APIを呼び出し、指定されたプロンプトに対する応答を返します。
+ * @param {string} teacherCode - （将来的な拡張用）教師コード
+ * @param {string} prompt - ユーザーが入力したプロンプト
+ * @param {string} persona - '小学生向け', '中学生向け', '教師向け' のいずれか
+ * @return {string} Geminiからの応答テキスト、またはエラーメッセージ
+ */
 function callGeminiAPI_GAS(teacherCode, prompt, persona) {
   const personaMap = {
     '小学生向け': 'あなたは小学校高学年以上向けの優しい先生です。',
@@ -6,21 +13,45 @@ function callGeminiAPI_GAS(teacherCode, prompt, persona) {
   };
   const base = personaMap[persona] || '';
   const finalPrompt = base + '\n' + prompt;
-  const apiKey = getGlobalGeminiApiKey();
-  if (!apiKey) return 'APIキーが設定されていません';
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey;
-  const payload = { contents: [{ parts: [{ text: finalPrompt }] }] };
-  const res = UrlFetchApp.fetch(url, {
+
+  const apiKey = getGlobalGeminiApiKey(); // APIキーはPropertiesServiceから取得することを推奨
+  if (!apiKey) {
+    return 'APIキーが設定されていません';
+  }
+
+  // ★★★ 変更点：モデル名を gemini-pro から最新のFlashモデルに変更 ★★★
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' + apiKey;
+
+  const payload = {
+    contents: [{
+      parts: [{
+        text: finalPrompt
+      }]
+    }]
+  };
+
+  const options = {
     method: 'post',
     contentType: 'application/json',
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
-  });
+  };
+
+  const res = UrlFetchApp.fetch(url, options);
   const obj = JSON.parse(res.getContentText());
+
+  // レスポンスの解析部分は変更なし
   if (obj.candidates && obj.candidates[0] && obj.candidates[0].content) {
     return obj.candidates[0].content.parts.map(p => p.text).join('\n');
   }
-  return 'No response';
+  
+  // エラーハンドリングを少し詳細化
+  if (obj.error) {
+    Logger.log('Gemini API Error: ' + JSON.stringify(obj.error));
+    return 'AIからの応答がありませんでした。エラー: ' + obj.error.message;
+  }
+  
+  return 'AIからの応答がありませんでした。';
 }
 
 /**
