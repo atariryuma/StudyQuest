@@ -55,14 +55,14 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-gray-950 text-gray-200">
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-purple-800 to-indigo-700 text-gray-200">
 
   <!-- ========================================
        HEADER
        ======================================== -->
-  <header class="p-4 bg-gray-800 flex flex-col md:flex-row md:justify-between md:items-center gap-4 shadow-md">
+  <header class="p-4 bg-gray-800 flex flex-col md:flex-row md:justify-between md:items-center gap-4 shadow-2xl rounded-2xl">
     <div class="flex items-center gap-4">
-      <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
+      <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-2xl text-sm shadow-2xl">ログインへ戻る</a>
       <h1 class="text-xl flex items-center gap-2">
         <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
         StudyQuest – 教師パネル
@@ -83,11 +83,11 @@
       </span>
     </div>
   </header>
-  <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
+  <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 rounded-2xl shadow-2xl">
+    <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-2xl shadow-2xl text-6xl font-bold text-center tracking-widest"></div>
   </div>
   <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-gray-800 p-6 rounded-xl space-y-4 w-80 modal-content">
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl space-y-4 w-80 modal-content">
       <div>
         <label for="modalGrade" class="block text-sm mb-1">学年</label>
         <select id="modalGrade" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
@@ -112,7 +112,7 @@
       </div>
       <p id="classPreview" class="text-center text-gray-300"></p>
       <div class="text-center">
-        <button id="saveClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded text-sm">保存</button>
+        <button id="saveClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button>
       </div>
     </div>
   </div>
@@ -122,14 +122,14 @@
        ======================================== -->
   <main class="flex-grow p-6 space-y-6 text-base">
     <div class="mb-4 flex items-center gap-2">
-      <button id="openClassBtn" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">クラス登録</button>
+      <button id="openClassBtn" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-2xl text-sm">クラス登録</button>
       <div id="currentClassCard" class="flex flex-wrap gap-2"></div>
     </div>
-    <section class="bg-gray-800 p-4 rounded-2xl shadow-lg">
+    <section class="bg-gray-800 p-4 rounded-2xl shadow-2xl">
       <div id="geminiSettings" class="flex flex-col sm:flex-row items-end gap-2">
         <div>
           <label for="apiKeyInput" class="text-xs">Gemini APIキー</label>
-          <input id="apiKeyInput" type="password" class="mt-1 p-1 rounded bg-gray-700 focus:outline-none text-sm" placeholder="保存済みの場合は空白" />
+          <input id="apiKeyInput" type="password" class="mt-1 p-1 rounded bg-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-400 text-sm" placeholder="保存済みの場合は空白" />
         </div>
         <div>
           <label for="personaSelect" class="text-xs">ペルソナ</label>
@@ -140,19 +140,19 @@
             <option value="教師向け">教師向け</option>
           </select>
         </div>
-        <button id="saveApiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
+        <button id="saveApiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button>
         <span id="apiStatus" class="text-green-400 text-xs hidden"></span>
       </div>
     </section>
     <section class="grid md:grid-cols-3 gap-6">
       <!-- ===== 新しい課題フォーム ===== -->
-      <div class="md:col-span-1 bg-gray-800 p-4 rounded-2xl shadow-lg">
+      <div class="md:col-span-1 bg-gray-800 p-4 rounded-2xl shadow-2xl">
         <h2 class="text-lg mb-2 flex items-center gap-1">
           <svg data-icon="PlusCircle" class="w-5 h-5 text-pink-400"></svg>
           新しい課題
         </h2>
         <form id="taskForm" class="space-y-4 text-base">
-          <button id="classSettingBtn" type="button" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">クラス設定</button>
+          <button id="classSettingBtn" type="button" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-2xl text-sm">クラス設定</button>
           <!-- ■ 担当クラス -->
           <div>
             <label for="taskClass" class="text-sm">■ 担当クラス</label>
@@ -162,7 +162,7 @@
           <!-- ■ 教科入力 -->
           <div>
             <label for="subject" class="text-sm">■ 教科を入力</label>
-            <input id="subject" type="text" list="subjectHistory" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base" />
+            <input id="subject" type="text" list="subjectHistory" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-400 text-base" />
             <datalist id="subjectHistory"></datalist>
           </div>
 
@@ -178,13 +178,13 @@
             <label class="text-sm">■ 回答タイプ</label>
             <div class="mt-1 flex gap-2 text-sm">
               <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="text" checked> テキスト回答
+                <input type="radio" name="ansType" value="text" class="focus:ring-2 focus:ring-pink-400" checked> テキスト回答
               </label>
               <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="radio"> 選択式 (ラジオ)
+                <input type="radio" name="ansType" value="radio" class="focus:ring-2 focus:ring-pink-400"> 選択式 (ラジオ)
               </label>
               <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="checkbox"> チェックボックス
+                <input type="radio" name="ansType" value="checkbox" class="focus:ring-2 focus:ring-pink-400"> チェックボックス
               </label>
             </div>
           </div>
@@ -208,20 +208,20 @@
 
           <!-- ■ 自己評価許可 -->
           <label class="block cursor-pointer text-sm">
-            <input type="checkbox" id="selfEval" /> 自己評価を許可する
+            <input type="checkbox" id="selfEval" class="focus:ring-2 focus:ring-pink-400" /> 自己評価を許可する
           </label>
 
 
           <!-- ■ 作成ボタン -->
           <button id="createBtn" type="submit"
-                  class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-xl shadow transition-transform duration-150 transform hover:scale-105 text-base">
+                  class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl transition-transform duration-150 transform hover:scale-105 text-base">
             作成
           </button>
         </form>
       </div>
 
       <!-- ===== 課題一覧カード型 ===== -->
-      <div class="md:col-span-2 bg-gray-800 p-4 rounded-2xl shadow-lg overflow-auto">
+      <div class="md:col-span-2 bg-gray-800 p-4 rounded-2xl shadow-2xl overflow-auto">
         <h2 class="text-lg mb-2 flex items-center gap-1">
           <svg data-icon="ClipboardList" class="w-5 h-5 text-pink-400"></svg>
           課題一覧
@@ -540,7 +540,7 @@
           div.className = 'flex gap-2';
           div.innerHTML = `
             <input type="text"
-                   class="flex-grow p-1 rounded bg-gray-700 focus:outline-none text-sm"
+                   class="flex-grow p-1 rounded bg-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-400 text-sm"
                    placeholder="選択肢${i}" />
           `;
           area.appendChild(div);
@@ -587,7 +587,7 @@
           }
 
           const card = document.createElement('div');
-          card.className = 'bg-gray-700 p-4 rounded-xl shadow transition-transform hover:scale-102 relative cursor-pointer';
+          card.className = 'bg-gray-700 p-4 rounded-2xl shadow-2xl transition-transform hover:scale-102 relative cursor-pointer';
           card.innerHTML = `
             ${detailHtml}
             <p class="text-sm text-gray-400 mt-2">${x.date}</p>
