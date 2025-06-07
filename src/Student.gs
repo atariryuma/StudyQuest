@@ -136,21 +136,20 @@ function initStudent(teacherCode, grade, classroom, number) {
     studentSheet.appendRow(['日時', '課題ID', '課題内容', '回答本文', '付与XP', '累積XP', 'レベル', 'トロフィー', '回答回数']);
     studentSheet.setTabColor("f4b400");
 
-    // 生徒用 Drive フォルダ作成
-    const stuFolderName = `StudyQuest_Stu_${teacherCode}_${studentId}`;
-    const teacherFolder = getTeacherRootFolder(teacherCode);
-    const studentsRoot  = getOrCreateSubFolder_(teacherFolder, 'Students');
-    let stuFolder = getOrCreateSubFolder_(studentsRoot, stuFolderName);
-    const q = `'${stuFolder.getId()}' in parents and title='Responses_${studentId}.csv' and trashed=false`;
-    const res = Drive.Files.list({ q, maxResults: 1 });
-    if (!res.items || res.items.length === 0) {
-      try {
-        Drive.Files.insert({ title: `Responses_${studentId}.csv`, parents: [{ id: stuFolder.getId() }] },
-          Utilities.newBlob('timestamp,taskId,answer', MimeType.CSV, `Responses_${studentId}.csv`));
-      } catch (e) {
-        logError_('createStudentFolder', e);
-      }
+  // 既存タスクを Submissions シートにも空行として登録
+  const subsSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
+  const tasksSheet = ss.getSheetByName(SHEET_TASKS);
+  if (subsSheet && tasksSheet) {
+    const last = tasksSheet.getLastRow();
+    if (last >= 2) {
+      const rows = tasksSheet.getRange(2, 1, last - 1, 5).getValues();
+      rows.forEach(r => {
+        const taskId = r[0];
+        const createdAt = r[3];
+        subsSheet.appendRow([createdAt, studentId, taskId, '', 0, 0, 0, '', 0, 0]);
+      });
     }
+  }
 
     // 目次シートにリンクを追加
     const tocSheet = ss.getSheetByName(SHEET_TOC);

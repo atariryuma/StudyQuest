@@ -1,9 +1,9 @@
 function listBoard(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
-  const sheet = ss.getSheetByName(SHEET_GLOBAL_ANSWERS);
+  const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (!sheet) {
-    return [{ name: "お知らせ", answer: `「${SHEET_GLOBAL_ANSWERS}」シートが見つかりません。` }];
+    return [{ name: "お知らせ", answer: `「${SHEET_SUBMISSIONS}」シートが見つかりません。` }];
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
@@ -30,7 +30,7 @@ function listBoard(teacherCode) {
 function listTaskBoard(teacherCode, taskId) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
-  const sheet = ss.getSheetByName(SHEET_GLOBAL_ANSWERS);
+  const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
