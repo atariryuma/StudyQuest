@@ -433,12 +433,14 @@
           card.innerHTML = `
             ${detailHtml}
             <p class="text-sm text-gray-400 mt-2">${x.date}</p>
-            <button class="copyBtn absolute top-2 right-12 bg-indigo-600 hover:bg-indigo-500 text-white p-1 rounded" data-id="${x.id}">
-              <svg data-icon="Copy" class="w-4 h-4"></svg>
-            </button>
-            <button class="deleteBtn absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1 rounded" data-id="${x.id}">
-              <svg data-icon="Trash2" class="w-4 h-4"></svg>
-            </button>
+            <div class="absolute top-2 right-2 flex flex-col gap-2">
+              <button class="copyBtn bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded" data-id="${x.id}">
+                <svg data-icon="Copy" class="w-5 h-5"></svg>
+              </button>
+              <button class="deleteBtn bg-red-600 hover:bg-red-500 text-white p-2 rounded" data-id="${x.id}">
+                <svg data-icon="Trash2" class="w-5 h-5"></svg>
+              </button>
+            </div>
           `;
           card.addEventListener('click', e => {
             if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
