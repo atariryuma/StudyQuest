@@ -45,10 +45,12 @@ clasp deploy --versionNumber 1 --deploymentId <DEPLOYMENT_ID>
 # ローカル単体テスト
 npm test
 
+# または Codex 環境では
+scripts/setup-codex.sh
+
 # 変更をGASに反映して確認
 clasp push && clasp open
 ```
-
 
 ## ▶ コーディング規約
 
