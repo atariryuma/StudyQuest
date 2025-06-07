@@ -33,6 +33,12 @@
     }
     .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
     .game-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 50;
+    }
   </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
@@ -140,8 +146,10 @@ function renderIcons(scope) {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderIcons(document);
+  showLoadingOverlay();
   if (!teacherCode || !grade || !classroom || !number) {
     alert('不正なアクセス');
+    hideLoadingOverlay();
     return;
   }
   initStudent();
@@ -156,17 +164,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initStudent() {
   google.script.run.withSuccessHandler(() => { loadTasks(); loadXp(); })
-    .withFailureHandler(e => alert('初期化失敗: ' + e.message))
+    .withFailureHandler(e => {
+      alert('初期化失敗: ' + e.message);
+      hideLoadingOverlay();
+    })
     .initStudent(teacherCode, grade, classroom, number);
 }
 
 function loadTasks() {
   google.script.run.withSuccessHandler(tasks => {
-    google.script.run.withSuccessHandler(history => {
-      history = Array.isArray(history) ? history : [];
-      renderLists(tasks || [], history);
-    }).getStudentHistory(teacherCode, studentId);
-  }).listTasksForClass(teacherCode, grade, classroom);
+    google.script.run
+      .withSuccessHandler(history => {
+        history = Array.isArray(history) ? history : [];
+        renderLists(tasks || [], history);
+        hideLoadingOverlay();
+      })
+      .withFailureHandler(e => {
+        alert('履歴取得失敗: ' + e.message);
+        hideLoadingOverlay();
+      })
+      .getStudentHistory(teacherCode, studentId);
+  })
+    .withFailureHandler(e => {
+      alert('課題取得失敗: ' + e.message);
+      hideLoadingOverlay();
+    })
+    .listTasksForClass(teacherCode, grade, classroom);
 }
 
 function renderLists(tasks, history) {
@@ -393,7 +416,24 @@ function updateSendButton() {
       break;
   }
 }
+
+/**
+ * Show the loading overlay.
+ */
+function showLoadingOverlay() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+/**
+ * Hide the loading overlay.
+ */
+function hideLoadingOverlay() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
 </script>
 <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?!= version ?></div>
+<div id="loadingOverlay" class="hidden flex items-center justify-center text-white text-xl font-bold">ロード中…</div>
 </body>
 </html>
