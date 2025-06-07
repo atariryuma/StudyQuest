@@ -219,7 +219,7 @@ function renderLists(tasks, history) {
   if (!currentTask && unanswered.length) openTask(unanswered[0], history);
 }
 
-function openTask(task, history) {
+async function openTask(task, history) {
   currentTask = task;
   aiCalls = 0;
   questStep = QuestStep.INITIAL_ANSWER;
@@ -227,7 +227,9 @@ function openTask(task, history) {
   const q = JSON.parse(task.q);
   const log = document.getElementById('chatLog');
   log.innerHTML = '';
-  appendMsg('system', `【${q.subject}】 ${q.question}`);
+  await typeWriter('こんにちわ！学習はどうかな？先生から課題が出ているよ！ええと…', 'system');
+  await delay(300);
+  await typeWriter(`【${q.subject}】 ${q.question}`, 'system');
   const rows = history.filter(r => r[1] === task.id);
   rows.forEach(r => appendMsg('student', r[3]));
   renderInputForStep(q, rows.length);
@@ -265,7 +267,7 @@ function renderInputForStep(q, attempt) {
   }
 }
 
-function handleSend() {
+async function handleSend() {
   if (!currentTask) return;
   const q = JSON.parse(currentTask.q);
   let text = '';
@@ -286,17 +288,14 @@ function handleSend() {
   document.querySelectorAll('#answerInputs input, #answerInputs textarea').forEach(e => e.value = '');
 
   if (questStep === QuestStep.INITIAL_ANSWER) {
-    google.script.run.withSuccessHandler(res => {
-      appendMsg('gemini', res);
-      questStep = QuestStep.DEEPENING_QUESTION;
-      renderInputForStep(q, 1);
-      updateProgressBar();
-      updateSendButton();
-    }).callGeminiAPI_GAS(
-      teacherCode,
-      `次の回答をした生徒に更に考えさせる質問を一つしてください。回答: ${text}`,
-      '小学生向け'
-    );
+    await typeWriter(`そうなんだ！君は『${text}』だと思ったんだね...`, 'gemini');
+    await delay(300);
+    const follow = q.followup || q.followUp || q.deepeningQuestion || q.followupQuestion;
+    await typeWriter(follow ? String(follow) : 'どうしてそう思ったの？理由を聞かせて', 'gemini');
+    questStep = QuestStep.DEEPENING_QUESTION;
+    renderInputForStep(q, 1);
+    updateProgressBar();
+    updateSendButton();
   } else if (questStep === QuestStep.DEEPENING_QUESTION) {
     google.script.run.withSuccessHandler(res => {
       appendMsg('gemini', res);
@@ -310,7 +309,10 @@ function handleSend() {
       '小学生向け'
     );
   } else if (questStep === QuestStep.REASONING) {
-    appendMsg('system', '最後にまとめの回答を送信してください');
+    const msgs = ['なるほど、よく考えたね！', 'いい視点だね！', 'ばっちりだよ！'];
+    await typeWriter(msgs[Math.floor(Math.random() * msgs.length)], 'system');
+    await delay(300);
+    await typeWriter('それじゃあ最後に、この時間の学習の振り返りを書いて先生に提出してね。', 'system');
     questStep = QuestStep.FINAL_ANSWER;
     renderInputForStep(q, 1);
     updateProgressBar();
@@ -346,6 +348,44 @@ function appendMsg(type, text) {
   div.innerHTML = `<p class="p-2 rounded ${type === 'student' ? 'bg-indigo-600 ml-auto' : 'bg-gray-700'} max-w-[80%]">${escapeHtml(text)}</p>`;
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
+}
+
+/**
+ * Display text in the chat log with a typing effect.
+ * @param {string} text - The text to show.
+ * @param {string} type - Message type such as 'system' or 'gemini'.
+ * @returns {Promise<void>} Resolves when typing is done.
+ */
+function typeWriter(text, type) {
+  return new Promise(resolve => {
+    const log = document.getElementById('chatLog');
+    const div = document.createElement('div');
+    div.className = `msg-${type}`;
+    const p = document.createElement('p');
+    p.className = `p-2 rounded ${type === 'student' ? 'bg-indigo-600 ml-auto' : 'bg-gray-700'} max-w-[80%] whitespace-pre-wrap`;
+    div.appendChild(p);
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    let i = 0;
+    const timer = setInterval(() => {
+      p.textContent += text.charAt(i);
+      log.scrollTop = log.scrollHeight;
+      i++;
+      if (i >= text.length) {
+        clearInterval(timer);
+        resolve();
+      }
+    }, 40);
+  });
+}
+
+/**
+ * Wait for the specified milliseconds.
+ * @param {number} ms - Duration in milliseconds.
+ * @returns {Promise<void>} Promise resolved after the delay.
+ */
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function loadXp() { updateXpBar(); }
