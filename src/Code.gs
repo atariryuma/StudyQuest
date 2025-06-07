@@ -10,7 +10,7 @@ const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
 const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const SQ_VERSION           = 'v1.0.21';
+const SQ_VERSION           = 'v1.0.22';
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */
