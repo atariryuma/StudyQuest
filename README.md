@@ -3,7 +3,7 @@
 ## 1. プロジェクト概要
 
 **1.1 プロジェクト名**
-StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
+StudyQuest（仮称） – 小学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
 
 **1.2 背景・目的**
 
@@ -27,34 +27,24 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 
 1. **教師（管理者）**
 
-   * 初回ログイン時：「kyoushi」を入力 → Google Drive上に`StudyQuest_Teach_<教師コード>`フォルダを自動作成。
+   * 初回ログイン時：「kyoushi」を入力 → Google Drive上に `StudyQuest_<TeacherCode>` フォルダを自動作成。
    * 2回目以降ログイン：教師コードのみで既存フォルダ／シートにアクセス。
    * 各学年・各クラスごとに独立したスプレッドシート（データベース）を持つ。
-
-     * 例：クラス1-A用シート：`Sheet_<teacherCode>_Grade1_ClassA`
-   * 課題（クエスト）の作成・編集・削除、統計情報の参照、生徒一覧管理、グローバル回答ボードの閲覧などを行う。
-   * 生徒としてもクエストボードにアクセスできるように、フォルダ・ファイル名は明確に区別。
+   * 課題の作成・編集・削除、統計情報の参照、生徒一覧管理、グローバル回答ボードの閲覧などを行う。
 
 2. **生徒（利用者）**
 
    * ログイン時に教師コード・学年（1～6）・組（英字1文字）・番号（1～99）を入力。
-   * **My Drive内にある「StudyQuest\_Stu\_****\_****」フォルダを検索**し、存在しなければ新規作成。フォルダ配下に専用スプレッドシートを配置。
-   * 検索して見つかった場合は、該当フォルダをUI上でアイコン表示し、クリックでログインできる。
+
    * 未回答クエストをカード表示で確認し、回答を送信。
-   * 同一課題に複数回答した場合もすべて保存され、履歴として参照可能。
+
    * 回答ごとに「付与XP」「累積XP」「レベル」「獲得トロフィー」を自動計算し、可視化。
-   * **AIフィードバック機能を用いて、児童の回答に対しゲーム的に気づきやヒントを得られる。**
-   * AIフィードバックは各課題につき2回まで利用可能。課題に回答するチャンスは最大3回。
-   * 自身の回答履歴や学習履歴（Study Log）を閲覧可能。
+
+   * AIフィードバックは各課題につき2回まで、課題への回答チャンスは最大3回。
 
 3. **ソーシャルゲームクリエイター（デザインコンサル）**
 
    * ゲーム的なUI/UX設計のアドバイスを提供。
-   * 生徒のフォルダ検索画面やアイコン表示、ログイン演出、カードアニメーションなどのデザイン手順を検討。
-
-4. **運用担当（管理者レベル）**
-
-   * Google Driveのストレージ管理、フォルダ権限設定、GASのデプロイ・バージョン管理を担当。
 
 ---
 
@@ -67,426 +57,58 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 * **入力項目**
 
   * パスコード（固定：`kyoushi`）
-
-* **入力ルール・バリデーション**
-
-  * パスコード入力欄は半角文字でのみ受け付け、全角入力時は半角に自動変換。
-  * 数字入力欄（該当箇所がある場合）は全角数字を自動で半角数字に変換。
-  * 教師コード入力欄は入力時に自動で**半角英数字大文字**に変換し、常に大文字で送信。
-  * 形式エラーとなるのは、英数字以外の文字列が含まれている場合のみ。
-
 * **処理フロー**
 
   1. パスコード検証後、`initTeacher(passcode)`を実行。
-  2. **初回ログイン**（スクリプトプロパティに教師コードなしの場合）：
-
-     * `generateTeacherCode()`にて6桁英数字のユニークな教師コードを生成。
-     * DriveAppで`StudyQuest_Teach_<教師コード>`フォルダを作成。
-     * **各学年・各クラスごとに独立したスプレッドシートを初期生成**：
-
-       * 例：`StudyQuest_<teacherCode>_Grade<1>_Class<A>`, `StudyQuest_<teacherCode>_Grade<1>_Class<B>`
-       * シート内は各クラス用に以下のタブを初期化：
-
-         1. `📜 目次`
-         2. `課題一覧`
-         3. `生徒一覧`
-         4. `回答ログ（全体ボード用）`
-         5. `AIフィードバックログ`
-         6. **生徒個別シート**（`Student_<studentId>`）は、生徒が初回ログイン時に動的作成。
-     * 生成した教師コードを返却し、初回ログインメッセージを表示。
-  3. **2回目以降ログイン**（スクリプトプロパティに教師コードが存在）：
-
-     * 最新の教師コードを取得して返却し、管理パネルに遷移。
-
-* **出力画面**
-
-  * 初回ログイン：教師コードを通知するモーダルを表示。
-  * 2回目以降：ダッシュボードに遷移し、「おかえりなさい！」メッセージを表示。
+  2. 初回ログイン：フォルダを自動生成し、教師コードを返却。
+  3. 2回目以降ログイン：既存コードを取得し、ダッシュボードへ遷移。
 
 #### 3.1.2 管理パネル（`manage.html`）
 
 * **画面構成**
 
-  * **ヘッダー**
+  * ヘッダー：ロゴ、教師コード表示、Gemini API設定など
+  * メイン：課題作成フォーム（教科選択、問題文、回答タイプ、Gemini設定）／課題一覧カード
 
-    * 左：StudyQuestロゴ（またはタイトル）
-    * 右：
+* **主要GAS呼び出し**
 
-      * 「回答ボードを見る」リンク → `?page=board&teacher=<教師コード>`
-      * 教師コード表示（例：`CODE: ABC123`）
+  * `createTask(...)`, `listTasks(...)`, `deleteTask(...)`, `getStatistics(...)`
 
-        * **クリック時拡大表示**：教師コードを大きくポップアップ表示し、生徒が自分のログイン画面で入力しやすいようにする。
-      * 課題数（アイコン＋件数）
-      * **生徒数（アイコン＋名）**：現在は累計ログイン回数を表示していたが、**登録されている生徒数**を表示するよう修正する。
-
-        * `生徒一覧`シートの行数から計算し、ヘッダー行を除いた行数を表示。
-      * **Gemini API設定エリア**：
-
-        * APIキー入力欄
-        * ペルソナ選択ドロップダウン（「小学生向け」「中学生向け」「教師向け」など）
-  * **メインエリア（2カラム）**
-
-    * **左側：新しい課題（クエスト）作成フォーム**
-
-      1. 教科ドロップダウン（国語、算数、理科、社会、英語）
-      2. 問題文入力（テキストエリア）
-      3. 回答タイプ選択（ラジオボタン）
-
-         * 短文回答 (`short`)
-         * 段落回答 (`long`)
-         * 選択式 (`radio`)
-         * チェックボックス (`checkbox`)
-      4. 「選択式/チェックボックス」選択時のみ：選択肢数プルダウン（2～5）
-
-         * 動的に生成された選択肢入力欄が現れる
-      5. 自己評価許可チェックボックス
-      6. **Gemini API設定**
-
-         * 入力欄：APIキー
-         * **ペルソナ選択**：ドロップダウンで「小学生向け」「中学生向け」「教師向け」など、Geminiに渡すプロンプトテンプレートを切り替え可能。
-      7. 作成ボタン
-    * **右側：課題一覧（カード表示）**
-
-      * 最新作成順にカードを並べる
-      * 各カードには以下を表示：
-
-        * 教科＋問題文（改行あり）
-        * 回答タイプ（日本語ラベル）
-        * 作成日時
-        * 削除ボタン（アイコン）
-
-* **主要なGAS呼び出し**
-
-  * `createTask(teacherCode, grade, classroom, payloadAsJson, selfEval, persona)`：課題（JSONデータ）を該当クラスの`課題一覧`シートに新規追加。
-  * `listTasks(teacherCode, grade, classroom)` → `renderTasks(rows)`でカード描画。
-  * `deleteTask(teacherCode, grade, classroom, taskId)` → 削除後、再度`listTasks`と`getStatistics`を呼び出し。
-  * `getStatistics(teacherCode, grade, classroom)`：該当クラスの生徒数（`生徒一覧`行数）、課題数、各生徒の累積XP/レベル/トロフィーを集計して返却。
-
-* **動作要件**
-
-  * ボタン押下時にGSAPで微細なアニメーションを付与。
-  * 課題作成直後にリストをリアルタイム更新。
-  * 選択式/チェックボックス選択肢入力欄はラジオボタン切り替え時に動的生成・破棄。
-  * カード上の削除ボタンを押すと確認ダイアログを表示し、確定後にAPI呼び出し。
+---
 
 ### 3.2 生徒モード（クエストボード：`input.html`）
 
 #### 3.2.1 ログイン／初期設定
 
 * **入力項目**
-
-  * 教師コード（6桁英数字・大文字半角）
-  * 学年（文字列 `"1"`～`"6"`：全角数字は自動で半角に変換）
-  * 組（文字列 英字1文字：全角アルファベットは自動で半角大文字に変換）
-  * 番号（文字列 `"1"`～`"99"`：全角数字→半角数字に変換）
-
-* **入力ルール・バリデーション**
-
-  * 教師コード欄は全角英数字・小文字で入力しても、**自動で半角英数字大文字**に変換。形式エラーは英数字以外を含む場合のみ発生。
-  * 学年・番号欄は全角数字を必ず半角数字に変換し、1～6（学年）、1～99（番号）の範囲チェックを行う。
-  * 組欄は全角アルファベットを半角アルファベットに変換し、大文字化。1文字入力を必須とする。
-  * バリデーションエラー時は、赤文字で「形式が正しくありません」などのメッセージを表示し、再入力を促す。
-
+  教師コード、学年、組、番号
 * **処理フロー**
 
-  1. **クライアント側バリデーション**で各項目が所定の形式か検証。
-  2. **My Drive検索**：
+  1. クライアントでバリデーション
+  2. 教師コードのあるDriveフォルダで検索／作成 → `initStudent(...)` 呼び出し
+  3. `Student_<ID>`シートの初期化または再利用
 
-     * `DriveApp.searchFolders("title = 'StudyQuest_Stu_<teacherCode>_<grade><class><studentId>' and 'root' in parents")`
-     * フォルダが存在しなければ `DriveApp.createFolder('StudyQuest_Stu_<teacherCode>_<grade><class><studentId>')` で新規作成。
-
-       * 作成後、フォルダ配下に `Responses_<studentId>.gsheet` を作成し（各クラス共通テンプレートをコピー）、初期化。
-     * フォルダが見つかった場合は、フォルダ名をアイコン付きで表示。
-
-       * UIにフォルダアイコンを複数表示し、該当フォルダをクリックするとログイン処理を開始。
-  3. `initStudent(teacherCode, grade, classroom, number)`を呼び出し：
-
-     * 該当クラスのスプレッドシートを取得。
-     * `生徒一覧`シートに該当`studentId`が存在しない場合は新規追加。
-     * `Student_<studentId>`シートを探し、存在しなければ**必ず作成**。既存シートはそのまま再利用。
-     * `Student_<studentId>`シートに、以下のヘッダー列を初期化：
-
-       | 列番号 | フィールド | 説明                      |
-       | --- | ----- | ----------------------- |
-       | A   | 日時    | 回答送信日時（`Date`）          |
-       | B   | 課題ID  | 課題を一意に識別するUUID          |
-       | C   | 課題内容  | 回答時点の問題文                |
-       | D   | 回答本文  | 生徒が入力した回答               |
-       | E   | 付与XP  | 回答により今回獲得したXP（固定20など）   |
-       | F   | 累積XP  | 回答後の累積XP                |
-       | G   | レベル   | 回答後のレベル                 |
-       | H   | トロフィー | 回答により獲得したトロフィー名（カンマ区切り） |
-       | I   | 回答回数  | その課題に対する回答回数（1～3）       |
-     * 既存シートがある場合はそのまま利用し、**行数を変更せず過去履歴を残す**。
-  4. 成功時、`?page=input&teacher=<>&grade=<>&class=<>&number=<>`に遷移。
-
-#### 3.2.2 クエストボード画面（`input.html`）
+#### 3.2.2 クエストボード画面
 
 * **画面構成**
 
-  * **背景**：パーティクルアニメーション（Canvas+2D描画）。
-  * **上部**：XPバー＋レベル表示
+  * XPバー＋レベル表示
+  * 未回答／完了済みクエスト一覧＋詳細・入力エリア
+  * AIフィードバックボタン、履歴表示ボタン、回答制限表示
 
-    * XPバーは全幅100%、現在の累積XPを％で表示。
-    * バー下に「レベル：<数値>」をリアルタイム更新。
-  * **メインエリア**（PCは左右2カラム、SPは縦並び）
+* **主要GAS呼び出し**
 
-    * **左カラム**
-
-      1. 未回答クエスト一覧（カード表示、背景グラデーション紫→藍）
-
-         * 各カードに：
-
-           * 教科ラベル、課題IDを元に取得した問題文冒頭、作成日時
-           * 提出済みの場合は取り消し線表示＆半透明化し、完了済みエリアに移動。
-      2. 完了済みクエスト一覧（カード表示）
-    * **右カラム：クエスト詳細エリア**
-
-      * 常に右カラムに詳細表示（SPはモーダル表示）。
-      * 表示項目：
-
-        1. **課題詳細**：教科名称、問題文全文。
-        2. **回答入力欄**（テキストエリア or 選択肢フォーム）。
-        3. **送信ボタン**（回答送信）。
-        4. **AIフィードバックボタン**（Gemini APIを呼び出し、ヒント・気づきを提供）。
-        5. **履歴を見るボタン**。
-        6. **AIフィードバック回数表示**：各課題ごとに残り呼び出し回数（最大2回）を表示。
-        7. **回答回数制限表示**：各課題の回答は最大3回まで。回数表示と制限情報を明示。
-  * **フッター/その他**
-
-    * **デバッグパネル**：画面左下に縮小表示。GAS呼び出しログ（開始/成功/失敗）を時刻付きで表示するテキストエリア。公開時は非表示可能。
-
-* **主要なGAS／API呼び出し**
-
-  1. `listTasks(teacherCode, grade, classroom)` → 全課題を取得し、クライアント側で未回答・回答済みを判定。
-
-  2. `getStudentHistory(teacherCode, grade, classroom, studentId)` → `Student_<studentId>`シートから全履歴行を取得し、配列形式で返却。
-
-  3. **詳細表示時**（タスクカードクリック）
-
-     * クライアント側で返却された履歴行（`historyRows`）をフィルタして、その課題IDの行群を抽出。
-     * 最後に追加された回答行の回答内容をテキストエリアにプリフィル。
-     * 過去回答も「履歴を見る」から閲覧可能。
-
-  4. **回答送信処理**
-
-     * ボタン押下でクライアントが以下を実行：
-       a. **回答回数チェック**：すでに3回回答済みならエラー表示し、送信不可。
-       b. **クライアントローカルで計算**：
-
-       * `historyRows`から前回累積XP（列F）、前回レベル（列G）、獲得済みトロフィー（列H）を取得。
-       * `earnedXp`を算出（問題ごとに固定スコア）。
-       * 新しい`newTotalXp = prevTotalXp + earnedXp`。
-       * **レベル判定**：`threshold = prevLevel × 100` → `newTotalXp ≥ threshold`ならレベルアップ。
-       * **トロフィー獲得条件**：
-
-         * 例：`newTotalXp ≥ 500`で「初級バッジ」、`newLevel ≥ 5`で「達人トロフィー」。
-       * **回答回数インクリメント**：送信前の回数に +1。
-         c. **回答保存呼び出し**：
-         `submitAnswer(teacherCode, grade, classroom, studentId, taskId, answerText, earnedXp, newTotalXp, newLevel, newTrophies, attemptCount)`
-         d. **AIフィードバックログ保存**（回答後、回答中に不要）。
-         e. **UI更新**：XPバー幅とレベルテキストをGSAPでアニメーション更新。残り回答回数表示を刷新。
-         f. 0.5秒後に再度 `listTasks` と `getStudentHistory` を呼び出し、UIを最新化。
-
-  5. **AIフィードバック処理**
-
-     * AIフィードバックボタン押下時（各課題ごと最大2回まで）：
-       a. **呼び出し回数チェック**：すでに2回呼び出し済みならボタンを「模範解答表示」に切り替え。
-       b. **Gemini API呼び出し**：
-
-       * プロンプト作成：児童の回答内容、課題タイトル、ペルソナ選択（小学生用・中学生用など）に応じたテンプレートを適用。
-       * 要求例：『この回答をもとに、次の問いかけのヒントをください。・・・』など。
-         c. **GAS経由で取得**：`callGeminiAPI_GAS(prompt, persona)`を呼び出し、非同期取得。
-         d. **フィードバック表示**：画面上に型アニメーション（タイプライター）で表示。
-         e. **呼び出し回数カウント**：成功時にローカル変数またはHiddenフィールドにカウントを保存。
-         f. **呼び出し回数上限到達時**：AIフィードバックボタンを「模範解答を見る」ボタンに切り替え。
-         g. **模範解答表示機能**：呼び出し上限到達後は模範解答を表示するのみでAI呼び出し不可。
-
-  6. **履歴表示**（モーダル表示）
-
-     * `historyRows`配列から該当課題IDの行群を抽出し、テーブル形式で以下を表示：
-       \| 日時 | 課題ID | 回答本文 | 付与XP | 累積XP | レベル | トロフィー | 回答回数 |
-
-       * 同一課題IDへの複数回答もすべて行として並べる。
-     * 各行クリックで詳細表示（必要に応じて）。
+  * `listTasks(...)`, `getStudentHistory(...)`, `submitAnswer(...)`, `callGeminiAPI_GAS(...)`
 
 ---
 
-## 3.3 回答ボード（`board.html`）
+### 3.3 回答ボード（`board.html`）
 
-* **機能概要**
-
-  * 教師モードの「回答ボードを見る」リンクから遷移。
-  * `listBoard(teacherCode)` を呼び出し、`回答ログ（全体ボード用）`シートから直近30件を取得。
-  * 返却データの構造：
-
-    ```js
-    [  
-      { studentId: "6-1-1", timestamp: <Date>, taskId: "uuid-xxx", answerSummary: "□□を…", earnedXp: 20, totalXp: 140, level: 2, trophies: "初級王冠", aiCalls: 1, attempts: 2 },  
-      …  
-    ]  
-    ```
-  * カードレイアウトでグリッド表示。各カードには：
-
-    1. 生徒ID
-    2. 回答要約／または回答全文
-    3. 付与XP
-    4. 回答後累積XP
-    5. 回答後レベル
-    6. 獲得トロフィー（あれば）
-    7. **AIフィードバック利用回数**（例：`AIヒント: 1/2`）
-    8. **回答回数**（例：`回答: 2/3`）
-  * GSAP でカードを順次回転フェードインアニメーション（rotationY: 90→0, opacity: 0→1）。
-  * 15秒ごと自動更新（`setInterval`）。
-
-### 3.4 GAS バックエンド全体構成
-
-#### 3.4.1 ファイル構成
-
-* `Code.gs`（サーバーサイド関数全般）
-* `appsscript.json`（タイムゾーン：Asia/Tokyo、実行ユーザー：USER\_ACCESSING、アクセス：ANYONE）
-
-#### 3.4.2 主な関数一覧
-
-1. `doGet(e)`
-
-   * パラメータ `page`, `teacher`, `grade`, `class`, `number` を受け取り、対応するHTMLテンプレートを返す。
-
-2. `generateTeacherCode()`
-
-   * 6桁英数字のランダム文字列を生成。スクリプトプロパティに重複がなければ返却。
-
-3. `findLatestFolderByName_(name)`
-
-   * DriveAppから同名フォルダを検索し、最新作成日時のフォルダを返す。
-
-4. `initTeacher(passcode)`
-
-   * 教師モード初回/2回目以降の判定 → フォルダ・複数クラス用スプレッドシートの生成または取得 → 必要シート初期化。
-
-5. `getSpreadsheetByTeacherCode_Class(teacherCode, grade, classroom)`
-
-   * スクリプトプロパティから対象クラスのスプレッドシートIDを取得し開く（存在しない場合はnull）。
-
-6. `findStudentSheet_(ss, studentId)`
-
-   * 指定スプレッドシート内で`Student_<studentId>`という名前のシートを検索・正規化して返す。
-
-7. `initStudent(teacherCode, grade, classroom, number)`
-
-   * **生徒初回ログイン処理** → `生徒一覧`シートにID登録 → `Student_<ID>`シート作成または既存シート利用。
-   * **My Driveへの専用フォルダ／ファイル作成**：生徒ログイン時に、生徒のGoogle Drive内に`StudyQuest_Stu_<teacherCode>_<grade><class><studentId>`フォルダを作成し、個別スプレッドシートファイルを生成して回答ログのバックアップを保存する。
-
-8. `createTask(teacherCode, grade, classroom, payloadAsJson, selfEval, persona)`
-
-   * 該当クラスの`課題一覧`シートに新行追加（課題ID: UUID、JSON文字列、自己評価フラグ、作成日時、ペルソナ）。
-
-9. `listTasks(teacherCode, grade, classroom)`
-
-   * 該当クラスの`課題一覧`シートから全行取得し、新→旧順の配列で返却。
-
-10. `deleteTask(teacherCode, grade, classroom, taskId)`
-
-* 該当クラスの`課題一覧`シートから該当IDの行を検索し削除。
-
-11. `submitAnswer(teacherCode, grade, classroom, studentId, taskId, answer, earnedXp, newTotalXp, newLevel, trophiesObtained, attemptCount)`
-
-    * **処理詳細**：
-
-      1. `getSpreadsheetByTeacherCode_Class(teacherCode, grade, classroom)`でスプレッドシート取得。
-      2. `findStudentSheet_(ss, studentId)`で`Student_<ID>`シート取得（存在しなければ異常終了）。
-      3. `課題一覧`シートから`taskId`を検索し、JSONをパースして`question`を取得。
-      4. `Student_<ID>`シートに新行を追記（列A～Iに日時、課題ID、課題内容、回答本文、付与XP、累積XP、レベル、トロフィー、回答回数）。
-      5. `回答ログ（全体ボード用）`シートに新行を追記（列A～Jに日時、生徒ID、課題ID、回答概要、付与XP、累積XP、レベル、トロフィー、AI呼び出し回数、回答回数）。
-      6. **生徒Driveへの個別ファイルへも追記**。
-      7. 成功時は`{ status: "ok", newTotalXp: <数値>, newLevel: <数値>, trophies: <文字列または配列> }`を返却。
-      8. エラー時は`{ status: "error", message: <エラーメッセージ> }`を返却。
-
-12. `getStudentHistory(teacherCode, grade, classroom, studentId)`
-
-    * `Student_<ID>`シートから全行を取得し、各行をオブジェクト化して配列で返却：
-
-      ```js
-      [  
-        { timestamp: <Date>, taskId: <String>, question: <String>, answer: <String>, earnedXp: <Number>, totalXp: <Number>, level: <Number>, trophies: <String>, attemptCount: <Number> },  
-        …  
-      ]  
-      ```
-    * 同一`taskId`への複数回答行もすべて含む（履歴として保持）。
-
-13. `listBoard(teacherCode, grade, classroom)`
-
-    * `回答ログ（全体ボード用）`シートから最終30行を取得し、各行をオブジェクト化して返却：
-
-      ```js
-      [  
-        { studentId: "6-1-1", timestamp: <Date>, taskId: <String>, answerSummary: <String>, earnedXp: <Number>, totalXp: <Number>, level: <Number>, trophies: <String>, aiCalls: <Number>, attempts: <Number> },  
-        …  
-      ]  
-      ```
-
-14. `getStatistics(teacherCode, grade, classroom)`
-
-    * **処理詳細**：
-
-      1. 該当クラスの`課題一覧`シートの行数（ヘッダー行を除く）を取得 → `taskCount`。
-      2. 該当クラスの`生徒一覧`シートの行数（ヘッダー行を除く）を取得 → `studentCount`。
-      3. **全**`Student_<ID>`シートを走査し、各シートの最終行を取得する（`getLastRow()`）。
-
-         * その行の列F（累積XP）、列G（レベル）、列H（トロフィー）を読み取り、下記情報をまとめる：
-
-           ```js
-           stats = [  
-             { studentId: "6-1-1", totalXp: 340, level: 3, trophies: "初級王冠, 学年1位" },  
-             …  
-           ];  
-           ```
-      4. `{ status: "ok", studentCount: <数値>, taskCount: <数値>, stats: <配列> }`を返却。
-
-15. `callGeminiAPI_GAS(prompt, persona)`
-
-    * **処理内容**：
-
-      * パラメータとして受け取ったプロンプトとペルソナ情報を用いてGemini APIを呼び出し、フィードバック文を取得。
-      * レスポンスを返却。
-
-16. `logToSpreadsheet(logData)`
-
-    * **処理内容**：
-
-      * AIフィードバック情報（児童ID、課題ID、回答、フィードバック、スコア、試行回数など）を`AIフィードバックログ`シートに記録。
-
-17. `include(filename)`
-
-    * HTMLテンプレート埋め込み用ヘルパー関数。
+* `listBoard(teacherCode)` → 全体回答ログ取得 → カードグリッド表示（自動更新）
 
 ---
 
-## 4. データ構造（スプレッドシートシート定義）
-
-### 4.1 スプレッドシート構成概要
-
-* **フォルダ名（教師用管理フォルダ）**： `StudyQuest_Teach_<教師コード>`
-* **各クラス用スプレッドシート名**： `StudyQuest_<teacherCode>_Grade<学年>_Class<組>_Log`
-* **シート一覧**（各クラス用シート共通）：
-
-### GitHub ActionsによるGASデプロイ
-
-`.github/workflows/deploy.yml` では `main` ブランチへの push で Web アプリを自動更新します。実行前に次のシークレットを登録してください。
-
-- `CLASPRC_JSON` – `~/.clasprc.json` の内容をそのまま登録
-- `DEPLOYMENT_ID` – 既存 Web アプリの deploymentId
-
-デプロイ先の Script ID は `.clasp.json` に記録してあります。
-
-#### デプロイ手順
-
-1. `CLASPRC_JSON` と `DEPLOYMENT_ID` をリポジトリのシークレットに登録します。
-2. `main` ブランチへ push するとワークフローが走り、`clasp push` と `clasp deploy` が自動実行されます。
-3. 初回のみ Apps Script エディタから Web アプリを手動作成し、得られた `DEPLOYMENT_ID` をシークレットに登録してください。`appsscript.json` に `webapp` 設定を追記します。
-4. デプロイが成功するとワークフロー内で `npm version patch --no-git-tag-version` が実行され、`src/Code.gs` とテストのバージョン定数も更新されます。この自動コミットには `[skip ci]` が付与されるため、デプロイ後に再度ワークフローが起動することはありません。
-
-## 5. データ取得とキャッシュ (最終設計)
+## 4. データ取得とキャッシュ (最終設計)
 
 ```
 Drive/
@@ -502,4 +124,61 @@ Drive/
             └── history.json
 ```
 
-Apps Script は各クラスのシート内容を `data.csv` と `data.json` に書き出します。夜間バッチで全クラスを走査し `summary.csv` を生成し、教師ダッシュボードから高速に参照できます。生徒ごとの提出履歴は `student_data` フォルダに `history.json` として保存し、改ざん防止のため教師権限でのみ更新します。
+* Apps Scriptは各クラスのシート内容を `data.csv`／`data.json` に出力し、夜間バッチで `summary.csv` を生成。
+* 生徒履歴は教師のDrive上で `history.json` として管理、改ざん防止のためApps Script経由でのみ更新。
+
+---
+
+## 5. GitHub Actions による GAS デプロイ
+
+* `.github/workflows/deploy.yml` で `main` への push をトリガーに `clasp push`／`clasp deploy` を実行。
+* 必要シークレット：`CLASPRC_JSON`, `DEPLOYMENT_ID`
+
+---
+
+以上。README をご確認ください。
+
+---
+
+## 6. 技術的指示
+
+以下の技術的要件を満たすよう実装してください。
+
+1. **Apps Script ウェブアプリ設定**
+
+   * `appsscript.json` の `webapp` 設定を適切に構成し、`executeAs`: `USER_ACCESSING`、`access`: `ANYONE` もしくは `DOMAIN` に設定。
+   * OAuth スコープは最小限（`drive.file`, `scripts.external_request` など）を指定。
+
+2. **Clasp 設定**
+
+   * `.clasp.json` に `scriptId` と `rootDir` を明示。
+   * `package.json` に `deploy` スクリプトを追加：
+
+     ```json
+     "scripts": {
+       "deploy": "clasp push --force && clasp deploy --deploymentId $DEPLOYMENT_ID"
+     }
+     ```
+
+3. **フォルダ操作**
+
+   * `DriveApp` ではなく、可能な限り `Advanced Drive Service` (Drive API) を利用し、エラー時の詳細ログをキャッチ。
+   * フォルダ検索は `Drive` サービスの `Files.list` メソッドで `q: "name='StudyQuest_<TeacherCode>' and mimeType='application/vnd.google-apps.folder'"` を用いる。
+
+4. **データキャッシュ**
+
+   * CSV/JSON 出力関数は非同期的に実行し、ユーザー操作をブロックしない（Promise パターン or コンソールログで完了通知）。
+
+5. **フロントエンド**
+
+   * `manage.html`, `input.html`, `board.html` は各々のスクリプトタグで `include('...')` を利用し、コードのDRY化を図る。
+   * UI コンポーネントは TailwindCSS + GSAP で実装し、共通コンポーネント化を検討。
+
+6. **テスト**
+
+   * Node.js 環境下で `npm test` が実行できるよう、`tests/` フォルダを整備し、`jest` または `mocha` でユニットテストを記述。
+
+7. **CI 設定**
+
+   * GitHub Actions (`deploy.yml`) に `clasp version` を追加して自動バージョン管理。
+   * プルリクエストごとに `npm run lint` & `npm test` が実行されるジョブを定義。
