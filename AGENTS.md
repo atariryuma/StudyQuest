@@ -45,18 +45,20 @@ clasp deploy --versionNumber 1 --deploymentId <DEPLOYMENT_ID>
 # ローカル単体テスト
 npm test
 
+# または Codex 環境では
+scripts/setup-codex.sh
+
 # 変更をGASに反映して確認
 clasp push && clasp open
 ```
-
 
 ## ▶ コーディング規約
 
 - ファイルは `Code.gs`、`Utils.gs` など役割ごとに分割
 - 関数名は `camelCase`
 - コメントは JSDoc 形式 (`/** ... */`)
-- スクリプトプロパティは教師コードと対応するスプレッドシート ID の保存にのみ使用
-  し、その他のデータは各教師のシートで管理する。複数の教師が同じウェブアプリを
+- スクリプトプロパティは教師コードと対応するフォルダ ID の保存にのみ使用
+  し、その他のデータは各教師のCSVファイルで管理する。複数の教師が同じウェブアプリを
   利用しても混乱が起こらないように設計する。
 
 ## ▶ CI/CD
