@@ -842,6 +842,85 @@ function exportSummary(teacherCode) {
 }
 
 /**
+ * getClassIdMap_(teacherCode): Script Properties から classIdMap を取得
+ * @param {string} teacherCode
+ * @return {Object} クラスIDとシート名のマップ
+ */
+function getClassIdMap_(teacherCode) {
+  const prop = PropertiesService.getScriptProperties().getProperty(`classIdMap_${teacherCode}`);
+  if (!prop) return {};
+  try {
+    return JSON.parse(prop);
+  } catch (e) {
+    return {};
+  }
+}
+
+/**
+ * exportCacheToTabs(teacherCode):
+ * 各クラスのデータシートをキャッシュタブに複製し summary を更新
+ * @param {string} teacherCode
+ */
+function exportCacheToTabs(teacherCode) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return;
+
+  const classIdMap = getClassIdMap_(teacherCode);
+  const classIds = Object.keys(classIdMap);
+
+  classIds.forEach(id => {
+    const sheetName = `_cache_data_${id}`;
+    const cacheSheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    cacheSheet.clear();
+    const src = ss.getSheetByName(classIdMap[id]);
+    if (!src) return;
+    const values = src.getDataRange().getValues();
+    if (values.length && values[0].length) {
+      cacheSheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    }
+    cacheSheet.hideSheet();
+  });
+
+  // summary タブ更新
+  const summarySheet = ss.getSheetByName('summary') || ss.insertSheet('summary');
+  summarySheet.clear();
+  let header = null;
+  const rows = [];
+  classIds.forEach(id => {
+    const cache = ss.getSheetByName(`_cache_data_${id}`);
+    if (!cache) return;
+    const values = cache.getDataRange().getValues();
+    if (!values.length) return;
+    if (!header) {
+      header = ['classId'].concat(values[0]);
+    }
+    for (let i = 1; i < values.length; i++) {
+      rows.push([id, ...values[i]]);
+    }
+  });
+  if (header) {
+    rows.unshift(header);
+    summarySheet.getRange(1, 1, rows.length, header.length).setValues(rows);
+  }
+  summarySheet.hideSheet();
+}
+
+/**
+ * getCacheData(teacherCode, classId):
+ * キャッシュシートからデータを取得
+ * @param {string} teacherCode
+ * @param {string} classId
+ * @return {Array[]} 値配列
+ */
+function getCacheData(teacherCode, classId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return [];
+  const sheet = ss.getSheetByName(`_cache_data_${classId}`);
+  if (!sheet) return [];
+  return sheet.getDataRange().getValues();
+}
+
+/**
  * getStudentDataFolder_(teacherCode, studentId):
  * STUDYQUEST_<code>/student_data/<studentId> を取得/作成
  */
@@ -938,5 +1017,5 @@ function getSqVersion() {
 
 // Export for testing in Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getSqVersion };
+  module.exports = { getSqVersion, exportCacheToTabs, getCacheData };
 }
