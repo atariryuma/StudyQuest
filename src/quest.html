@@ -15,29 +15,22 @@
       font-family: 'DotGothic16', sans-serif;
       background-color: #1a1b26;
     }
-    /* Custom scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #2a2f4a; }
     ::-webkit-scrollbar-thumb { background: #4a4f8a; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #5a5f9a; }
-
-    /* Background pattern */
     .pixel-bg {
       background-image:
         linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
       background-size: 16px 16px;
     }
-
-    /* Glass style panels */
     .glass-panel {
       background: rgba(26, 27, 38, 0.6);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    /* Game-like button */
     .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
     .game-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
   </style>
@@ -45,61 +38,70 @@
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
 
   <div class="max-w-7xl mx-auto h-[calc(100vh-2rem)] flex flex-col gap-4">
-    <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+    <header class="glass-panel rounded-xl p-3 flex justify-between items-center gap-4 shadow-lg">
       <div class="flex items-center gap-3">
         <i data-lucide="swords" class="w-8 h-8 text-cyan-400"></i>
         <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest</h1>
       </div>
-      <div class="w-full sm:w-1/2 lg:w-1/3">
-        <div class="flex justify-between items-center mb-1 text-sm text-gray-400">
-          <span>Lv. <span id="playerLevel">1</span></span>
-          <span><span id="studentId"></span></span>
-        </div>
-        <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden">
-          <div id="xpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0" style="transition: width 0.5s ease-in-out;"></div>
-        </div>
-        <div class="text-center text-xs mt-1 text-yellow-300">
-          <span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP
+      <div class="flex items-center gap-6">
+        <span id="studentId" class="text-sm text-gray-400"></span>
+        <div class="w-48">
+          <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+            <span>Lv.<span id="playerLevel">1</span></span>
+            <span><span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP</span>
+          </div>
+          <div class="h-3 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden">
+            <div id="xpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0"></div>
+          </div>
         </div>
       </div>
     </header>
 
-    <main class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
-      <aside class="w-full md:w-1/3 lg:w-1/4 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
-          <i data-lucide="scroll-text" class="w-6 h-6 text-amber-400"></i>
+    <div class="flex-grow flex gap-4 overflow-hidden">
+      <aside class="w-64 flex-shrink-0 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
+        <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
+          <i data-lucide="scroll-text" class="w-5 h-5 text-amber-400"></i>
           クエストボード
         </h2>
-        <div class="space-y-3 overflow-y-auto flex-grow">
+        <div class="flex-1 overflow-y-auto space-y-3">
           <div>
-            <h3 class="text-sm font-bold text-pink-400 mb-2">未回答クエスト</h3>
+            <h3 class="text-sm font-bold text-pink-400 mb-1">未回答クエスト</h3>
             <div id="unanswered" class="space-y-2"></div>
           </div>
           <div>
-            <h3 class="text-sm font-bold text-cyan-400 mb-2">完了済みクエスト</h3>
+            <h3 class="text-sm font-bold text-cyan-400 mb-1">完了済みクエスト</h3>
             <div id="answered" class="space-y-2"></div>
           </div>
         </div>
       </aside>
 
-      <section class="w-full md:w-2/3 lg:w-3/4 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden">
+      <section class="flex-1 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden relative">
         <div id="stepProgress" class="flex items-center gap-2 p-3"></div>
-        <div id="chatLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
-        <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
-          <div id="answerInputs" class="mb-3"></div>
-          <div class="flex flex-col sm:flex-row items-center gap-3">
-            <button id="sendBtn" class="game-btn w-full sm:w-auto flex-grow bg-pink-600 text-white px-8 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 active:border-pink-700 flex items-center justify-center gap-2">
-              <i data-lucide="send-horizontal"></i>
-              <span>提出する</span>
-            </button>
-            <button id="modeToggle" class="game-btn w-full sm:w-auto bg-gray-600 text-gray-200 px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 active:border-gray-700 flex items-center justify-center gap-2">
-              <i data-lucide="sparkles"></i>
-              <span>Geminiにヒントを求める</span>
-            </button>
+        <div id="questArea" class="flex flex-col flex-1">
+          <div id="chatLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
+          <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
+            <div id="answerInputs" class="mb-3"></div>
+            <div class="flex items-center gap-3">
+              <button id="sendBtn" class="game-btn bg-pink-600 text-white px-6 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex items-center gap-2">
+                <i data-lucide="send-horizontal"></i>
+                <span>回答する</span>
+              </button>
+              <a id="viewAnswersBtn" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center gap-2" href="#" target="_blank">
+                <i data-lucide="users"></i>
+                <span>みんなの回答を見る</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex items-center justify-center hidden">
+          <div class="text-center space-y-4">
+            <p class="text-xl font-bold">クエストクリア！</p>
+            <p><span id="earnedXp">+0</span> XP 獲得</p>
+            <button id="nextQuestBtn" class="game-btn bg-pink-600 text-white px-6 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500">次のクエストへ</button>
           </div>
         </div>
       </section>
-    </main>
+    </div>
   </div>
 <script>
   <?!= include('shared/escapeHtml'); ?>
@@ -109,13 +111,13 @@ const grade = '<?!= grade ?>';
 const classroom = '<?!= classroom ?>';
 const number = '<?!= number ?>';
 const version = '<?!= version ?>';
+
 const studentId = `${grade}-${classroom}-${number}`;
 let xp = 0;
 let level = 1;
 let totalXp = 0;
 const xpPerQuest = 10;
 let currentTask = null;
-let mode = 'submit';
 let aiCalls = 0;
 
 const QuestStep = {
@@ -123,6 +125,7 @@ const QuestStep = {
   DEEPENING_QUESTION: 1,
   REASONING: 2,
   FINAL_ANSWER: 3,
+  COMPLETED: 4,
 };
 let questStep = QuestStep.INITIAL_ANSWER;
 let stepAnswers = ['', '', '', ''];
@@ -142,17 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   initStudent();
-  document.getElementById('modeToggle').addEventListener('click', toggleMode);
-  document.getElementById('sendBtn').addEventListener('click', onSend);
+  document.getElementById('sendBtn').addEventListener('click', handleSend);
+  document.getElementById('nextQuestBtn').addEventListener('click', () => {
+    document.getElementById('resultScreen').classList.add('hidden');
+    loadTasks();
+  });
   updateProgressBar();
+  updateSendButton();
 });
-
-function toggleMode() {
-  mode = mode === 'submit' ? 'gemini' : 'submit';
-  const btn = document.getElementById('sendBtn');
-  btn.textContent = mode === 'submit' ? '提出' : 'ヒント';
-  document.getElementById('modeToggle').textContent = mode === 'submit' ? 'Gemini' : '提出';
-}
 
 function initStudent() {
   google.script.run.withSuccessHandler(() => { loadTasks(); loadXp(); })
@@ -207,37 +207,46 @@ function openTask(task, history) {
   appendMsg('system', `【${q.subject}】 ${q.question}`);
   const rows = history.filter(r => r[1] === task.id);
   rows.forEach(r => appendMsg('student', r[3]));
-  renderInput(q, rows.length);
+  renderInputForStep(q, rows.length);
   log.scrollTop = log.scrollHeight;
   updateProgressBar();
+  updateSendButton();
+  const link = document.getElementById('viewAnswersBtn');
+  link.href = `?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
 }
 
-function renderInput(q, attempt) {
+function renderInputForStep(q, attempt) {
   const area = document.getElementById('answerInputs');
   area.innerHTML = '';
-  if (attempt >= 1) q.type = 'text';
-  if (q.type === 'text') {
+  if (questStep === QuestStep.INITIAL_ANSWER) {
+    if (attempt >= 1) q.type = 'text';
+    if (q.type === 'text') {
+      area.innerHTML = '<textarea id="answerText" class="w-full p-2 bg-gray-600 rounded"></textarea>';
+    } else if (q.type === 'radio') {
+      q.choices.forEach((c, i) => {
+        const id = `r${i}`;
+        const opt = escapeHtml(c);
+        area.innerHTML += `<label class="flex items-center gap-1"><input type="radio" name="choice" value="${opt}" id="${id}">${opt}</label>`;
+      });
+    } else if (q.type === 'checkbox') {
+      q.choices.forEach((c, i) => {
+        const id = `c${i}`;
+        const opt = escapeHtml(c);
+        area.innerHTML += `<label class="flex items-center gap-1"><input type="checkbox" value="${opt}" class="cb">${opt}</label>`;
+      });
+    }
+  } else if (questStep === QuestStep.COMPLETED) {
+    area.innerHTML = '';
+  } else {
     area.innerHTML = '<textarea id="answerText" class="w-full p-2 bg-gray-600 rounded"></textarea>';
-  } else if (q.type === 'radio') {
-    q.choices.forEach((c, i) => {
-      const id = `r${i}`;
-      const opt = escapeHtml(c);
-      area.innerHTML += `<label class="flex items-center gap-1"><input type="radio" name="choice" value="${opt}" id="${id}">${opt}</label>`;
-    });
-  } else if (q.type === 'checkbox') {
-    q.choices.forEach((c, i) => {
-      const id = `c${i}`;
-      const opt = escapeHtml(c);
-      area.innerHTML += `<label class="flex items-center gap-1"><input type="checkbox" value="${opt}" class="cb">${opt}</label>`;
-    });
   }
 }
 
-function onSend() {
+function handleSend() {
   if (!currentTask) return;
   const q = JSON.parse(currentTask.q);
   let text = '';
-  if (q.type === 'text') {
+  if (q.type === 'text' || questStep !== QuestStep.INITIAL_ANSWER) {
     text = document.getElementById('answerText').value.trim();
   } else if (q.type === 'radio') {
     const sel = document.querySelector('input[name="choice"]:checked');
@@ -249,15 +258,17 @@ function onSend() {
     alert('回答を入力してください');
     return;
   }
-
   appendMsg('student', text);
   stepAnswers[questStep] = text;
+  document.querySelectorAll('#answerInputs input, #answerInputs textarea').forEach(e => e.value = '');
 
   if (questStep === QuestStep.INITIAL_ANSWER) {
     google.script.run.withSuccessHandler(res => {
       appendMsg('gemini', res);
       questStep = QuestStep.DEEPENING_QUESTION;
+      renderInputForStep(q, 1);
       updateProgressBar();
+      updateSendButton();
     }).callGeminiAPI_GAS(
       teacherCode,
       `次の回答をした生徒に更に考えさせる質問を一つしてください。回答: ${text}`,
@@ -267,7 +278,9 @@ function onSend() {
     google.script.run.withSuccessHandler(res => {
       appendMsg('gemini', res);
       questStep = QuestStep.REASONING;
+      renderInputForStep(q, 1);
       updateProgressBar();
+      updateSendButton();
     }).callGeminiAPI_GAS(
       teacherCode,
       `生徒の回答「${text}」の理由や根拠を説明するヒントを短く与えてください。`,
@@ -276,14 +289,15 @@ function onSend() {
   } else if (questStep === QuestStep.REASONING) {
     appendMsg('system', '最後にまとめの回答を送信してください');
     questStep = QuestStep.FINAL_ANSWER;
+    renderInputForStep(q, 1);
     updateProgressBar();
+    updateSendButton();
   } else if (questStep === QuestStep.FINAL_ANSWER) {
+    addXp(xpPerQuest);
     google.script.run.withSuccessHandler(() => {
-      xp += xpPerQuest;
-      totalXp += xpPerQuest;
-      if (xp >= level * 100) { level++; xp = 0; }
-      updateXpBar();
       loadTasks();
+      document.getElementById('earnedXp').textContent = `+${xpPerQuest}`;
+      document.getElementById('resultScreen').classList.remove('hidden');
     }).submitAnswer(
       teacherCode,
       studentId,
@@ -296,11 +310,10 @@ function onSend() {
       aiCalls,
       document.querySelectorAll('#chatLog .msg-student').length
     );
-    questStep = QuestStep.INITIAL_ANSWER;
-    stepAnswers = ['', '', '', ''];
+    questStep = QuestStep.COMPLETED;
+    updateProgressBar();
+    updateSendButton();
   }
-
-  document.getElementById('answerInputs').querySelectorAll('input,textarea').forEach(e => e.value = '');
 }
 
 function appendMsg(type, text) {
@@ -312,8 +325,16 @@ function appendMsg(type, text) {
   log.scrollTop = log.scrollHeight;
 }
 
-
 function loadXp() { updateXpBar(); }
+function addXp(amount) {
+  totalXp += amount;
+  xp += amount;
+  while (xp >= level * 100) {
+    xp -= level * 100;
+    level++;
+  }
+  updateXpBar();
+}
 function updateXpBar() {
   document.getElementById('playerLevel').textContent = level;
   document.getElementById('xpCurrent').textContent = xp;
@@ -331,7 +352,7 @@ function updateProgressBar() {
     const circle = document.createElement('div');
     circle.textContent = i + 1;
     circle.className = 'w-6 h-6 rounded-full text-xs flex items-center justify-center';
-    if (i <= questStep) {
+    if (questStep >= i) {
       circle.classList.add('bg-pink-600', 'text-white');
     } else {
       circle.classList.add('bg-gray-700', 'text-gray-400');
@@ -340,13 +361,39 @@ function updateProgressBar() {
     if (i < total - 1) {
       const line = document.createElement('div');
       line.className = 'flex-1 h-1';
-      line.classList.add(i < questStep ? 'bg-pink-600' : 'bg-gray-700');
+      line.classList.add(questStep > i ? 'bg-pink-600' : 'bg-gray-700');
       container.appendChild(line);
     }
+  }
+}
+
+function updateSendButton() {
+  const btn = document.getElementById('sendBtn');
+  const label = btn.querySelector('span');
+  switch (questStep) {
+    case QuestStep.INITIAL_ANSWER:
+      label.textContent = '回答する';
+      btn.disabled = false;
+      break;
+    case QuestStep.DEEPENING_QUESTION:
+      label.textContent = '送信';
+      btn.disabled = false;
+      break;
+    case QuestStep.REASONING:
+      label.textContent = '送信';
+      btn.disabled = false;
+      break;
+    case QuestStep.FINAL_ANSWER:
+      label.textContent = '提出する';
+      btn.disabled = false;
+      break;
+    case QuestStep.COMPLETED:
+      label.textContent = '完了';
+      btn.disabled = true;
+      break;
   }
 }
 </script>
 <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?!= version ?></div>
 </body>
 </html>
-
