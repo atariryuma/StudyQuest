@@ -341,3 +341,14 @@ function getGeminiSettings(teacherCode) {
   const data = loadTeacherSettings_(teacherCode);
   return { apiKey: data.apiKey || '', persona: data.persona || '' };
 }
+
+/**
+ * getGlobalGeminiApiKey(): スクリプト全体で使用する Gemini API キーを取得
+ */
+function getGlobalGeminiApiKey() {
+  const props = PropertiesService.getScriptProperties();
+  const encoded = props.getProperty('globalGeminiApiKey') || '';
+  return encoded
+    ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString()
+    : '';
+}
