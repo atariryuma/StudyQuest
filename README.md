@@ -20,7 +20,8 @@
    - パスコード入力（固定: `kyoushi`）
    - `initTeacher(passcode)` 呼び出し
    - 初回: `StudyQuest_<TeacherCode>` フォルダ、各クラス用スプレッドシート自動生成
-   - 2回目以降: 既存 `TeacherCode` に紐づくダッシュボードへ遷移
+   - 2回目以降: スクリプトの設定が残っていない場合でも My ドライブ直下から
+     `StudyQuest_<TeacherCode>` フォルダを検索して既存コードを復元
 
 2. **管理パネル**
    - 課題作成フォーム: クラス選択、科目、問題文、回答タイプ、Gemini設定

@@ -31,6 +31,29 @@ function findLatestFolderByName_(name) {
 }
 
 /**
+ * detectTeacherFolderOnDrive_():
+ * My Drive 直下から StudyQuest_<CODE> 形式のフォルダを検索
+ * 最も新しいものの教師コードとIDを返す
+ */
+function detectTeacherFolderOnDrive_() {
+  const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' and name contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
+  try {
+    const res = Drive.Files.list({ q, orderBy: 'createdTime desc' });
+    const items = res.items || [];
+    for (let i = 0; i < items.length; i++) {
+      const name = items[i].title || items[i].name || '';
+      const m = name.match(new RegExp('^' + FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
+      if (m) {
+        return { code: m[1], id: items[i].id };
+      }
+    }
+  } catch (e) {
+    logError_('detectTeacherFolderOnDrive_', e);
+  }
+  return null;
+}
+
+/**
  * initTeacher(passcode):
  * 教師用初回ログイン or 2回目以降の判定 → スプレッドシートを生成 or 取得
  */
@@ -52,6 +75,13 @@ function initTeacher(passcode) {
       }
     }
   });
+  if (!foundCode) {
+    const info = detectTeacherFolderOnDrive_();
+    if (info) {
+      props.setProperty(info.code, info.id);
+      return { status: 'ok', teacherCode: info.code };
+    }
+  }
   if (foundCode) {
     return { status: 'ok', teacherCode: foundCode };
   }
