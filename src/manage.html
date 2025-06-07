@@ -370,33 +370,51 @@
         updateAiCreditDisplay();
 
         const choiceType = document.getElementById('aiChoiceType').value;
+        const question = document.getElementById('question').value.trim();
+        const subject = document.getElementById('subject').value.trim();
+        const persona = document.getElementById('personaSelect').value;
         const container = document.getElementById('optionInputs');
         container.innerHTML = `<div class="text-center text-sm p-4">AIが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
 
-        setTimeout(() => {
-          let mockChoices = [];
-          if (choiceType === '単語') mockChoices = ['光合成', '呼吸', '蒸散'];
-          else if (choiceType === '短文') mockChoices = ['葉で日光を浴びること', '酸素を吸って二酸化炭素を出すこと', '根から水を吸い上げること'];
-          else mockChoices = ['植物が光のエネルギーを使って、水と二酸化炭素から栄養分を作り出す働き。', '生物が生命活動を維持するために、酸素を取り入れて体内の有機物を分解し、エネルギーを取り出す働き。', '植物の体内の水分が、主に葉の裏側にある気孔から水蒸気として排出される現象。'];
+        const typePrompt = choiceType === '単語' ? '単語を3つ' : choiceType === '短文' ? '短文を3つ' : '長文を3つ';
+        const prompt = `${subject} の課題「${question}」に対する回答例として${typePrompt}箇条書きで提示してください。`;
 
-          generationHistory.push(mockChoices);
-          renderOptionInputs(mockChoices);
-          updateGenerationHistory();
-        }, 800);
-
-        if (aiCredits <= 0) {
-          document.getElementById('generateChoicesBtn').disabled = true;
-        }
+        google.script.run
+          .withSuccessHandler(res => {
+            const choices = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
+            generationHistory.push(choices);
+            renderOptionInputs(choices);
+            updateGenerationHistory();
+            if (aiCredits <= 0) {
+              document.getElementById('generateChoicesBtn').disabled = true;
+            }
+          })
+          .withFailureHandler(err => {
+            container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
+          })
+          .callGeminiAPI_GAS(teacherCode, prompt, persona);
       });
 
       document.getElementById('generateFollowupBtn').addEventListener('click', () => {
         const container = document.getElementById('followupSuggestions');
+        const question = document.getElementById('question').value.trim();
+        const subject = document.getElementById('subject').value.trim();
+        const persona = document.getElementById('personaSelect').value;
         container.innerHTML = `AIが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
-        setTimeout(() => {
-          container.textContent = `・なぜその働きが植物にとって重要だと思いますか？\n・人間や他の動物の活動と、何か似ている点はありますか？`;
-        }, 800);
+
+        const prompt = `${subject} の課題「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
+
+        google.script.run
+          .withSuccessHandler(res => {
+            const lines = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
+            container.textContent = lines.map(l => `・${l}`).join('\n');
+          })
+          .withFailureHandler(err => {
+            container.textContent = '生成に失敗しました: ' + err.message;
+          })
+          .callGeminiAPI_GAS(teacherCode, prompt, persona);
       });
 
       document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
