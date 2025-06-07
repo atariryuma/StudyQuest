@@ -95,7 +95,7 @@ StudyQuest_<TeacherCode>/
 
 Gemini API キーは教師全体で 1 つを共有し、Apps Script のスクリプトプロパティ
 `geminiApiKey` として Base64 形式で保存されます。設定画面から入力したキーは
-`setGlobalGeminiApiKey` により保存され、`getGlobalGeminiApiKey` で取得できます。
+`setGlobalGeminiApiKey` により保存され、`getGlobalGeminiApiKey` で取得できます。スクリプトプロパティの名前は **geminiApiKey** 固定です。
 
 `Settings` シートの列構成 (`type`, `value1`, `value2`) は変更せず、保存される
 エントリは `persona` と `class` のみです。過去バージョンで使用されていた
