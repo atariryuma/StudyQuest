@@ -181,4 +181,4 @@ Drive/
 7. **CI 設定**
 
    * GitHub Actions (`deploy.yml`) に `clasp version` を追加して自動バージョン管理。
-   * プルリクエストごとに `npm run lint` & `npm test` が実行されるジョブを定義。
+   * プルリクエストごとに `npm test` が実行されるジョブを定義。

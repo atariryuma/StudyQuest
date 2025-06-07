@@ -49,12 +49,6 @@ npm test
 clasp push && clasp open
 ```
 
-## ▶ Lint & フォーマット
-
-```bash
-npm run lint      # ESLint
-npm run format    # Prettier
-```
 
 ## ▶ コーディング規約
 
