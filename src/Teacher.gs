@@ -43,27 +43,19 @@ function findLatestFolderByName_(name) {
  * 最も新しいものの教師コードとIDを返す
  */
 function detectTeacherFolderOnDrive_() {
-  const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' ` +
-            `and name contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
+  const q = `mimeType='application/vnd.google-apps.folder' ` +
+            `and title contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
-    const it = DriveApp.searchFolders(q);
-    let newest = null;
-    let newestDate = null;
-    let code = null;
-    while (it.hasNext()) {
-      const folder = it.next();
-      const name = folder.getName();
-      const m = name.match(new RegExp('^' + FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
+    const res = Drive.Files.list({ q, orderBy: 'createdDate desc' });
+    const items = res.items || [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const m = item.title.match(new RegExp('^' + FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
       if (m) {
-        const date = folder.getDateCreated();
-        if (!newestDate || date > newestDate) {
-          newest = folder;
-          newestDate = date;
-          code = m[1];
-        }
+        return { code: m[1], id: item.id };
       }
     }
-    return newest ? { code: code, id: newest.getId() } : null;
+    return null;
   } catch (e) {
     logError_('detectTeacherFolderOnDrive_', e);
     return null;
