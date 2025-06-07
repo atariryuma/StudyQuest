@@ -138,7 +138,7 @@ function initTeacher(passcode) {
   const newCode    = generateTeacherCode();
   const folderName = FOLDER_NAME_PREFIX + newCode;
   const folderInstance = createFolder_('root', folderName);
-  initializeFolders(newCode, []);
+  initializeFolders(newCode, [], folderInstance);
 
   const ss       = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
   const ssId     = ss.getId();
@@ -809,8 +809,8 @@ function getTeacherRootFolder(teacherCode) {
  * および class_1, class_2 ... サブフォルダを作成し、
  * 作成したクラス番号と学年・組の対応表を Drive 上に保存
 */
-function initializeFolders(teacherCode, classList) {
-  const root = getTeacherRootFolder(teacherCode);
+function initializeFolders(teacherCode, classList, root) {
+  root = root || getTeacherRootFolder(teacherCode);
 
   // ensure base folders
   const teacherData = getOrCreateSubFolder_(root, TEACHER_DATA_FOLDER);
