@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "deploy": "clasp push --force --no-open",
-    "test": "jest"
+    "test": "jest",
+    "postversion": "node scripts/postversion.js"
   },
   "devDependencies": {
     "@google/clasp": "^2.4.2",

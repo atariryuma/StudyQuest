@@ -46,17 +46,4 @@ jobs:
       - name: Show URL
         run: echo "${{ steps.deploy.outputs.webapp_url }}"
 
-      - name: Bump version and commit
-        if: success()
-        run: |
-          set -eux
-          npm version patch --no-git-tag-version
-          NEW_VER=$(node -p "require('./package.json').version")
-          sed -i "s/^const SQ_VERSION           = 'v[0-9.]*';$/const SQ_VERSION           = 'v${NEW_VER}';/" src/Code.gs
-          sed -i "s/expect(getSqVersion()).toBe('v[0-9.]*');/expect(getSqVersion()).toBe('v${NEW_VER}');/" tests/Code.test.js
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add package.json src/Code.gs tests/Code.test.js
-          git commit -m "Bump version to v${NEW_VER} [skip ci]"
-          git push
           
