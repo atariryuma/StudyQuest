@@ -48,12 +48,17 @@ StudyQuest_<TeacherCode>/
     -   未回答／完了済みクエストの一覧 (`listTasks`)
     -   回答送信 (`submitAnswer`)、AIフィードバック (`callGeminiAPI_GAS`)
 
-## 4. 技術スタック
+## 4. StudyQuest_DB の詳細
 
--   Google Apps Script (GAS)
--   HTML / CSS (TailwindCSS) / JavaScript (GSAP)
--   Gemini API
--   GitHub Actions + clasp (CI / CD)
+本アプリでは、教師ごとに 1 つの **StudyQuest_DB** スプレッドシートを使用します。
+データは次の 4 シートに集約され、複雑なファイル管理を必要としません。
+
+| シート名 | 役割 |
+| :--- | :--- |
+| `Tasks` | 課題情報を管理 |
+| `Submissions` | 生徒からの提出ログ |
+| `Students` | 生徒の XP・レベルなどを保持 |
+| `Dashboard` | QUERY 関数で集計した統計ビュー |
 
 ## 5. セットアップ
 
@@ -72,9 +77,8 @@ StudyQuest_<TeacherCode>/
     ```bash
     npm install
     ```
-4.  **Google Drive API (Advanced Service) の有効化**
-    Apps Script エディタの **サービス** から「Drive API」を追加します。
-    **※注:** このプロジェクトでは主に、GASが自身の親フォルダを特定するために `Drive.Files.get(ScriptApp.getScriptId())` のような形で利用します。
+4.  **(任意) Google Drive API の追加**
+    Drive API はフォルダ特定など最小限の操作にのみ利用します。必要に応じて Apps Script エディタの「サービス」から追加してください。
 
 ## 6. CI / CD (GitHub Actions)
 
