@@ -59,10 +59,21 @@
       </div>
       <button id="saveGeminiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
       <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
+      <button id="classSettingBtn" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm">クラス設定</button>
     </div>
   </header>
   <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
+  </div>
+  <div id="classSettingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-gray-800 text-gray-200 p-6 rounded-xl space-y-4 w-72">
+      <p class="text-sm">クラスIDを「学年,組;学年,組」の形式で入力 (最大8件)</p>
+      <textarea id="classIdInput" rows="3" class="w-full p-2 rounded bg-gray-700 focus:outline-none text-sm" placeholder="例: 6,1;6,2"></textarea>
+      <div class="flex justify-end gap-2">
+        <button id="cancelClassBtn" class="px-3 py-1 bg-gray-600 rounded text-sm">キャンセル</button>
+        <button id="confirmClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded text-sm">保存</button>
+      </div>
+    </div>
   </div>
 
   <!-- ========================================
@@ -202,6 +213,25 @@
       // Gemini 設定読み込み
       loadGeminiSettings();
       document.getElementById('saveGeminiBtn').addEventListener('click', saveGeminiSettings);
+      document.getElementById('classSettingBtn').addEventListener('click', () => {
+        document.getElementById('classSettingModal').classList.remove('hidden');
+      });
+      document.getElementById('cancelClassBtn').addEventListener('click', () => {
+        document.getElementById('classSettingModal').classList.add('hidden');
+      });
+      document.getElementById('confirmClassBtn').addEventListener('click', () => {
+        const input = document.getElementById('classIdInput').value.trim();
+        if (input.split(';').filter(x => x.trim()).length > 8) {
+          alert('最大8件まで入力できます。');
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(() => {
+            document.getElementById('classSettingModal').classList.add('hidden');
+          })
+          .withFailureHandler(err => alert('更新に失敗: ' + err.message))
+          .setClassIdMap(teacherCode, input);
+      });
 
       // 3) 回答タイプ選択時に optionsArea を表示／非表示
       Array.from(document.getElementsByName('ansType')).forEach(radio => {
