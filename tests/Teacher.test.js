@@ -51,7 +51,8 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
     STUDENT_SHEET_PREFIX: 'stu_',
     DriveApp: {
       createFolder: jest.fn(() => ({ getId: ()=>'fid' })),
-      getFileById: jest.fn(() => ({ moveTo: jest.fn() }))
+      getFileById: jest.fn(() => ({ moveTo: jest.fn() })),
+      searchFolders: jest.fn()
     },
     SpreadsheetApp: { create: jest.fn(() => ssStub) },
     logError_: () => {},
