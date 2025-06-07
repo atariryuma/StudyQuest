@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
-    <title>StudyQuest - 教師パネル</title>
+    <title>StudyQuest - 管理パネル (AI機能強化版)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,9 +37,30 @@
             transition: all 0.2s ease;
             border-bottom-width: 4px;
         }
-        .game-btn:active {
+        .game-btn:disabled {
+            filter: grayscale(80%);
+            cursor: not-allowed;
+        }
+        .game-btn:active:not(:disabled) {
             transform: translateY(2px);
             border-bottom-width: 2px;
+        }
+        .class-card {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background-color: #374151;
+            cursor: pointer;
+            font-size: 0.875rem;
+            border: 1px solid transparent;
+        }
+        .class-card.selected {
+            background-color: #4338ca;
+            border-color: #6d28d9;
+            box-shadow: 0 0 10px rgba(109, 40, 217, 0.5);
+        }
+        .ai-tool-panel {
+            background: rgba(0,0,0,0.2);
+            border-left: 2px solid #a855f7;
         }
         input:focus, textarea:focus, select:focus {
             outline: none;
@@ -59,7 +80,7 @@
         <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
             <div class="flex items-center gap-3">
                 <i data-lucide="shield-check" class="w-8 h-8 text-pink-400"></i>
-                <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest / 教師パネル</h1>
+                <h1 class="text-2xl font-bold tracking-wider text-white">管理パネル</h1>
             </div>
             <div class="flex items-center gap-3">
                 <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2">
@@ -128,11 +149,11 @@
                             </div>
                         </div>
                         <div class="bg-gray-900/50 p-3 rounded-lg text-center">
-                            <p class="text-sm text-gray-400">招待コード</p>
+                            <p class="text-sm text-gray-400">教師コード</p>
                             <p id="codeBadge" class="text-2xl font-bold tracking-widest text-amber-300">----</p>
                         </div>
-                        <div id="currentDateTime" class="w-full game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 text-base flex items-center justify-center gap-2">
-                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        <div class="text-white text-center py-2 text-lg flex items-center justify-center gap-2">
+                            <i data-lucide="clock" class="w-5 h-5 text-indigo-300"></i>
                             <span id="currentDateTimeText"></span>
                         </div>
                     </div>
@@ -207,8 +228,31 @@
                                 <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="checkbox" class="sr-only"> チェックボックス</label>
                             </div>
                         </div>
-                        <div id="optionsArea" class="space-y-2 hidden">
-                            <div id="optionInputs"></div>
+                        <div id="aiToolsSection" class="space-y-4 hidden">
+                            <div class="p-3 rounded-lg ai-tool-panel space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-4 h-4"></i>AIで選択肢を生成</label>
+                                    <div id="aiCredit" class="text-sm text-amber-300 font-bold">生成クレジット: 💎 💎 💎</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <select id="aiChoiceType" class="flex-grow p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm">
+                                        <option value="単語">単語</option>
+                                        <option value="短文">短文</option>
+                                        <option value="長文">長文</option>
+                                    </select>
+                                    <button type="button" id="generateChoicesBtn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
+                                </div>
+                                <div id="optionInputs" class="space-y-2"></div>
+                                <div id="generationHistoryWrapper" class="hidden">
+                                    <button type="button" id="toggleHistoryBtn" class="text-xs text-gray-400 hover:text-white">生成履歴を見る ▼</button>
+                                    <div id="generationHistory" class="hidden mt-2 p-2 bg-gray-900/50 rounded-md space-y-2"></div>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-lg ai-tool-panel space-y-3">
+                                <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>AIによる深掘りの質問例</label>
+                                <button type="button" id="generateFollowupBtn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">質問を生成</button>
+                                <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
+                            </div>
                         </div>
                         <label class="block text-sm mb-1 text-gray-400 cursor-pointer">
                             <input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する
@@ -290,8 +334,12 @@
         return;
       }
 
+      let aiCredits = 3;
+      let generationHistory = [];
+      updateAiCreditDisplay();
+
       // 2) 右上バッジをセット
-      document.getElementById('codeBadge').textContent = `CODE: ${teacherCode}`;
+      document.getElementById('codeBadge').textContent = teacherCode;
       document.getElementById('codeBadge').addEventListener('click', () => {
         document.getElementById('teacherCodeModalText').textContent = teacherCode;
         document.getElementById('teacherCodeModal').classList.remove('hidden');
@@ -307,25 +355,59 @@
       document.getElementById('saveApiBtn').addEventListener('click', saveGeminiSettings);
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
 
-      // 3) 回答タイプ選択時に optionsArea を表示／非表示
+      // 3) 回答タイプ選択時に AI ツールを表示 / 非表示
       Array.from(document.getElementsByName('ansType')).forEach(radio => {
         radio.addEventListener('change', e => {
-          const area = document.getElementById('optionsArea');
-          if (e.target.value === 'radio' || e.target.value === 'checkbox') {
-            area.classList.remove('hidden');
-            generateOptionInputs();
-          } else {
-            area.classList.add('hidden');
-            resetOptionInputs();
-          }
+          const area = document.getElementById('aiToolsSection');
+          area.classList.toggle('hidden', e.target.value === 'text');
         });
       });
 
-      // 4) numOptions が変わったときに入力欄を再生成
-      const numOptionsEl = document.getElementById('numOptions');
-      if (numOptionsEl) {
-        numOptionsEl.addEventListener('change', generateOptionInputs);
-      }
+      document.getElementById('generateChoicesBtn').addEventListener('click', () => {
+        if (aiCredits <= 0) return;
+
+        aiCredits--;
+        updateAiCreditDisplay();
+
+        const choiceType = document.getElementById('aiChoiceType').value;
+        const container = document.getElementById('optionInputs');
+        container.innerHTML = `<div class="text-center text-sm p-4">AIが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
+        renderIcons(document);
+
+        setTimeout(() => {
+          let mockChoices = [];
+          if (choiceType === '単語') mockChoices = ['光合成', '呼吸', '蒸散'];
+          else if (choiceType === '短文') mockChoices = ['葉で日光を浴びること', '酸素を吸って二酸化炭素を出すこと', '根から水を吸い上げること'];
+          else mockChoices = ['植物が光のエネルギーを使って、水と二酸化炭素から栄養分を作り出す働き。', '生物が生命活動を維持するために、酸素を取り入れて体内の有機物を分解し、エネルギーを取り出す働き。', '植物の体内の水分が、主に葉の裏側にある気孔から水蒸気として排出される現象。'];
+
+          generationHistory.push(mockChoices);
+          renderOptionInputs(mockChoices);
+          updateGenerationHistory();
+        }, 800);
+
+        if (aiCredits <= 0) {
+          document.getElementById('generateChoicesBtn').disabled = true;
+        }
+      });
+
+      document.getElementById('generateFollowupBtn').addEventListener('click', () => {
+        const container = document.getElementById('followupSuggestions');
+        container.innerHTML = `AIが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
+        renderIcons(document);
+        setTimeout(() => {
+          container.textContent = `・なぜその働きが植物にとって重要だと思いますか？\n・人間や他の動物の活動と、何か似ている点はありますか？`;
+        }, 800);
+      });
+
+      document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
+        const historyDiv = document.getElementById('generationHistory');
+        const isHidden = historyDiv.classList.toggle('hidden');
+        e.target.textContent = isHidden ? '生成履歴を見る ▼' : '生成履歴を隠す ▲';
+      });
+
+      document.getElementById('optionInputs').addEventListener('click', e => {
+        if (e.target.closest('.removeOptionBtn')) e.target.closest('.flex').remove();
+      });
 
       // 5) 「新しい課題」フォーム送信時
       const taskForm = document.getElementById('taskForm');
@@ -446,8 +528,8 @@
         const now = new Date();
         const text = now.toLocaleString('ja-JP', {
           year: 'numeric', month: '2-digit', day: '2-digit',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
+          hour: '2-digit', minute: '2-digit'
+        }).replace(/\//g, '-');
         const el = document.getElementById('currentDateTimeText');
         if (el) el.textContent = text;
       }
@@ -528,13 +610,47 @@
         localStorage.setItem('subjectHistory', JSON.stringify(hist));
       }
 
+      function updateAiCreditDisplay() {
+        const creditEl = document.getElementById('aiCredit');
+        if (!creditEl) return;
+        let diamonds = Array(aiCredits).fill('💎').join(' ');
+        creditEl.innerHTML = `生成クレジット: ${diamonds}`;
+      }
+
+      function updateGenerationHistory() {
+        const wrapper = document.getElementById('generationHistoryWrapper');
+        const container = document.getElementById('generationHistory');
+        if (!wrapper || !container) return;
+        if (generationHistory.length === 0) {
+          wrapper.classList.add('hidden');
+          return;
+        }
+        wrapper.classList.remove('hidden');
+        container.innerHTML = '';
+        generationHistory.forEach((historySet, index) => {
+          const historyEntry = document.createElement('div');
+          historyEntry.className = 'border-t border-gray-700 pt-2';
+          const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+          historyEntry.innerHTML = `
+            <p class="text-xs font-bold text-gray-500">履歴 ${index + 1}</p>
+            <ul class="list-disc list-inside text-xs">${listItems}</ul>
+          `;
+          container.prepend(historyEntry);
+        });
+      }
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+      }
+
       // 9) フォームリセットヘルパー
       function resetForm() {
         document.getElementById('subject').value = '';
         document.getElementById('question').value = '';
         const textRadio = document.querySelector('input[name="ansType"][value="text"]');
         if (textRadio) textRadio.checked = true;
-        document.getElementById('optionsArea').classList.add('hidden');
+        document.getElementById('aiToolsSection').classList.add('hidden');
         resetOptionInputs();
         document.getElementById('selfEval').checked = false;
       }
@@ -545,20 +661,21 @@
       }
 
       // 選択肢入力欄を動的生成
-      function generateOptionInputs() {
-        const area = document.getElementById('optionInputs');
-        const numOptions = parseInt(document.getElementById('numOptions').value, 10);
-        area.innerHTML = '';
-        for (let i = 1; i <= numOptions; i++) {
+      function renderOptionInputs(choices = []) {
+        const container = document.getElementById('optionInputs');
+        if (!container) return;
+        container.innerHTML = '';
+        if (choices.length === 0) return;
+        choices.forEach((choice, index) => {
           const div = document.createElement('div');
-          div.className = 'flex gap-2';
+          div.className = 'flex items-center gap-2';
           div.innerHTML = `
-            <input type="text"
-                   class="flex-grow p-1 rounded bg-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-400 text-sm"
-                   placeholder="選択肢${i}" />
+            <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
+            <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
           `;
-          area.appendChild(div);
-        }
+          container.appendChild(div);
+        });
+        renderIcons(document);
       }
 
       /**
