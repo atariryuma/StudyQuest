@@ -88,9 +88,9 @@
           <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
             <div id="answerInputs" class="mb-3"></div>
             <div class="flex items-center justify-between gap-3">
-              <button id="sendBtn" class="game-btn bg-pink-600 text-white px-6 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex items-center gap-2 flex-1">
+              <button id="sendBtn" class="game-btn text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 flex-1 border">
                 <i data-lucide="send-horizontal"></i>
-                <span>回答する</span>
+                <span>送信</span>
               </button>
               <a id="viewAnswersBtn" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center gap-2 flex-1" href="#" target="_blank">
                 <i data-lucide="users"></i>
@@ -237,7 +237,8 @@ async function openTask(task, history) {
   updateProgressBar();
   updateSendButton();
   const link = document.getElementById('viewAnswersBtn');
-  link.href = `?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
+  const baseUrl = window.location.origin + window.location.pathname;
+  link.href = `${baseUrl}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
 }
 
 function renderInputForStep(q, attempt) {
@@ -297,22 +298,11 @@ async function handleSend() {
     updateProgressBar();
     updateSendButton();
   } else if (questStep === QuestStep.DEEPENING_QUESTION) {
-    google.script.run.withSuccessHandler(res => {
-      appendMsg('gemini', res);
-      questStep = QuestStep.REASONING;
-      renderInputForStep(q, 1);
-      updateProgressBar();
-      updateSendButton();
-    }).callGeminiAPI_GAS(
-      teacherCode,
-      `生徒の回答「${text}」の理由や根拠を説明するヒントを短く与えてください。`,
-      '小学生向け'
-    );
-  } else if (questStep === QuestStep.REASONING) {
-    const msgs = ['なるほど、よく考えたね！', 'いい視点だね！', 'ばっちりだよ！'];
-    await typeWriter(msgs[Math.floor(Math.random() * msgs.length)], 'system');
-    await delay(300);
-    await typeWriter('それじゃあ最後に、この時間の学習の振り返りを書いて先生に提出してね。', 'system');
+    if (text.length <= 20) {
+      await typeWriter('シンプルだけど、君らしい意見だね！', 'system');
+      await delay(300);
+    }
+    await typeWriter('じゃあ、今日の学習について、生活とのつながりやもっと知りたいと思ったことを教えてね！', 'system');
     questStep = QuestStep.FINAL_ANSWER;
     renderInputForStep(q, 1);
     updateProgressBar();
@@ -410,12 +400,15 @@ function updateProgressBar() {
   const container = document.getElementById('stepProgress');
   if (!container) return;
   container.innerHTML = '';
-  const total = 4;
+  const total = 3;
+  const stepIndex =
+    questStep === QuestStep.INITIAL_ANSWER ? 0 :
+    questStep === QuestStep.DEEPENING_QUESTION ? 1 : 2;
   for (let i = 0; i < total; i++) {
     const circle = document.createElement('div');
     circle.textContent = i + 1;
     circle.className = 'w-6 h-6 rounded-full text-xs flex items-center justify-center';
-    if (questStep >= i) {
+    if (stepIndex >= i) {
       circle.classList.add('bg-pink-600', 'text-white');
     } else {
       circle.classList.add('bg-gray-700', 'text-gray-400');
@@ -424,7 +417,7 @@ function updateProgressBar() {
     if (i < total - 1) {
       const line = document.createElement('div');
       line.className = 'flex-1 h-1';
-      line.classList.add(questStep > i ? 'bg-pink-600' : 'bg-gray-700');
+      line.classList.add(stepIndex > i ? 'bg-pink-600' : 'bg-gray-700');
       container.appendChild(line);
     }
   }
@@ -433,25 +426,31 @@ function updateProgressBar() {
 function updateSendButton() {
   const btn = document.getElementById('sendBtn');
   const label = btn.querySelector('span');
+  btn.classList.remove(
+    'bg-pink-600','border-pink-800','hover:bg-pink-500',
+    'bg-blue-600','border-blue-800','hover:bg-blue-500',
+    'bg-green-600','border-green-800','hover:bg-green-500',
+    'bg-gray-600','border-gray-800','hover:bg-gray-500'
+  );
   switch (questStep) {
     case QuestStep.INITIAL_ANSWER:
-      label.textContent = '回答する';
+      label.textContent = '送信';
+      btn.classList.add('bg-pink-600','border-pink-800','hover:bg-pink-500');
       btn.disabled = false;
       break;
     case QuestStep.DEEPENING_QUESTION:
       label.textContent = '送信';
-      btn.disabled = false;
-      break;
-    case QuestStep.REASONING:
-      label.textContent = '送信';
+      btn.classList.add('bg-blue-600','border-blue-800','hover:bg-blue-500');
       btn.disabled = false;
       break;
     case QuestStep.FINAL_ANSWER:
-      label.textContent = '提出する';
+      label.textContent = '提出';
+      btn.classList.add('bg-green-600','border-green-800','hover:bg-green-500');
       btn.disabled = false;
       break;
     case QuestStep.COMPLETED:
       label.textContent = '完了';
+      btn.classList.add('bg-gray-600','border-gray-800','hover:bg-gray-600');
       btn.disabled = true;
       break;
   }
