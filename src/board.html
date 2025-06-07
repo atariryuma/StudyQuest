@@ -44,7 +44,7 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-6">
+<body class="min-h-screen bg-gradient-to-br from-purple-800 to-indigo-700 text-gray-100 p-4 md:p-6">
   <header class="mb-6 flex justify-between items-center">
     <h1 id="boardHeading" class="text-2xl flex items-center gap-2">
       <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
@@ -118,7 +118,7 @@
         }
         rows.forEach((r, i) => {
           const card = document.createElement('div');
-          card.className = 'p-4 bg-gray-800 rounded-xl shadow-md break-words opacity-0';
+          card.className = 'p-4 bg-gray-800 rounded-2xl shadow-2xl break-words opacity-0';
           card.innerHTML = `
             <h3 class="text-pink-400 text-sm mb-1">${escapeHtml(r.studentId)}</h3>
             <p class="text-gray-200 whitespace-pre-wrap">${escapeHtml(r.answer)}</p>
