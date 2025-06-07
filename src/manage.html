@@ -291,6 +291,7 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js"></script>
 
   <script>
+<?!= include('shared/escapeHtml.js'); ?>
     // Lucide Icons を SVG に置き換える
     function renderIcons(scope) {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -676,10 +677,6 @@
         });
       }
 
-      function escapeHtml(text) {
-        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-        return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
-      }
 
       // 9) フォームリセットヘルパー
       function resetForm() {
@@ -746,12 +743,12 @@
           try {
             data = JSON.parse(x.q);
             detailHtml = `
-              <p class="text-sm text-indigo-300 mb-1">【${data.subject || '—'}】</p>
-              <p class="text-base mb-1 whitespace-pre-wrap">${data.question || ''}</p>
+              <p class="text-sm text-indigo-300 mb-1">【${escapeHtml(data.subject || '—')}】</p>
+              <p class="text-base mb-1 whitespace-pre-wrap">${escapeHtml(data.question || '')}</p>
               <p class="text-sm text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
             `;
           } catch (_) {
-            detailHtml = `<p class="text-base mb-1 whitespace-pre-wrap">${x.q}</p>`;
+            detailHtml = `<p class="text-base mb-1 whitespace-pre-wrap">${escapeHtml(x.q)}</p>`;
           }
 
           const card = document.createElement('div');
