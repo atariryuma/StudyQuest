@@ -152,7 +152,6 @@
           新しい課題
         </h2>
         <form id="taskForm" class="space-y-4 text-base">
-          <button id="classSettingBtn" type="button" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-2xl text-sm">クラス設定</button>
           <!-- ■ 担当クラス -->
           <div>
             <label for="taskClass" class="text-sm">■ 担当クラス</label>
@@ -302,7 +301,6 @@
       loadClassOptions();
       loadSubjectHistory();
       document.getElementById('saveApiBtn').addEventListener('click', saveGeminiSettings);
-      document.getElementById('classSettingBtn').addEventListener('click', openClassModal);
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
 
       // 3) 回答タイプ選択時に optionsArea を表示／非表示
