@@ -9,10 +9,8 @@ const SHEET_STUDENTS        = '生徒一覧';
 const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
 const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
-
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-// GAS スクリプトのテストバージョン
-const GAS_VERSION           = '0.1.0-test';
+const SQ_VERSION           = '0.1.0-test';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
@@ -670,8 +668,8 @@ function getGeminiSettings() {
 }
 
 /**
- * 現在の GAS バージョンを返す
+ * 現在の バージョンを返す
  */
 function getGasVersion() {
-  return `GAS v${GAS_VERSION}`;
+  return SQ_VERSION;
 }
