@@ -1,230 +1,235 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>StudyQuest – 課題管理</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- ゲームっぽいドットフォント -->
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
-  <!-- TailwindCSS + GSAP アニメーション + Lucide React（アイコン） -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <meta charset="UTF-8" />
+    <title>StudyQuest - 教師パネル</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body {
-      font-family: 'DotGothic16', monospace;
-    }
-    /* デバッグパネル */
-    #debugPanel {
-      position: fixed;
-      bottom: 1rem;
-      left: 1rem;
-      width: 320px;
-      max-height: 200px;
-      background: rgba(31, 41, 55, 0.9);
-      border: 1px solid #4b5563;
-      border-radius: 0.5rem;
-      overflow-y: auto;
-      padding: 0.75rem;
-      font-size: 0.75rem;
-      line-height: 1.2;
-      color: #d1d5db;
-      z-index: 50;
-    }
-    #debugPanelHeader {
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      color: #9ca3af;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    #debugClose {
-      cursor: pointer;
-      color: #f87171;
-    }
-    .class-card {
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      background-color: #374151;
-      cursor: pointer;
-      font-size: 0.875rem;
-    }
-    .class-card.selected {
-      background-color: #4f46e5;
-    }
-  </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'DotGothic16', sans-serif;
+            background-color: #1a1b26;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2a2f4a; }
+        ::-webkit-scrollbar-thumb { background: #4a4f8a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5a5f9a; }
+        .pixel-bg {
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .glass-panel {
+            background: rgba(26, 27, 38, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .game-btn {
+            transition: all 0.2s ease;
+            border-bottom-width: 4px;
+        }
+        .game-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            --tw-ring-color: #f472b6;
+            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+        }
+    </style>
 </head>
-<body class="min-h-screen flex flex-col bg-gradient-to-br from-purple-800 to-indigo-700 text-gray-200">
+<body class="text-gray-200 min-h-screen p-4 pixel-bg">
 
-  <!-- ========================================
-       HEADER
-       ======================================== -->
-  <header class="p-4 bg-gray-800 flex flex-col md:flex-row md:justify-between md:items-center gap-4 shadow-2xl rounded-2xl">
-    <div class="flex items-center gap-4">
-      <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-2xl text-sm shadow-2xl">ログインへ戻る</a>
-      <h1 class="text-xl flex items-center gap-2">
-        <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
-        StudyQuest – 教師パネル
-      </h1>
-    </div>
-    <div class="flex items-center gap-4">
-      <a id="boardLink" href="#" class="text-sm hover:text-pink-400">回答ボードを見る</a>
-      <span id="codeBadge" class="px-3 py-1 bg-pink-600 rounded-xl text-sm tracking-wider">
-        <!-- ここに CODE: XXXX が入る -->
-      </span>
-      <span id="widgetTasks" class="flex items-center px-3 py-1 bg-indigo-600 rounded-xl text-sm tracking-wider">
-        <svg data-icon="ClipboardList" class="w-4 h-4 mr-1"></svg>
-        <span id="totalTasks">0</span> 件
-      </span>
-      <span id="widgetStudents" class="flex items-center px-3 py-1 bg-green-600 rounded-xl text-sm tracking-wider">
-        <svg data-icon="User" class="w-4 h-4 mr-1"></svg>
-        <span id="totalStudents">0</span> 名
-      </span>
-    </div>
-  </header>
-  <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 rounded-2xl shadow-2xl">
-    <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-2xl shadow-2xl text-6xl font-bold text-center tracking-widest"></div>
-  </div>
-  <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl space-y-4 w-80 modal-content">
-      <div>
-        <label for="modalGrade" class="block text-sm mb-1">学年</label>
-        <select id="modalGrade" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
-          <option value="">-- 学年 --</option>
-          <option value="1">1年</option>
-          <option value="2">2年</option>
-          <option value="3">3年</option>
-          <option value="4">4年</option>
-          <option value="5">5年</option>
-          <option value="6">6年</option>
-        </select>
-      </div>
-      <div>
-        <label for="modalClass" class="block text-sm mb-1">組</label>
-        <select id="modalClass" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
-          <option value="">-- 組 --</option>
-          <option value="1">1組</option>
-          <option value="2">2組</option>
-          <option value="3">3組</option>
-          <option value="4">4組</option>
-        </select>
-      </div>
-      <p id="classPreview" class="text-center text-gray-300"></p>
-      <div class="text-center">
-        <button id="saveClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button>
-      </div>
-    </div>
-  </div>
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto flex flex-col gap-4">
 
-  <!-- ========================================
-       MAIN CONTENT
-       ======================================== -->
-  <main class="flex-grow p-6 space-y-6 text-base">
-    <div class="mb-4 flex items-center gap-2">
-      <button id="openClassBtn" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-2xl text-sm">クラス登録</button>
-      <div id="currentClassCard" class="flex flex-wrap gap-2"></div>
-    </div>
-    <section class="bg-gray-800 p-4 rounded-2xl shadow-2xl">
-      <div id="geminiSettings" class="flex flex-col sm:flex-row items-start gap-2">
-        <div>
-          <label for="apiKeyInput" class="text-xs">Gemini APIキー</label>
-          <input id="apiKeyInput" type="password" class="mt-1 p-1 rounded bg-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-400 text-sm" placeholder="保存済みの場合は空白" />
-        </div>
-        <div>
-          <label for="personaSelect" class="text-xs">ペルソナ</label>
-          <select id="personaSelect" class="mt-1 p-1 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
-            <option value="">-- 選択 --</option>
-            <option value="小学生向け">小学生向け</option>
-            <option value="中学生向け">中学生向け</option>
-            <option value="教師向け">教師向け</option>
-          </select>
-        </div>
-        <button id="saveApiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button>
-        <span id="apiStatus" class="text-green-400 text-xs hidden"></span>
-      </div>
-    </section>
-    <section class="grid md:grid-cols-3 gap-6">
-      <!-- ===== 新しい課題フォーム ===== -->
-      <div class="md:col-span-1 bg-gray-800 p-4 rounded-2xl shadow-2xl">
-        <h2 class="text-lg mb-2 flex items-center gap-1">
-          <svg data-icon="PlusCircle" class="w-5 h-5 text-pink-400"></svg>
-          新しい課題
-        </h2>
-        <form id="taskForm" class="space-y-4 text-base">
-          <!-- ■ 担当クラス -->
-          <div>
-            <label for="taskClass" class="text-sm">■ 担当クラス</label>
-            <div id="taskClassButtons" class="flex flex-wrap gap-2 mt-1"></div>
-          </div>
-
-          <!-- ■ 教科入力 -->
-          <div>
-            <label for="subject" class="text-sm">■ 教科を入力</label>
-            <input id="subject" type="text" list="subjectHistory" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-400 text-base" />
-            <datalist id="subjectHistory"></datalist>
-          </div>
-
-          <!-- ■ 問題文 -->
-          <div>
-            <label for="question" class="text-sm">■ 問題文</label>
-            <textarea id="question" rows="3" placeholder="問題文を入力…"
-                      class="w-full mt-1 p-2 rounded bg-gray-700 focus:outline-none text-base" required></textarea>
-          </div>
-
-          <!-- ■ 回答タイプ選択 (Googleフォーム風) -->
-          <div>
-            <label class="text-sm">■ 回答タイプ</label>
-            <div class="mt-1 flex gap-2 text-sm">
-              <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="text" class="focus:ring-2 focus:ring-pink-400" checked> テキスト回答
-              </label>
-              <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="radio" class="focus:ring-2 focus:ring-pink-400"> 選択式 (ラジオ)
-              </label>
-              <label class="flex items-center gap-1">
-                <input type="radio" name="ansType" value="checkbox" class="focus:ring-2 focus:ring-pink-400"> チェックボックス
-              </label>
+        <!-- Header -->
+        <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+            <div class="flex items-center gap-3">
+                <i data-lucide="shield-check" class="w-8 h-8 text-pink-400"></i>
+                <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest / 教師パネル</h1>
             </div>
-          </div>
-
-          <!-- ── 選択式 / チェックボックス用オプション入力エリア ── -->
-          <div id="optionsArea" class="space-y-2 hidden">
-            <!-- ─ 選択肢数を選ぶドロップダウン ─ -->
-            <div>
-              <label for="numOptions" class="text-sm">□ 選択肢数</label>
-              <select id="numOptions"
-                      class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base">
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
+            <div class="flex items-center gap-3">
+                <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>ログインへ戻る</span>
+                </a>
             </div>
-            <!-- ─ ここに選択肢用の入力欄をまとめて生成 ─ -->
-            <div id="optionInputs" class="space-y-1"></div>
-          </div>
+        </header>
 
-          <!-- ■ 自己評価許可 -->
-          <label class="block cursor-pointer text-sm">
-            <input type="checkbox" id="selfEval" class="focus:ring-2 focus:ring-pink-400" /> 自己評価を許可する
-          </label>
+        <!-- Modals -->
+        <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 rounded-2xl shadow-2xl">
+            <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-2xl shadow-2xl text-6xl font-bold text-center tracking-widest"></div>
+        </div>
+        <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl space-y-4 w-80 modal-content">
+                <div>
+                    <label for="modalGrade" class="block text-sm mb-1">学年</label>
+                    <select id="modalGrade" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+                        <option value="">-- 学年 --</option>
+                        <option value="1">1年</option>
+                        <option value="2">2年</option>
+                        <option value="3">3年</option>
+                        <option value="4">4年</option>
+                        <option value="5">5年</option>
+                        <option value="6">6年</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="modalClass" class="block text-sm mb-1">組</label>
+                    <select id="modalClass" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+                        <option value="">-- 組 --</option>
+                        <option value="1">1組</option>
+                        <option value="2">2組</option>
+                        <option value="3">3組</option>
+                        <option value="4">4組</option>
+                    </select>
+                </div>
+                <p id="classPreview" class="text-center text-gray-300"></p>
+                <div class="text-center">
+                    <button id="saveClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button>
+                </div>
+            </div>
+        </div>
 
+        <!-- Main Content Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <!-- ■ 作成ボタン -->
-          <button id="createBtn" type="submit"
-                  class="w-full py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl transition-transform duration-150 transform hover:scale-105 text-base">
-            作成
-          </button>
-        </form>
-      </div>
+            <!-- Left Column: Dashboard & Settings -->
+            <div class="lg:col-span-1 flex flex-col gap-6">
 
-      <!-- ===== 課題一覧カード型 ===== -->
-      <div class="md:col-span-2 bg-gray-800 p-4 rounded-2xl shadow-2xl overflow-auto">
-        <h2 class="text-lg mb-2 flex items-center gap-1">
-          <svg data-icon="ClipboardList" class="w-5 h-5 text-pink-400"></svg>
-          課題一覧
-        </h2>
+                <!-- Dashboard Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="layout-dashboard" class="w-6 h-6 text-cyan-400"></i>
+                        <span>ダッシュボード</span>
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-around text-center">
+                            <div>
+                                <p class="text-3xl font-bold text-pink-400" id="totalTasks">0</p>
+                                <p class="text-sm text-gray-400">公開クエスト</p>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold text-green-400" id="totalStudents">0</p>
+                                <p class="text-sm text-gray-400">登録生徒数</p>
+                            </div>
+                        </div>
+                        <div class="bg-gray-900/50 p-3 rounded-lg text-center">
+                            <p class="text-sm text-gray-400">招待コード</p>
+                            <p id="codeBadge" class="text-2xl font-bold tracking-widest text-amber-300">----</p>
+                        </div>
+                        <a id="boardLink" href="#" class="w-full game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 text-base flex items-center justify-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                            <span>回答ボードを見る</span>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Settings Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="sliders-horizontal" class="w-6 h-6 text-gray-400"></i>
+                        <span>各種設定</span>
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-bold text-pink-400 mb-2">クラス管理</h3>
+                            <div id="currentClassCard" class="flex flex-wrap gap-2 mb-2"></div>
+                            <button id="openClassBtn" class="w-full game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                <span>クラスを登録</span>
+                            </button>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-pink-400 mb-2">Gemini API 設定</h3>
+                            <div class="space-y-2 text-sm">
+                                <input type="password" id="apiKeyInput" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="APIキーを入力 (保存済み)">
+                                <select id="personaSelect" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="">-- 選択 --</option>
+                                    <option value="小学生向け">小学生向け</option>
+                                    <option value="中学生向け">中学生向け</option>
+                                    <option value="教師向け">教師向け</option>
+                                </select>
+                                <button id="saveApiBtn" class="w-full game-btn bg-pink-600 text-white px-4 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="save" class="w-4 h-4"></i>
+                                    <span>設定を保存</span>
+                                </button>
+                                <span id="apiStatus" class="text-green-400 text-xs hidden"></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column: Quest Management -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+
+                <!-- New Quest Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="plus-square" class="w-6 h-6 text-amber-400"></i>
+                        <span>新しいクエストを作成</span>
+                    </h2>
+                    <form id="taskForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">教科</label>
+                                <input id="subject" type="text" list="subjectHistory" placeholder="例: 算数, 国語..." class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                <datalist id="subjectHistory"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">対象クラス</label>
+                                <div id="taskClassButtons" class="flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-400">クエスト内容 (問題文)</label>
+                            <textarea id="question" rows="3" placeholder="ここに問題文を入力します。" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-400">回答タイプ</label>
+                            <div class="flex gap-2 text-sm">
+                                <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="text" class="sr-only" checked> テキスト回答</label>
+                                <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="radio" class="sr-only"> 選択式</label>
+                                <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="checkbox" class="sr-only"> チェックボックス</label>
+                            </div>
+                        </div>
+                        <div id="optionsArea" class="space-y-2 hidden">
+                            <div id="optionInputs"></div>
+                        </div>
+                        <label class="block text-sm mb-1 text-gray-400 cursor-pointer">
+                            <input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する
+                        </label>
+                        <button type="submit" id="createBtn" class="w-full game-btn bg-amber-600 text-white px-4 py-2 rounded-lg font-bold border-amber-800 hover:bg-amber-500 text-base flex items-center justify-center gap-2">
+                            <i data-lucide="wand-sparkles" class="w-5 h-5"></i>
+                            <span>クエストを作成する</span>
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Quest List Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i>
+                        <span>公開中のクエスト一覧</span>
+                    </h2>
+                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
+                </section>
+            </div>
+        </main>
         <div id="tasksContainer" class="grid gap-4 text-base">
           <!-- JavaScript でカードを埋める -->
         </div>
