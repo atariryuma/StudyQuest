@@ -87,6 +87,10 @@
         </div>
       </div>
       <a href="#" id="backLink" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2 flex-shrink-0"></a>
+      <a id="manageBtn" class="game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 text-sm flex items-center gap-2 flex-shrink-0" href="#">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+        <span>管理パネル</span>
+      </a>
       <button type="button" id="closeTaskBtn" class="game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center gap-2 flex-shrink-0 hidden">
         <i data-lucide="square-x" class="w-4 h-4"></i>
         <span>クエストを閉じる</span>
@@ -195,6 +199,7 @@
         return;
       }
       const backLink = document.getElementById('backLink');
+      const manageBtn = document.getElementById('manageBtn');
       const closeBtn = document.getElementById('closeTaskBtn');
       const grade = params.get('grade');
       const classroom = params.get('class');
@@ -205,6 +210,8 @@
         if (followupSection) followupSection.classList.add('hidden');
         backLink.href = `?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
+        manageBtn.style.pointerEvents = 'none';
+        manageBtn.style.opacity = '0.5';
       } else {
         if (followupSection) {
           followupSection.classList.remove('hidden');
@@ -212,6 +219,9 @@
         }
         backLink.href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
+        manageBtn.href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+        manageBtn.style.pointerEvents = '';
+        manageBtn.style.opacity = '';
       }
 
       if (taskId) {
