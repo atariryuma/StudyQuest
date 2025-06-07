@@ -23,7 +23,7 @@ function doGet(e) {
   template.grade       = (e && e.parameter && e.parameter.grade)     ? e.parameter.grade     : '';
   template.classroom   = (e && e.parameter && e.parameter['class'])  ? e.parameter['class']  : '';
   template.number      = (e && e.parameter && e.parameter.number)    ? e.parameter.number    : '';
-  template.version     = getGasVersion();
+  template.version     = getSqVersion();
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -694,11 +694,11 @@ function getGeminiSettings() {
 /**
  * 現在の バージョンを返す
  */
-function getGasVersion() {
+function getSqVersion() {
   return SQ_VERSION;
 }
 
 // Export for testing in Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getGasVersion };
+  module.exports = { getSqVersion };
 }
