@@ -1,175 +1,88 @@
 # StudyQuest
 
-> 小学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
+> 小中学校向けゲーミフィケーション型課題管理・学習支援ウェブアプリ
 
 ## 1. プロジェクト概要
 
-**StudyQuest** は、Google Workspace（Drive, Spreadsheet, Apps Script）を活用し、
-小学校の生徒向けにゲーミフィケーション要素を取り入れた課題管理・学習支援を実現するWebアプリです。
+**StudyQuest** は、Google Workspace を活用し、小中学校の生徒向けにゲーミフィケーション要素を取り入れた課題管理・学習支援を実現するWebアプリです。**単一のスプレッドシート**をデータベースとして利用することで、シンプルで管理しやすく、リアルタイムなデータ反映を実現しています。
 
-- **教師側**: テンプレートフォルダとスプレッドシートを自動生成し、課題の作成・配信・統計分析を行う管理パネルを提供
-- **生徒側**: XPバー、レベル、トロフィーなどでモチベーションを可視化し、未回答クエストの閲覧・回答送信を行うクエストボードを提供
-- **回答ボード**: 全体回答ログをリアルタイムに閲覧できる共有ボード機能
-- **AIフィードバック**: Gemini API連携でヒントや気づきを提示（課題ごと2回まで）
+-   **教師側**: 課題の作成・配信、全生徒の進捗をリアルタイムに分析できる管理パネルを提供。
+-   **生徒側**: XPやレベル、トロフィーでモチベーションを可視化し、課題への挑戦を促すクエストボードを提供。
+-   **AIフィードバック**: Gemini APIと連携し、生徒が課題で行き詰まった際にヒントを提示します。
 
-## 2. 機能要件
+## 2. データ構造：シンプル・一元管理モデル
 
-### 2.1 教師モード（`manage.html`）
-
-1. **ログイン／初期設定**
-   - パスコード入力（固定: `kyoushi`）
-   - `initTeacher(passcode)` 呼び出し
-   - 初回: `StudyQuest_<TeacherCode>` フォルダ、各クラス用スプレッドシート自動生成
-   - 2回目以降: スクリプトの設定が残っていない場合でも My ドライブ直下から
-     `StudyQuest_<TeacherCode>` フォルダを検索して既存コードを復元
-   - **注意**: `StudyQuest_<TeacherCode>` フォルダは「My Drive」直下から移動しないでください。サブフォルダへ置くと `initTeacher()` 実行時に毎回新しいフォルダが作成されます。
-
-2. **管理パネル**
-   - 課題作成フォーム: クラス選択、科目、問題文、回答タイプ、Gemini設定
-   - 課題一覧カード: 編集・削除機能、統計情報取得
-   - 主なGAS呼び出し: `createTask`, `listTasks`, `deleteTask`, `getStatistics`
-
-
-### 2.2 生徒モード（`input.html`）
-
-1. **ログイン／初期設定**
-   - 教師コード、学年、組、番号を入力してバリデーション
-   - `initStudent(...)` 呼び出しで専用クエストボード初期化
-
-2. **クエストボード画面**
-   - XPバー + レベル表示
-   - 未回答／完了済みクエスト一覧
-   - 回答入力エリア、AIフィードバックボタン、履歴表示
-   - 主なGAS呼び出し: `listTasks`, `getStudentHistory`, `submitAnswer`, `callGeminiAPI_GAS`
-
-
-### 2.3 回答ボード（`board.html`）
-
-- 教師コードを渡して全体回答ログを取得 (`listBoard(teacherCode)`)し、カードグリッドで表示
-
-## 3. データ構造とキャッシュ設計
-
-- **1 ファイル完結構成**: `StudyQuest_<TeacherCode>_Log` スプレッドシート
-  - `_cache_data_<classId>` タブ: クラス別キャッシュ
-  - `summary` タブ: 集計データ
-  - `生徒_<ID>` タブ: 学習履歴
-
-- **バッチ更新**: 深夜 1 時の時間駆動トリガーで `exportCacheToTabs()` を実行
-- **手動更新**: 管理画面にキャッシュ更新ボタンを配置
+本プロジェクトは、**単一のスプレッドシート** `StudyQuest_DB` に全てのデータを集約する、シンプルで効率的な設計を採用しています。これにより、複雑なファイル操作やデータ同期処理を必要としません。
 
 ### フォルダ構成
 
 ```
 StudyQuest_<TeacherCode>/
-├── StudyQuest_<TeacherCode>_Log
-└── Students/
-    └── StudyQuest_Stu_<TeacherCode>_<StudentID>/
-        └── Responses_<StudentID>.csv
+└── StudyQuest_DB  (このファイルに全データを集約)
 ```
+
+### スプレッドシート (`StudyQuest_DB`) の構成
+
+| シート名 | 役割 |
+| :--- | :--- |
+| **`Tasks`** | 課題情報を一元管理するマスタシート |
+| **`Submissions`** | 全生徒の回答をリアルタイムに記録する中央ログ |
+| **`Students`** | 生徒情報（レベル、XPなど）を管理するマスタシート |
+| **`Dashboard`** | `QUERY`関数などを活用し、提出状況やランキングを自動で可視化する教師用ダッシュボード |
+
+## 3. 機能要件
+
+### 3.1 教師モード (`manage.html`)
+
+1.  **初期設定**: `initTeacher()` を実行し、必要なデータ管理用スプレッドシート (`StudyQuest_DB`) を自動生成します。
+2.  **管理パネル**:
+    -   課題作成フォーム (`createTask`)
+    -   課題一覧（編集・削除機能付き, `listTasks`, `deleteTask`)
+    -   リアルタイム統計ダッシュボードの閲覧
+
+### 3.2 生徒モード (`input.html`)
+
+1.  **ログイン**: 教師コードと自身の情報を入力し、クエストボードを初期化します。
+2.  **クエストボード**:
+    -   XPバー、レベル、獲得トロフィーを表示
+    -   未回答／完了済みクエストの一覧 (`listTasks`)
+    -   回答送信 (`submitAnswer`)、AIフィードバック (`callGeminiAPI_GAS`)
 
 ## 4. 技術スタック
 
-- Google Apps Script (GAS)
-- HTML + TailwindCSS + GSAP (フロントエンド)
-- Gemini API (AIフィードバック)
-- GitHub Actions + clasp (CI / CD)
+-   Google Apps Script (GAS)
+-   HTML / CSS (TailwindCSS) / JavaScript (GSAP)
+-   Gemini API
+-   GitHub Actions + clasp (CI / CD)
 
 ## 5. セットアップ
 
-1. **リポジトリをクローン**
-```bash
-   git clone <リポジトリURL>
-   cd studyquest
-````
-
-2. **Clasp 認証**
-
-   ```bash
-   npm install -g @google/clasp
-   clasp login --creds <path/to/credentials.json>
-   ```
-
-3. **.clasp.json 設定**
-
-   ```json
-   {
-     "scriptId": "<GAS Script ID>",
-     "rootDir": "src"
-   }
-   ```
-
-4. **package.json の deploy スクリプト**
-
-   ```json
-   "scripts": {
-     "deploy": "clasp push --force && clasp deploy --deploymentId $DEPLOYMENT_ID"
-   }
-   ```
-
-5. **GitHub Actions シークレット設定**
-
-   * `CLASPRC_JSON`: clasp の認証情報
-   * `DEPLOYMENT_ID`: デプロイ先の Deployment ID
-
-6. **依存インストール**
-
-   ```bash
-   npm install
-   ```
-
-7. **Google Drive API (Advanced Service) を有効化**
-
-   Apps Script エディタの **サービス** から「Drive API」を追加し、Google Cloud Console 側でも同 API を有効にします。下記のように `Drive.Files` を利用する関数（例: `createFolder_`, `detectTeacherFolderOnDrive_`）が動作するために必須です。
-
-   ```javascript
-   const file = Drive.Files.insert({
-     title: name,
-     mimeType: MimeType.FOLDER,
-     parents: [{ id: parentId }]
-   });
-   ```
-
-   詳細手順は [Google Apps Script 公式ドキュメント](https://developers.google.com/apps-script/guides/services/advanced#enable) を参照してください。
+1.  **リポジトリをクローン**
+    ```bash
+    git clone <リポジトリURL>
+    cd studyquest
+    ```
+2.  **Clasp 認証と設定**
+    ```bash
+    npm install -g @google/clasp
+    clasp login
+    # .clasp.json に scriptId と rootDir を設定
+    ```
+3.  **依存インストール**
+    ```bash
+    npm install
+    ```
+4.  **Google Drive API (Advanced Service) の有効化**
+    Apps Script エディタの **サービス** から「Drive API」を追加します。
+    **※注:** このプロジェクトでは主に、GASが自身の親フォルダを特定するために `Drive.Files.get(ScriptApp.getScriptId())` のような形で利用します。
 
 ## 6. CI / CD (GitHub Actions)
 
-`.github/workflows/deploy.yml`:
+`.github/workflows/deploy.yml` により、`main`ブランチへのプッシュをトリガーに自動デプロイが実行されます。
+（内容は変更なしのため省略）
 
-```yaml
-name: deploy-gas-webapp
-on:
-  push:
-    branches: [ main ]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    env:
-      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm install
-      - run: npm test        # プルリクエストでのテスト実行
-      - run: npm install -g @google/clasp
-      - name: Configure clasp
-        run: |
-          echo "$CLASPRC_JSON" > ~/.clasprc.json
-      - run: npm run deploy
-```
+## 7. 開発ガイドライン
 
-## 7. テスト
-
-* `tests/` フォルダに Jest または Mocha テストを配置
-* `npm test` でユニットテストを実行
-
-## 8. 開発ガイドライン
-
-* **Apps Script WebApp**: `executeAs: USER_ACCESSING`, `access: ANYONE` か `DOMAIN`
-* **OAuth Scope**: drive.file, scripts.external\_request など最小権限
-* **フォルダ操作**: Advanced Drive Service (`Files.list`) を推奨
-* **キャッシュ更新**: UIをブロックしない非同期実行
-* **フロントエンド構造**: `include()` で共通パーツをDRY化
-
+-   **データ操作**: すべてのデータは `SpreadsheetApp` サービスを通じて `StudyQuest_DB` スプレッドシートに直接読み書きします。
+-   **データ集計**: `QUERY`などのスプレッドシート関数を最大限に活用し、GAS側での複雑なデータ処理を避けます。
+-   **フロントエンド構造**: `include()` を活用し、UIパーツ（ヘッダー、フッターなど）を共通化します。
