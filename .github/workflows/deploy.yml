@@ -43,7 +43,6 @@ jobs:
             --description "auto-deploy from GitHub Actions"
           echo "webapp_url=https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?page=login" \
             >> "$GITHUB_OUTPUT"
-
       - name: Show URL
         run: echo "${{ steps.deploy.outputs.webapp_url }}"
 
@@ -60,3 +59,4 @@ jobs:
           git add package.json src/Code.gs tests/Code.test.js
           git commit -m "Bump version to v${NEW_VER} [skip ci]"
           git push
+          
