@@ -484,4 +484,5 @@ StudyQuest（仮称）– 小学校向けゲーミフィケーション型課題
 1. `CLASPRC_JSON` と `DEPLOYMENT_ID` をリポジトリのシークレットに登録します。
 2. `main` ブランチへ push するとワークフローが走り、`clasp push` と `clasp deploy` が自動実行されます。
 3. 初回のみ Apps Script エディタから Web アプリを手動作成し、得られた `DEPLOYMENT_ID` をシークレットに登録してください。`appsscript.json` に `webapp` 設定を追記します。
+4. デプロイが成功するとワークフロー内で `npm version patch --no-git-tag-version` が実行され、`src/Code.gs` とテストのバージョン定数も更新されます。この自動コミットには `[skip ci]` が付与されるため、デプロイ後に再度ワークフローが起動することはありません。
 
