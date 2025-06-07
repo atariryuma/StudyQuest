@@ -674,3 +674,8 @@ function getGeminiSettings() {
 function getGasVersion() {
   return GAS_VERSION;
 }
+
+// Export for testing in Node.js environment
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { getGasVersion };
+}
