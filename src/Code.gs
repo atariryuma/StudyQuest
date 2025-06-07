@@ -37,7 +37,7 @@ function exportCacheToTabs(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
 
-  const classIdMap = getClassIdMap_(teacherCode);
+  const classIdMap = getClassIdMap(teacherCode);
   const classIds = Object.keys(classIdMap);
 
   classIds.forEach(id => {

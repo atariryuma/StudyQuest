@@ -290,7 +290,7 @@ function setClassIdMap(teacherCode, idsString) {
   return map;
 }
 
-function getClassIdMap_(teacherCode) {
+function getClassIdMap(teacherCode) {
   const data = loadTeacherSettings_(teacherCode);
   const map = {};
   (data.classes || []).forEach((c, idx) => {
