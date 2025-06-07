@@ -58,8 +58,8 @@
         </select>
       </div>
       <button id="saveGeminiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
-      <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>    </div>
-    <p class="text-xs text-gray-400 mt-1">設定内容(APIキー・担当クラス)は教師フォルダ内の settings.csv に保存されます。Gemini API は生徒の回答からヒントを生成する目的でのみ利用されます。</p>
+      <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
+    </div>
   </header>
   <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
@@ -422,6 +422,9 @@
         google.script.run
           .withSuccessHandler(() => {
             document.getElementById('geminiStatus').classList.remove('hidden');
+            if (key) {
+              alert('設定内容(APIキー・担当クラス)は教師フォルダ内の settings.csv に保存されます。Gemini API は生徒の回答からヒントを生成する目的でのみ利用されます。');
+            }
           })
           .setGeminiSettings(teacherCode, key, persona);
       }
