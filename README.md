@@ -110,9 +110,10 @@ StudyQuest_<TeacherCode>/
 
 Gemini APIキーは、アプリケーション全体で1つを共有します。セキュリティを確保するため、キーはスプレッドシート上ではなく、GASのサーバーサイドに安全に保存される**スクリプトプロパティ (Script Properties)** を使用します。
 
-* 設定画面から入力されたキーは `setGlobalGeminiApiKey` 関数によってスクリプトプロパティに保存されます。
-* API利用時には `getGlobalGeminiApiKey` 関数で安全に呼び出されます。
-* スクリプトプロパティに保存する際のプロパティ名は `geminiApiKey` です。
+* キーの登録は必ず `setGlobalGeminiApiKey` または `setGeminiSettings` を通して行います。これらの関数はキーを Base64 でエンコードした上で `geminiApiKey` プロパティに保存します。
+* API 利用時には `getGlobalGeminiApiKey` 関数で安全に呼び出します。
+* 旧バージョンからアップグレードする場合、`${teacherCode}_apiKey` 形式のプロパティが残っていることがあります。`deleteLegacyApiKeys` を一度実行して不要なキーを削除してください。
+* `getGlobalGeminiApiKey` 実行時に `Exception: newBlob failed to decode` と表示される場合は、保存されているキーが正しくエンコードされていません。再度 `setGlobalGeminiApiKey` か `setGeminiSettings` を実行して上書きすると解決します。
 
 #### Gemini API 呼び出し例
 
