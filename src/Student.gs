@@ -168,11 +168,17 @@ function initStudent(teacherCode, grade, classroom, number) {
     if (taskSheet) {
       const lastRow = taskSheet.getLastRow();
       if (lastRow >= 2) {
-        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 5).getValues();
+        const map = getClassIdMap(teacherCode);
+        let classId = null;
+        Object.keys(map).forEach(id => {
+          if (map[id] === `${grade}-${classroom}`) classId = id;
+        });
+        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 6).getValues();
         taskData.forEach(row => {
+          if (classId && String(row[1]) !== String(classId)) return;
           const taskId        = row[0];
-          const payloadAsJson = row[1];
-          const createdAt     = row[3]; // 作成日時
+          const payloadAsJson = row[2];
+          const createdAt     = row[4]; // 作成日時
           let questionText    = '';
           try {
             const parsed = JSON.parse(payloadAsJson);
@@ -187,4 +193,15 @@ function initStudent(teacherCode, grade, classroom, number) {
   }
 
   return { status: 'ok' };
+}
+
+function getStudentHistory(teacherCode, studentId) {
+  studentId = String(studentId || '').trim();
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return [];
+  const sheet = findStudentSheet_(ss, studentId);
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, 1, lastRow - 1, 9).getValues();
 }

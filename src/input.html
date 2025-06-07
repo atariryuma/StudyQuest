@@ -154,7 +154,7 @@ function loadTasks() {
       history = Array.isArray(history) ? history : [];
       renderLists(tasks || [], history);
     }).getStudentHistory(teacherCode, studentId);
-  }).listTasks(teacherCode);
+  }).listTasksForClass(teacherCode, grade, classroom);
 }
 
 function renderLists(tasks, history) {
