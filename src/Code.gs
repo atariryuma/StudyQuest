@@ -12,7 +12,7 @@ const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シート
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
 const TEACHER_DATA_FOLDER   = 'teacher_data';
 const STUDENT_DATA_FOLDER   = 'student_data';
-const SQ_VERSION           = 'v1.0.7';
+const SQ_VERSION           = 'v1.0.8';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
