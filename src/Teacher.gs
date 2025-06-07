@@ -346,13 +346,13 @@ function getGlobalGeminiApiKey() {
   return encoded ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString() : '';
 }
 
-/**
- * getGlobalGeminiApiKey(): スクリプト全体で使用する Gemini API キーを取得
- */
-function getGlobalGeminiApiKey() {
-  const props = PropertiesService.getScriptProperties();
-  const encoded = props.getProperty('globalGeminiApiKey') || '';
-  return encoded
-    ? Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString()
-    : '';
+function setGeminiPersona(teacherCode, persona) {
+  const data = loadTeacherSettings_(teacherCode);
+  data.persona = persona;
+  saveTeacherSettings_(teacherCode, data);
+}
+
+function getGeminiPersona(teacherCode) {
+  const data = loadTeacherSettings_(teacherCode);
+  return data.persona || '';
 }
