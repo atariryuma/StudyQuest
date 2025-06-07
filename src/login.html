@@ -2,36 +2,89 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>StudyQuest – ログイン</title>
-  <!-- ゲームっぽいドットフォント -->
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
-  <!-- TailwindCSS + GSAP -->
+  <title>StudyQuest - ログイン画面 新レイアウト案</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
+
+  <!-- GSAP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
-    body { font-family: 'DotGothic16', monospace; }
+    body {
+      font-family: 'DotGothic16', sans-serif;
+      background-color: #1a1b26;
+      overflow: hidden;
+    }
     #particleCanvas {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%; z-index: -1;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
     }
-    /* 初回メッセージ用モーダル */
-    #firstMessage {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      align-items: center; justify-content: center;
+    .glass-panel {
+      background: rgba(26, 27, 38, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    #firstMessage .modal {
-      background: #1f2937; padding: 1.5rem; border-radius: 1rem;
-      max-width: 90%; color: #fff; font-size: 0.875rem;
+    .game-btn {
+      transition: all 0.2s ease;
+      border-bottom-width: 4px;
     }
-    #firstMessage button {
-      margin-top: 1rem; padding: 0.5rem 1rem; background: #ec4899;
-      border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer;
+    .game-btn:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
     }
-    /* デバッグパネル */
+    input, select {
+      background-color: rgba(20, 21, 30, 0.8);
+      border: 1px solid #4a4f8a;
+    }
+    input:focus, select:focus {
+      outline: none;
+      --tw-ring-color: #f472b6;
+      --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+      --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+      box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+      border-color: #f472b6;
+    }
+    input[type="checkbox"] {
+      appearance: none;
+      background-color: rgba(20, 21, 30, 0.8);
+      border: 1px solid #4a4f8a;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 0.25rem;
+      display: inline-block;
+      position: relative;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+    input[type="checkbox"]:checked {
+      background-color: #ec4899;
+      border-color: #f472b6;
+    }
+    input[type="checkbox"]:checked::after {
+      content: '✔';
+      position: absolute;
+      color: white;
+      font-size: 0.8rem;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    /* debug panel styles from original */
     #debugPanel {
       position: fixed;
       bottom: 1rem;
@@ -62,104 +115,74 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-800 to-indigo-700 text-white">
+<body class="text-gray-200">
 
-  <!-- 背景パーティクル用キャンバス -->
   <canvas id="particleCanvas"></canvas>
 
-  <!-- ログインボックス -->
-  <div id="loginBox" class="bg-gray-900/80 p-8 rounded-2xl shadow-2xl w-80 md:w-96 text-center">
-    <h1 class="text-3xl mb-4 tracking-widest drop-shadow-lg">
-      Study<span class="text-pink-400">Quest</span>
-    </h1>
-    <form id="loginForm" class="space-y-4 text-sm">
-      <!-- 教師モード切替 -->
-      <label class="block text-left text-xs cursor-pointer">
-        <input type="checkbox" id="teacherMode" class="focus:ring-2 focus:ring-pink-400" /> 私は教師です
-      </label>
-
-      <!-- 教師パスコード -->
-      <div id="passcodeWrap" class="hidden">
-        <input
-          id="passcode"
-          type="password"
-          placeholder="教師パスコード（kyoushi）"
-          class="w-full p-2 rounded bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
-        />
+  <main class="min-h-screen flex items-center justify-center p-4">
+    <section id="loginBox" class="glass-panel rounded-2xl p-8 w-full max-w-md shadow-2xl">
+      <div class="text-center mb-6">
+        <i data-lucide="swords" class="w-12 h-12 text-pink-400 mx-auto mb-2"></i>
+        <h1 class="text-3xl font-bold tracking-widest text-white">StudyQuest</h1>
+        <p class="text-gray-400 text-sm mt-1">冒険の準備をしよう！</p>
       </div>
+      <form id="loginForm" class="space-y-4">
+        <div class="mb-4">
+          <label class="flex items-center gap-2 text-gray-400 text-sm cursor-pointer hover:text-white transition-colors">
+            <input type="checkbox" id="teacherMode">
+            <span>私は教師です</span>
+          </label>
+        </div>
+        <div id="teacherCodeWrap" class="space-y-3">
+          <div class="relative">
+            <i data-lucide="hash" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="teacherCode" type="text" placeholder="教師コード" class="w-full p-3 pl-10 rounded-lg text-white" required list="teacherHistory">
+            <datalist id="teacherHistory"></datalist>
+          </div>
+        </div>
+        <div id="studentFields" class="space-y-3">
+          <div class="grid grid-cols-3 gap-2">
+            <input id="grade" type="number" placeholder="学年" class="w-full p-3 rounded-lg text-white" required>
+            <input id="classroom" type="text" placeholder="組" class="w-full p-3 rounded-lg text-white" required>
+            <input id="number" type="number" placeholder="番号" class="w-full p-3 rounded-lg text-white" required>
+          </div>
+        </div>
+        <div id="passcodeWrap" class="hidden space-y-3">
+          <div class="relative">
+            <i data-lucide="key-round" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="passcode" type="password" placeholder="教師パスコード" class="w-full p-3 pl-10 rounded-lg text-white">
+          </div>
+        </div>
+        <button id="loginBtn" type="submit" class="w-full game-btn bg-pink-600 text-white p-3 rounded-lg font-bold border-pink-800 hover:bg-pink-500 active:border-pink-700 flex items-center justify-center gap-2 mt-6">
+          <i data-lucide="log-in" class="w-5 h-5"></i>
+          <span>ログイン</span>
+        </button>
+      </form>
+    </section>
+  </main>
 
-      <!-- 児童用：教師コード -->
-      <div id="teacherCodeWrap">
-        <input
-          id="teacherCode"
-          type="text"
-          maxlength="6"
-          placeholder="教師コード (6桁英数字)"
-          list="teacherHistory"
-          class="w-full p-2 rounded bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
-          required
-        />
-        <datalist id="teacherHistory"></datalist>
+  <div id="firstMessage" class="fixed inset-0 bg-black/60 items-center justify-center p-4 hidden">
+    <div class="glass-panel rounded-2xl p-8 w-full max-w-lg text-center shadow-2xl">
+      <i data-lucide="party-popper" class="w-12 h-12 text-amber-400 mx-auto mb-4"></i>
+      <h2 class="text-2xl font-bold mb-2">ようこそ！</h2>
+      <p class="text-gray-300 mb-4">
+        Google DriveにStudyQuest用のフォルダを作成します。<br>
+        生徒には以下の招待コードを伝えてください。
+      </p>
+      <div class="bg-gray-900/50 p-4 rounded-lg text-center my-4">
+        <p class="text-sm text-gray-400">あなたの招待コード</p>
+        <p class="text-3xl font-bold tracking-widest text-amber-300">AB12-CD34</p>
       </div>
-
-      <!-- 児童用：学年・組・番号 -->
-      <div id="studentFields" class="space-y-2">
-        <input
-          id="grade"
-          type="number"
-          min="1"
-          max="6"
-          placeholder="学年"
-          class="w-full p-2 rounded bg-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
-          required
-        />
-        <input
-          id="classroom"
-          type="text"
-          maxlength="1"
-          placeholder="組"
-          class="w-full p-2 rounded bg-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
-          required
-        />
-        <input
-          id="number"
-          type="number"
-          min="1"
-          max="99"
-          placeholder="番号"
-          class="w-full p-2 rounded bg-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
-          required
-        />
-      </div>
-
-      <button
-        id="loginBtn"
-        type="submit"
-        class="w-full py-2 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl uppercase tracking-widest transform transition-all duration-200"
-      >
-        ログイン
+      <button id="closeFirstMsg" class="w-full game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 active:border-indigo-700">
+        始める
       </button>
-    </form>
-    <p id="loading" class="mt-3 text-xs text-gray-400 hidden">通信中…</p>
-  </div>
-
-  <!-- 初回ログイン用注意メッセージ（モーダル）-->
-  <div id="firstMessage" class="rounded-2xl shadow-2xl">
-    <div class="modal rounded-2xl shadow-2xl">
-      <p>🎉 初回ログインありがとうございます！</p>
-      <p>これから Google Drive 上に</p>
-      <p><strong>「StudyQuest_<span id="newCodeSpan"></span>」</strong>フォルダを作成します。</p>
-      <p>児童の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
-      <p>※既に同名フォルダがある場合は上書きされますのでご注意を。</p>
-      <button id="closeFirstMsg" class="rounded-2xl shadow-2xl">了解しました</button>
     </div>
   </div>
 
-  <!-- exec URL を埋め込む -->
+  <!-- exec URL -->
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
   </script>
-
   <script>
     // ==============================
     // 背景パーティクル
