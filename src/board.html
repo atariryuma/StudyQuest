@@ -93,16 +93,7 @@
   </div>
 
   <script>
-    function escapeHtml(text) {
-      const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      };
-      return text == null ? '' : String(text).replace(/[&<>"']/g, m => map[m]);
-    }
+<?!= include('shared/escapeHtml.js'); ?>
 
     const canvas = document.getElementById('particleCanvas');
     const ctx = canvas.getContext('2d');
