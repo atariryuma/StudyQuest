@@ -15,6 +15,51 @@ const STUDENT_DATA_FOLDER   = 'student_data';
 const SQ_VERSION           = 'v1.0.8';
 
 /**
+ * logError_(where, error): 詳細なエラーログを出力
+ */
+function logError_(where, error) {
+  Logger.log('[' + where + '] ' + error.message);
+  if (error.stack) Logger.log(error.stack);
+}
+
+/**
+ * createFolder_(parentId, name): Drive API でフォルダ作成
+ */
+function createFolder_(parentId, name) {
+  try {
+    const file = Drive.Files.insert({
+      title: name,
+      mimeType: MimeType.FOLDER,
+      parents: [{ id: parentId }]
+    });
+    return DriveApp.getFolderById(file.id);
+  } catch (e) {
+    logError_('createFolder_' + name, e);
+    throw e;
+  }
+}
+
+/**
+ * findSubFolder_(parentId, name): 親フォルダ内で名前一致する最新フォルダを返す
+ */
+function findSubFolder_(parentId, name) {
+  const q = `'${parentId}' in parents and name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  try {
+    const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
+    const items = res.items || [];
+    return items.length ? DriveApp.getFolderById(items[0].id) : null;
+  } catch (e) {
+    logError_('findSubFolder_', e);
+    return null;
+  }
+}
+
+function getOrCreateSubFolder_(parentFolder, name) {
+  const found = findSubFolder_(parentFolder.getId(), name);
+  return found || createFolder_(parentFolder.getId(), name);
+}
+
+/**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */
 function doGet(e) {
@@ -53,19 +98,15 @@ function generateTeacherCode() {
  * 同名フォルダが複数ある場合、作成日が最新のものを返す
  */
 function findLatestFolderByName_(name) {
-  const iter = DriveApp.getFoldersByName(name);
-  if (!iter.hasNext()) return null;
-  let latest = null;
-  let date   = null;
-  while (iter.hasNext()) {
-    const f = iter.next();
-    const d = f.getDateCreated();
-    if (!date || d > date) {
-      date = d;
-      latest = f;
-    }
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  try {
+    const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
+    const items = res.items || [];
+    return items.length ? DriveApp.getFolderById(items[0].id) : null;
+  } catch (e) {
+    logError_('findLatestFolderByName_', e);
+    return null;
   }
-  return latest;
 }
 
 /**
@@ -94,15 +135,21 @@ function initTeacher(passcode) {
     return { status: 'ok', teacherCode: foundCode };
   }
   // 新規作成
-  const newCode        = generateTeacherCode();
-  const folderName     = FOLDER_NAME_PREFIX + newCode;
-  const folderInstance = DriveApp.createFolder(folderName);
+  const newCode    = generateTeacherCode();
+  const folderName = FOLDER_NAME_PREFIX + newCode;
+  const folderInstance = createFolder_('root', folderName);
   initializeFolders(newCode, []);
 
-  const ss     = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
-  const ssFile = DriveApp.getFileById(ss.getId());
-  folderInstance.addFile(ssFile);
-  DriveApp.getRootFolder().removeFile(ssFile);
+  const ss       = SpreadsheetApp.create(`StudyQuest_${newCode}_Log`);
+  const ssId     = ss.getId();
+  try {
+    Drive.Files.update({}, ssId, null, {
+      addParents: folderInstance.getId(),
+      removeParents: 'root'
+    });
+  } catch (e) {
+    logError_('initTeacher-moveSheet', e);
+  }
 
   // 目次シート作成
   const tocSheet = ss.getSheets()[0];
@@ -329,8 +376,13 @@ function initStudent(teacherCode, grade, classroom, number) {
     const stuFolderName = `StudyQuest_Stu_${teacherCode}_${studentId}`;
     let stuFolder = findLatestFolderByName_(stuFolderName);
     if (!stuFolder) {
-      stuFolder = DriveApp.createFolder(stuFolderName);
-      stuFolder.createFile(`Responses_${studentId}.csv`, 'timestamp,taskId,answer');
+      stuFolder = createFolder_('root', stuFolderName);
+      try {
+        Drive.Files.insert({ title: `Responses_${studentId}.csv`, parents: [{ id: stuFolder.getId() }] },
+          Utilities.newBlob('timestamp,taskId,answer', MimeType.CSV, `Responses_${studentId}.csv`));
+      } catch (e) {
+        logError_('createStudentFolder', e);
+      }
     }
 
     // 目次シートにリンクを追加
@@ -688,11 +740,16 @@ function logToSpreadsheet(logData) {
  * 同名ファイルを削除して新規作成するユーティリティ
  */
 function overwriteFile_(folder, name, content, mimeType) {
-  const iter = folder.getFilesByName(name);
-  while (iter.hasNext()) {
-    iter.next().setTrashed(true);
+  const folderId = folder.getId();
+  const q = `'${folderId}' in parents and name='${name}' and trashed=false`;
+  try {
+    const res = Drive.Files.list({ q });
+    (res.items || []).forEach(f => Drive.Files.trash(f.id));
+    Drive.Files.insert({ title: name, parents: [{ id: folderId }] },
+      Utilities.newBlob(content, mimeType || MimeType.PLAIN_TEXT, name));
+  } catch (e) {
+    logError_('overwriteFile_', e);
   }
-  folder.createFile(name, content, mimeType || MimeType.PLAIN_TEXT);
 }
 
 /**
@@ -739,7 +796,7 @@ function convertRangeToJson_(sheet) {
 function getTeacherRootFolder(teacherCode) {
   const name = FOLDER_NAME_PREFIX + teacherCode;
   const folder = findLatestFolderByName_(name);
-  return folder || DriveApp.createFolder(name);
+  return folder || createFolder_('root', name);
 }
 
 /**
@@ -752,10 +809,8 @@ function initializeFolders(teacherCode, classList) {
   const root = getTeacherRootFolder(teacherCode);
 
   // ensure base folders
-  const teacherIter = root.getFoldersByName(TEACHER_DATA_FOLDER);
-  const teacherData = teacherIter.hasNext() ? teacherIter.next() : root.createFolder(TEACHER_DATA_FOLDER);
-  const studentIter = root.getFoldersByName(STUDENT_DATA_FOLDER);
-  const studentData = studentIter.hasNext() ? studentIter.next() : root.createFolder(STUDENT_DATA_FOLDER);
+  const teacherData = getOrCreateSubFolder_(root, TEACHER_DATA_FOLDER);
+  const studentData = getOrCreateSubFolder_(root, STUDENT_DATA_FOLDER);
 
   const map = {};
   (classList || []).forEach((cls, idx) => {
@@ -766,8 +821,8 @@ function initializeFolders(teacherCode, classList) {
       map[id] = `${grade}-${klass}`;
     }
     const name = 'class_' + id;
-    if (!teacherData.getFoldersByName(name).hasNext()) teacherData.createFolder(name);
-    if (!studentData.getFoldersByName(name).hasNext()) studentData.createFolder(name);
+    if (!findSubFolder_(teacherData.getId(), name)) createFolder_(teacherData.getId(), name);
+    if (!findSubFolder_(studentData.getId(), name)) createFolder_(studentData.getId(), name);
   });
 
   PropertiesService.getScriptProperties().setProperty(`classIdMap_${teacherCode}`, JSON.stringify(map));
@@ -797,11 +852,10 @@ function setClassIdMap(teacherCode, idsString) {
  */
 function getClassFolder(teacherCode, classId) {
   const root = getTeacherRootFolder(teacherCode);
-  const tIter = root.getFoldersByName(TEACHER_DATA_FOLDER);
-  const teacherData = tIter.hasNext() ? tIter.next() : root.createFolder(TEACHER_DATA_FOLDER);
+  const teacherData = getOrCreateSubFolder_(root, TEACHER_DATA_FOLDER);
   const cName = 'class_' + classId;
-  const cIter = teacherData.getFoldersByName(cName);
-  return cIter.hasNext() ? cIter.next() : teacherData.createFolder(cName);
+  const found = findSubFolder_(teacherData.getId(), cName);
+  return found || createFolder_(teacherData.getId(), cName);
 }
 
 /**
@@ -846,10 +900,9 @@ function exportSummary(teacherCode) {
  * STUDYQUEST_<code>/student_data/<studentId> を取得/作成
  */
 function getStudentDataFolder_(teacherCode, studentId) {
-  const rootIter = getTeacherRootFolder(teacherCode).getFoldersByName(STUDENT_DATA_FOLDER);
-  const studentRoot = rootIter.hasNext() ? rootIter.next() : getTeacherRootFolder(teacherCode).createFolder(STUDENT_DATA_FOLDER);
-  const iter = studentRoot.getFoldersByName(studentId);
-  return iter.hasNext() ? iter.next() : studentRoot.createFolder(studentId);
+  const studentRoot = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), STUDENT_DATA_FOLDER);
+  const found = findSubFolder_(studentRoot.getId(), studentId);
+  return found || createFolder_(studentRoot.getId(), studentId);
 }
 
 /**
@@ -857,11 +910,14 @@ function getStudentDataFolder_(teacherCode, studentId) {
  */
 function readStudentHistoryJson_(teacherCode, studentId) {
   const folder = getStudentDataFolder_(teacherCode, studentId);
-  const fileIter = folder.getFilesByName('history.json');
-  if (!fileIter.hasNext()) return [];
+  const q = `'${folder.getId()}' in parents and name='history.json' and trashed=false`;
   try {
-    return JSON.parse(fileIter.next().getBlob().getDataAsString());
+    const res = Drive.Files.list({ q, maxResults: 1 });
+    const items = res.items || [];
+    if (items.length === 0) return [];
+    return JSON.parse(DriveApp.getFileById(items[0].id).getBlob().getDataAsString());
   } catch (e) {
+    logError_('readStudentHistoryJson_', e);
     return [];
   }
 }
@@ -872,13 +928,18 @@ function readStudentHistoryJson_(teacherCode, studentId) {
 function writeStudentHistoryJson_(teacherCode, studentId, data) {
   const folder = getStudentDataFolder_(teacherCode, studentId);
   const json = JSON.stringify(data);
-  const fileIter = folder.getFilesByName('history.json');
-  if (fileIter.hasNext()) {
-    const f = fileIter.next();
-    f.setContent(json);
-    while (fileIter.hasNext()) fileIter.next().setTrashed(true);
-  } else {
-    folder.createFile('history.json', json, MimeType.PLAIN_TEXT);
+  const q = `'${folder.getId()}' in parents and name='history.json' and trashed=false`;
+  try {
+    const res = Drive.Files.list({ q });
+    const items = res.items || [];
+    if (items.length > 0) {
+      Drive.Files.update({ title: 'history.json' }, items[0].id, Utilities.newBlob(json, MimeType.PLAIN_TEXT, 'history.json'));
+      items.slice(1).forEach(i => Drive.Files.trash(i.id));
+    } else {
+      Drive.Files.insert({ title: 'history.json', parents: [{ id: folder.getId() }] }, Utilities.newBlob(json, MimeType.PLAIN_TEXT, 'history.json'));
+    }
+  } catch (e) {
+    logError_('writeStudentHistoryJson_', e);
   }
 }
 
