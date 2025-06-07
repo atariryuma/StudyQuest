@@ -19,8 +19,8 @@ function callGeminiAPI_GAS(teacherCode, prompt, persona) {
     return 'APIキーが設定されていません';
   }
 
-  // ★★★ 変更点：モデル名を gemini-pro から最新のFlashモデルに変更 ★★★
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' + apiKey;
+  // ★★★ 変更点：モデル名を gemini-2.0-flash に更新 ★★★
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
 
   const payload = {
     contents: [{
