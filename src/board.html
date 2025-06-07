@@ -89,6 +89,19 @@
       <a href="#" id="backLink" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2 flex-shrink-0"></a>
     </header>
 
+    <section id="aiFollowupSection" class="glass-panel rounded-xl p-4 mb-4 shadow-lg hidden space-y-2">
+      <label class="text-sm text-gray-400">回答テキスト</label>
+      <textarea id="selectedAnswerInput" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-600 text-sm"></textarea>
+      <div class="flex items-center gap-2">
+        <button type="button" id="generateFollowupFromAnswerBtn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm flex-shrink-0">深掘り質問生成</button>
+        <button type="button" id="toggleAnswerHistoryBtn" class="text-xs text-gray-400 hover:text-white ml-auto">生成履歴を見る ▼</button>
+      </div>
+      <div id="followupFromAnswerOutput" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
+      <div id="answerHistoryWrapper" class="hidden">
+        <div id="answerGenerationHistory" class="hidden mt-2 p-2 bg-gray-900/50 rounded-md space-y-2"></div>
+      </div>
+    </section>
+
     <main id="answers" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></main>
   </div>
 
@@ -167,6 +180,7 @@
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
       const taskId = params.get('task');
+      let persona = '';
 
       debug('🔄 ページ読み込み完了');
       debug(`▶ teacherCode="${teacherCode}", taskId="${taskId || ''}"`);
@@ -180,11 +194,17 @@
       const grade = params.get('grade');
       const classroom = params.get('class');
       const number = params.get('number');
+      const followupSection = document.getElementById('aiFollowupSection');
 
       if (grade && classroom && number) {
+        if (followupSection) followupSection.classList.add('hidden');
         backLink.href = `?page=input&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
       } else {
+        if (followupSection) {
+          followupSection.classList.remove('hidden');
+          google.script.run.withSuccessHandler(p => { persona = p || ''; }).getGeminiPersona(teacherCode);
+        }
         backLink.href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
       }
@@ -240,6 +260,12 @@
               <div class="flex justify-between items-center"><span>AIヒント / 回答回数:</span><span>${r.aiCalls}/2回, ${r.attempts}/3回</span></div>
             </div>
           `;
+          card.addEventListener('click', () => {
+            const ansIn = document.getElementById('selectedAnswerInput');
+            if (ansIn && !followupSection.classList.contains('hidden')) {
+              ansIn.value = r.answer;
+            }
+          });
           container.appendChild(card);
           gsap.to(card, {
             delay: i * 0.1,
@@ -250,6 +276,58 @@
           });
         });
         lucide.createIcons();
+      }
+
+      const ansInput = document.getElementById('selectedAnswerInput');
+      const followupBtn = document.getElementById('generateFollowupFromAnswerBtn');
+      const followupOut = document.getElementById('followupFromAnswerOutput');
+      const historyBtn = document.getElementById('toggleAnswerHistoryBtn');
+      const historyDiv = document.getElementById('answerGenerationHistory');
+      const historyWrapper = document.getElementById('answerHistoryWrapper');
+      let followupHistory = [];
+
+      function updateFollowupHistory() {
+        if (!historyWrapper) return;
+        if (followupHistory.length === 0) {
+          historyWrapper.classList.add('hidden');
+          return;
+        }
+        historyWrapper.classList.remove('hidden');
+        historyDiv.innerHTML = '';
+        followupHistory.forEach((txt, idx) => {
+          const div = document.createElement('div');
+          div.className = 'border-t border-gray-700 pt-2';
+          div.innerHTML = `<p class="text-xs font-bold text-gray-500">履歴 ${idx + 1}</p><p class="text-xs whitespace-pre-wrap">${escapeHtml(txt)}</p>`;
+          historyDiv.prepend(div);
+        });
+      }
+
+      if (followupBtn) {
+        followupBtn.addEventListener('click', () => {
+          const ans = ansInput ? ansInput.value.trim() : '';
+          if (!ans) return;
+          followupOut.innerHTML = `AIが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
+          renderIcons(document);
+          google.script.run
+            .withSuccessHandler(res => {
+              const lines = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
+              const text = lines.map(l => `・${l}`).join('\n');
+              followupOut.textContent = text;
+              followupHistory.push(text);
+              updateFollowupHistory();
+            })
+            .withFailureHandler(err => {
+              followupOut.textContent = '生成に失敗しました: ' + err.message;
+            })
+            .generateFollowupFromAnswer(teacherCode, ans, persona);
+        });
+      }
+
+      if (historyBtn) {
+        historyBtn.addEventListener('click', e => {
+          const hidden = historyDiv.classList.toggle('hidden');
+          e.target.textContent = hidden ? '生成履歴を見る ▼' : '生成履歴を隠す ▲';
+        });
       }
 
       loadBoard();

@@ -41,3 +41,14 @@ function logToSpreadsheet(logData) {
     logData.feedback || ''
   ]);
 }
+
+/**
+ * generateFollowupFromAnswer(teacherCode, answerText, persona):
+ * 指定された回答を基に理解を深める質問例を生成
+ */
+function generateFollowupFromAnswer(teacherCode, answerText, persona) {
+  answerText = String(answerText || '').trim();
+  if (!answerText) return '';
+  const prompt = `次の生徒の回答を基に理解を深めるための質問を2つ箇条書きで提示してください。\n回答:「${answerText}」`;
+  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+}
