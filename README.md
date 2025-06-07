@@ -113,3 +113,18 @@ function deleteLegacyApiKeys() {
   });
 }
 ```
+
+## 9. テスト実行
+
+1. 依存インストール
+    ```bash
+    npm install
+    ```
+    または Codex 環境では
+    ```bash
+    scripts/setup-codex.sh
+    ```
+2. テスト
+    ```bash
+    npm test
+    ```
