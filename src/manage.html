@@ -774,6 +774,7 @@
        */
       function renderTasks(rows) {
         const container = document.getElementById('tasksContainer');
+        rows = Array.isArray(rows) ? rows.filter(r => !r.closed) : [];
         container.innerHTML = '';
         if (!rows || rows.length === 0) {
           container.innerHTML = '<p class="text-gray-500 text-center">課題はまだありません。</p>';
