@@ -128,3 +128,4 @@ function convertRangeToJson_(sheet) {
     result.push(rowObj);
   }
   return result;
+}
