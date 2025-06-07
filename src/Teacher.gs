@@ -19,7 +19,7 @@ function generateTeacherCode() {
  * 同名フォルダが複数ある場合、作成日が最新のものを返す
  */
 function findLatestFolderByName_(name) {
-  const q = `'root' in parents and name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const q = `'root' in parents and title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   try {
     const res = Drive.Files.list({ q, orderBy: 'createdTime desc', maxResults: 1 });
     const items = res.items || [];
@@ -36,7 +36,7 @@ function findLatestFolderByName_(name) {
  * 最も新しいものの教師コードとIDを返す
  */
 function detectTeacherFolderOnDrive_() {
-  const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' and name contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
+  const q = `'root' in parents and mimeType='application/vnd.google-apps.folder' and title contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
     const res = Drive.Files.list({ q, orderBy: 'createdTime desc' });
     const items = res.items || [];
@@ -225,7 +225,7 @@ function getTeacherRootFolder(teacherCode) {
   }
 
   const name = FOLDER_NAME_PREFIX + teacherCode;
-  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const q = `title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   let items = [];
   try {
     const res = Drive.Files.list({ q, orderBy: 'createdTime asc' });
