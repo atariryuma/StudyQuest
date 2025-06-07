@@ -169,10 +169,16 @@
                         <div>
                             <h3 class="font-bold text-pink-400 mb-2">クラス管理</h3>
                             <div id="currentClassCard" class="flex flex-wrap gap-2 mb-2"></div>
-                            <button id="openClassBtn" class="w-full game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2">
-                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                                <span>クラスを登録</span>
-                            </button>
+                            <div class="flex gap-2">
+                                <button id="openClassBtn" class="w-1/2 game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                    <span>クラスを登録</span>
+                                </button>
+                                <button id="deleteClassBtn" class="w-1/2 game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <span>クラス削除</span>
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <h3 class="font-bold text-pink-400 mb-2">Gemini API 設定</h3>
@@ -310,6 +316,7 @@
     // デバッグログ出力用
     let debugContentElem;
     let registeredClasses = [];
+    let selectedClassId = null;
     function debug(msg) {
       if (!debugContentElem) return;
       const t = new Date().toLocaleTimeString();
@@ -356,6 +363,7 @@
       loadSubjectHistory();
       document.getElementById('saveApiBtn').addEventListener('click', saveGeminiSettings);
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
+      document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
 
       // 3) 回答タイプ選択時に AI ツールを表示 / 非表示
       Array.from(document.getElementsByName('ansType')).forEach(radio => {
@@ -581,6 +589,7 @@
         google.script.run
           .withSuccessHandler(map => {
             registeredClasses = Object.keys(map).map(id => map[id].split('-'));
+            selectedClassId = null;
             const area = document.getElementById('taskClassButtons');
             if (area) {
               area.innerHTML = '';
@@ -850,6 +859,26 @@
           .setClassIdMap(teacherCode, idsString);
       });
 
+      function deleteSelectedClass() {
+        if (!selectedClassId) {
+          alert('削除するクラスを選択してください。');
+          return;
+        }
+        if (!confirm('選択中のクラスを削除しますか？')) return;
+        const idx = parseInt(selectedClassId, 10) - 1;
+        if (idx >= 0 && idx < registeredClasses.length) {
+          registeredClasses.splice(idx, 1);
+        }
+        const idsString = registeredClasses.map(x => x.join(',')).join(';');
+        google.script.run
+          .withSuccessHandler(map => {
+            selectedClassId = null;
+            loadClassOptions();
+          })
+          .withFailureHandler(err => alert('更新に失敗: ' + err.message))
+          .setClassIdMap(teacherCode, idsString);
+      }
+
       function renderClassCards(map) {
         const cont = document.getElementById('currentClassCard');
         if (!cont) return;
@@ -859,9 +888,13 @@
           card.className = 'class-card';
           card.textContent = map[id];
           card.dataset.id = id;
+          if (id === String(selectedClassId)) {
+            card.classList.add('selected');
+          }
           card.addEventListener('click', () => {
             document.querySelectorAll('#currentClassCard .class-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
+            selectedClassId = id;
             const radio = document.querySelector(`#taskClassButtons input[value="${id}"]`);
             if (radio) radio.checked = true;
             if (window.gsap) {
