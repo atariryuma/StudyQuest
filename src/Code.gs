@@ -10,7 +10,7 @@ const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
 const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const SQ_VERSION           = '0.1.0-test';
+const SQ_VERSION           = 'v1.0.0';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
@@ -419,6 +419,30 @@ function deleteTask(teacherCode, taskId) {
   const idx  = data.indexOf(taskId);
   if (idx >= 0) {
     sheet.deleteRow(idx + 2);
+  }
+}
+
+/**
+ * duplicateTask(teacherCode, taskId):
+ * 指定した課題を複製して新しいIDで追加
+ */
+function duplicateTask(teacherCode, taskId) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return;
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === taskId) {
+      const newId = Utilities.getUuid();
+      const payload = data[i][1];
+      const selfEval = data[i][2];
+      const persona = data[i][4] || '';
+      sheet.appendRow([newId, payload, selfEval, new Date(), persona]);
+      break;
+    }
   }
 }
 
