@@ -130,8 +130,7 @@ function initTeacher(passcode) {
   tocSheet.autoResizeColumn(1);
   tocSheet.autoResizeColumn(2);
 
-  props.setProperty(newCode, ss.getId());
-  props.setProperty(newCode + '_FOLDER', folderInstance.getId());
+  props.setProperty(newCode, folderInstance.getId());
   saveTeacherSettings_(newCode, { apiKey: '', persona: '', classes: [] });
   return {
     status: 'new',
@@ -142,17 +141,23 @@ function initTeacher(passcode) {
 
 /**
  * getSpreadsheetByTeacherCode(teacherCode):
- * スクリプトプロパティから SS ID を取得し、Spreadsheet を開く
+ * スクリプトプロパティからフォルダ ID を取得し、
+ * そのフォルダ内の StudyQuest_<teacherCode>_Log を開く
  */
 function getSpreadsheetByTeacherCode(teacherCode) {
   if (!teacherCode) return null;
   const props = PropertiesService.getScriptProperties();
-  const ssId  = props.getProperty(teacherCode);
-  if (!ssId) return null;
+  const folderId = props.getProperty(teacherCode);
+  if (!folderId) return null;
   try {
-    return SpreadsheetApp.openById(ssId);
+    const folder = DriveApp.getFolderById(folderId);
+    const files = folder.getFilesByName(`StudyQuest_${teacherCode}_Log`);
+    if (files.hasNext()) {
+      return SpreadsheetApp.openById(files.next().getId());
+    }
+    return null;
   } catch (e) {
-    console.error(`スプレッドシートが開けません: Code=${teacherCode}, ID=${ssId}。エラー: ${e.message}`);
+    console.error(`スプレッドシートが開けません: Code=${teacherCode}, Folder=${folderId}。エラー: ${e.message}`);
     return null;
   }
 }
@@ -177,11 +182,12 @@ function loadTeacherSettings_(teacherCode) {
 /**
  * getTeacherRootFolder(teacherCode):
  * 同名フォルダが複数存在する場合は最古の1件を残し、
- * その他はゴミ箱へ移動してからフォルダを返す
+ * その他はゴミ箱へ移動してからフォルダを返す。
+ * フォルダ ID は教師コードをキーとしてスクリプトプロパティに保存される。
  */
 function getTeacherRootFolder(teacherCode) {
   const props = PropertiesService.getScriptProperties();
-  const stored = props.getProperty(teacherCode + '_FOLDER');
+  const stored = props.getProperty(teacherCode);
   if (stored) {
     try {
       return DriveApp.getFolderById(stored);
@@ -204,11 +210,11 @@ function getTeacherRootFolder(teacherCode) {
     for (let i = 1; i < items.length; i++) {
       try { Drive.Files.trash(items[i].id); } catch (err) { logError_('trashDup', err); }
     }
-    props.setProperty(teacherCode + '_FOLDER', keep.id);
+    props.setProperty(teacherCode, keep.id);
     return DriveApp.getFolderById(keep.id);
   }
   const folder = createFolder_('root', name);
-  props.setProperty(teacherCode + '_FOLDER', folder.getId());
+  props.setProperty(teacherCode, folder.getId());
   return folder;
 }
 
