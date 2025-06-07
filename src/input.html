@@ -83,6 +83,7 @@
       </aside>
 
       <section class="w-full md:w-2/3 lg:w-3/4 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden">
+        <div id="stepProgress" class="flex items-center gap-2 p-3"></div>
         <div id="chatLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
         <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
           <div id="answerInputs" class="mb-3"></div>
@@ -116,6 +117,15 @@ let currentTask = null;
 let mode = 'submit';
 let aiCalls = 0;
 
+const QuestStep = {
+  INITIAL_ANSWER: 0,
+  DEEPENING_QUESTION: 1,
+  REASONING: 2,
+  FINAL_ANSWER: 3,
+};
+let questStep = QuestStep.INITIAL_ANSWER;
+let stepAnswers = ['', '', '', ''];
+
 function debug(msg) { console.log(msg); }
 
 function renderIcons(scope) {
@@ -133,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initStudent();
   document.getElementById('modeToggle').addEventListener('click', toggleMode);
   document.getElementById('sendBtn').addEventListener('click', onSend);
+  updateProgressBar();
 });
 
 function toggleMode() {
@@ -187,6 +198,8 @@ function renderLists(tasks, history) {
 function openTask(task, history) {
   currentTask = task;
   aiCalls = 0;
+  questStep = QuestStep.INITIAL_ANSWER;
+  stepAnswers = ['', '', '', ''];
   const q = JSON.parse(task.q);
   const log = document.getElementById('chatLog');
   log.innerHTML = '';
@@ -195,6 +208,7 @@ function openTask(task, history) {
   rows.forEach(r => appendMsg('student', r[3]));
   renderInput(q, rows.length);
   log.scrollTop = log.scrollHeight;
+  updateProgressBar();
 }
 
 function renderInput(q, attempt) {
@@ -219,9 +233,8 @@ function renderInput(q, attempt) {
 function onSend() {
   if (!currentTask) return;
   const q = JSON.parse(currentTask.q);
-  const attempt = document.querySelectorAll('#chatLog .msg-student').length;
   let text = '';
-  if (q.type === 'text' || attempt >= 1) {
+  if (q.type === 'text') {
     text = document.getElementById('answerText').value.trim();
   } else if (q.type === 'radio') {
     const sel = document.querySelector('input[name="choice"]:checked');
@@ -233,24 +246,57 @@ function onSend() {
     alert('回答を入力してください');
     return;
   }
+
   appendMsg('student', text);
-  if (mode === 'submit') {
+  stepAnswers[questStep] = text;
+
+  if (questStep === QuestStep.INITIAL_ANSWER) {
+    google.script.run.withSuccessHandler(res => {
+      appendMsg('gemini', res);
+      questStep = QuestStep.DEEPENING_QUESTION;
+      updateProgressBar();
+    }).callGeminiAPI_GAS(
+      teacherCode,
+      `次の回答をした生徒に更に考えさせる質問を一つしてください。回答: ${text}`,
+      '小学生向け'
+    );
+  } else if (questStep === QuestStep.DEEPENING_QUESTION) {
+    google.script.run.withSuccessHandler(res => {
+      appendMsg('gemini', res);
+      questStep = QuestStep.REASONING;
+      updateProgressBar();
+    }).callGeminiAPI_GAS(
+      teacherCode,
+      `生徒の回答「${text}」の理由や根拠を説明するヒントを短く与えてください。`,
+      '小学生向け'
+    );
+  } else if (questStep === QuestStep.REASONING) {
+    appendMsg('system', '最後にまとめの回答を送信してください');
+    questStep = QuestStep.FINAL_ANSWER;
+    updateProgressBar();
+  } else if (questStep === QuestStep.FINAL_ANSWER) {
     google.script.run.withSuccessHandler(() => {
       xp += xpPerQuest;
       totalXp += xpPerQuest;
       if (xp >= level * 100) { level++; xp = 0; }
       updateXpBar();
       loadTasks();
-    }).submitAnswer(teacherCode, studentId, currentTask.id, text, xpPerQuest, totalXp, level, '', aiCalls, attempt + 1);
-  } else {
-    if (aiCalls >= 2) {
-      appendMsg('system', 'Geminiはこれ以上使えません。');
-      return;
-    }
-    aiCalls++;
-    google.script.run.withSuccessHandler(res => { appendMsg('gemini', res); })
-      .callGeminiAPI_GAS(teacherCode, text, '小学生向け');
+    }).submitAnswer(
+      teacherCode,
+      studentId,
+      currentTask.id,
+      text,
+      xpPerQuest,
+      totalXp,
+      level,
+      '',
+      aiCalls,
+      document.querySelectorAll('#chatLog .msg-student').length
+    );
+    questStep = QuestStep.INITIAL_ANSWER;
+    stepAnswers = ['', '', '', ''];
   }
+
   document.getElementById('answerInputs').querySelectorAll('input,textarea').forEach(e => e.value = '');
 }
 
@@ -274,6 +320,30 @@ function updateXpBar() {
   document.getElementById('xpNext').textContent = level * 100;
   const pct = Math.min((xp / (level * 100)) * 100, 100);
   gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
+}
+
+function updateProgressBar() {
+  const container = document.getElementById('stepProgress');
+  if (!container) return;
+  container.innerHTML = '';
+  const total = 4;
+  for (let i = 0; i < total; i++) {
+    const circle = document.createElement('div');
+    circle.textContent = i + 1;
+    circle.className = 'w-6 h-6 rounded-full text-xs flex items-center justify-center';
+    if (i <= questStep) {
+      circle.classList.add('bg-pink-600', 'text-white');
+    } else {
+      circle.classList.add('bg-gray-700', 'text-gray-400');
+    }
+    container.appendChild(circle);
+    if (i < total - 1) {
+      const line = document.createElement('div');
+      line.className = 'flex-1 h-1';
+      line.classList.add(i < questStep ? 'bg-pink-600' : 'bg-gray-700');
+      container.appendChild(line);
+    }
+  }
 }
 </script>
 <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?!= version ?></div>
