@@ -57,12 +57,14 @@
 
   <script>
     function escapeHtml(text) {
-      return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return text == null ? '' : String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
     // デバッグログ出力用
@@ -83,10 +85,6 @@
       document.getElementById('versionInfo').addEventListener('click', () => {
         debugPanel.classList.remove('hidden');
       });
-      function escapeHtml(text) {
-        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-        return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
-      }
 
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
@@ -95,10 +93,6 @@
       debug('🔄 ページ読み込み完了');
       debug(`▶ teacherCode="${teacherCode}", taskId="${taskId || ''}"`);
 
-      function escapeHtml(text) {
-        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-        return String(text).replace(/[&<>"']/g, m => map[m]);
-      }
       if (!teacherCode) {
         alert('不正なアクセスです。');
         location.href = '?page=login';
