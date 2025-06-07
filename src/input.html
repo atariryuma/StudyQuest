@@ -152,12 +152,14 @@
 
   <script>
     function escapeHtml(text) {
-      return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return text == null ? '' : String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
     // Lucide Icons のレンダリング
@@ -179,14 +181,6 @@
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
 
-    function escapeHtml(text) {
-      return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
 
     // デバッグパネル閉じるボタン
     const debugPanel = document.getElementById('debugPanel');
@@ -208,10 +202,6 @@
     let allAnswered   = [];
     let currentQuest  = null;
 
-    function escapeHtml(text) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-      return text == null ? '' : text.replace(/[&<>"']/g, m => map[m]);
-    }
 
     document.addEventListener('DOMContentLoaded', () => {
       // 背景パーティクルを起動
