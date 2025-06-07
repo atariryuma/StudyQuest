@@ -12,7 +12,6 @@
 - **回答ボード**: 全体回答ログをリアルタイムに閲覧できる共有ボード機能
 - **AIフィードバック**: Gemini API連携でヒントや気づきを提示（課題ごと2回まで）
 
-
 ## 2. 機能要件
 
 ### 2.1 教師モード（`manage.html`）
@@ -46,7 +45,6 @@
 
 - 教師コードを渡して全体回答ログを取得 (`listBoard(teacherCode)`)し、カードグリッドで表示
 
-
 ## 3. データ構造とキャッシュ設計
 
 - **1 ファイル完結構成**: `StudyQuest_<TeacherCode>_Log` スプレッドシート
@@ -57,14 +55,12 @@
 - **バッチ更新**: 深夜 1 時の時間駆動トリガーで `exportCacheToTabs()` を実行
 - **手動更新**: 管理画面にキャッシュ更新ボタンを配置
 
-
 ## 4. 技術スタック
 
 - Google Apps Script (GAS)
 - HTML + TailwindCSS + GSAP (フロントエンド)
 - Gemini API (AIフィードバック)
 - GitHub Actions + clasp (CI / CD)
-
 
 ## 5. セットアップ
 

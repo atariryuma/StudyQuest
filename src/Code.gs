@@ -10,8 +10,6 @@ const SHEET_GLOBAL_ANSWERS  = '回答ログ（全体ボード用）';
 const SHEET_AI_FEEDBACK     = 'AIフィードバックログ';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const TEACHER_DATA_FOLDER   = 'teacher_data';
-const STUDENT_DATA_FOLDER   = 'student_data';
 const SQ_VERSION           = 'v1.0.15';
 
 /**
@@ -210,6 +208,8 @@ function initTeacher(passcode) {
   tocSheet.autoResizeColumn(2);
 
   props.setProperty(newCode, ss.getId());
+  props.setProperty(newCode + '_FOLDER', folderInstance.getId());
+  saveTeacherSettings_(newCode, { apiKey: '', persona: '', classes: [] });
   return {
     status: 'new',
     teacherCode: newCode,
@@ -756,6 +756,41 @@ function readFileContent_(folder, name) {
   return null;
 }
 
+function parseSettingsCsv_(csv) {
+  const data = { apiKey: '', persona: '', classes: [] };
+  if (!csv) return data;
+  csv.split(/\r?\n/).forEach(line => {
+    const parts = line.split(',');
+    if (!parts.length) return;
+    if (parts[0] === 'apiKey') {
+      data.apiKey = parts[1] ? Utilities.newBlob(Utilities.base64Decode(parts[1])).getDataAsString() : '';
+    } else if (parts[0] === 'persona') {
+      data.persona = parts[1] || '';
+    } else if (parts[0] === 'class' && parts.length >= 3) {
+      data.classes.push([parts[1], parts[2]]);
+    }
+  });
+  return data;
+}
+
+function saveTeacherSettings_(teacherCode, obj) {
+  const folder = getTeacherRootFolder(teacherCode);
+  const lines = [];
+  if (obj.apiKey !== undefined) lines.push(['apiKey', Utilities.base64Encode(obj.apiKey)]);
+  if (obj.persona !== undefined) lines.push(['persona', obj.persona]);
+  if (Array.isArray(obj.classes)) {
+    obj.classes.forEach(c => lines.push(['class', c[0], c[1]]));
+  }
+  const csv = lines.map(arr => arr.join(',')).join('\n');
+  overwriteFile_(folder, 'settings.csv', csv, MimeType.PLAIN_TEXT);
+}
+
+function loadTeacherSettings_(teacherCode) {
+  const folder = getTeacherRootFolder(teacherCode);
+  const csv = readFileContent_(folder, 'settings.csv');
+  return parseSettingsCsv_(csv);
+}
+
 /**
  * convertRangeToCsv_(range): Range を CSV 文字列に変換
  */
@@ -803,6 +838,16 @@ function convertRangeToJson_(sheet) {
  * その他はゴミ箱へ移動してからフォルダを返す
  */
 function getTeacherRootFolder(teacherCode) {
+  const props = PropertiesService.getScriptProperties();
+  const stored = props.getProperty(teacherCode + '_FOLDER');
+  if (stored) {
+    try {
+      return DriveApp.getFolderById(stored);
+    } catch (e) {
+      logError_('getTeacherRootFolder-open', e);
+    }
+  }
+
   const name = FOLDER_NAME_PREFIX + teacherCode;
   const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   let items = [];
@@ -817,23 +862,21 @@ function getTeacherRootFolder(teacherCode) {
     for (let i = 1; i < items.length; i++) {
       try { Drive.Files.trash(items[i].id); } catch (err) { logError_('trashDup', err); }
     }
+    props.setProperty(teacherCode + '_FOLDER', keep.id);
     return DriveApp.getFolderById(keep.id);
   }
-  return createFolder_('root', name);
+  const folder = createFolder_('root', name);
+  props.setProperty(teacherCode + '_FOLDER', folder.getId());
+  return folder;
 }
 
 /**
  * initializeFolders(teacherCode, classList):
- * StudyQuest_<TeacherCode> 配下に teacher_data / student_data
- * および class_1, class_2 ... サブフォルダを作成し、
- * 作成したクラス番号と学年・組の対応表を Drive 上に保存
+ * StudyQuest_<TeacherCode> 配下でクラス設定を初期化し、
+ * 作成したクラス番号と学年・組の対応表を settings.csv に保存
 */
 function initializeFolders(teacherCode, classList, root) {
   root = root || getTeacherRootFolder(teacherCode);
-
-  // ensure base folders
-  const teacherData = getOrCreateSubFolder_(root, TEACHER_DATA_FOLDER);
-  const studentData = getOrCreateSubFolder_(root, STUDENT_DATA_FOLDER);
 
   const map = {};
   (classList || []).forEach((cls, idx) => {
@@ -843,12 +886,11 @@ function initializeFolders(teacherCode, classList, root) {
     if (grade !== undefined && klass !== undefined) {
       map[id] = `${grade}-${klass}`;
     }
-    const name = 'class_' + id;
-    if (!findSubFolder_(teacherData.getId(), name)) createFolder_(teacherData.getId(), name);
-    if (!findSubFolder_(studentData.getId(), name)) createFolder_(studentData.getId(), name);
   });
 
-  overwriteFile_(teacherData, 'class_map.json', JSON.stringify(map), MimeType.PLAIN_TEXT);
+  const current = loadTeacherSettings_(teacherCode);
+  current.classes = classList;
+  saveTeacherSettings_(teacherCode, current);
   return map;
 }
 
@@ -867,18 +909,8 @@ function setClassIdMap(teacherCode, idsString) {
       }
     });
   }
-  return initializeFolders(teacherCode, list);
-}
-
-/**
- * getClassFolder(teacherCode, classId): クラス用フォルダ取得/作成
- */
-function getClassFolder(teacherCode, classId) {
-  const root = getTeacherRootFolder(teacherCode);
-  const teacherData = getOrCreateSubFolder_(root, TEACHER_DATA_FOLDER);
-  const cName = 'class_' + classId;
-  const found = findSubFolder_(teacherData.getId(), cName);
-  return found || createFolder_(teacherData.getId(), cName);
+  const map = initializeFolders(teacherCode, list);
+  return map;
 }
 
 /**
@@ -887,14 +919,12 @@ function getClassFolder(teacherCode, classId) {
  * @return {Object} クラスIDとシート名のマップ
  */
 function getClassIdMap_(teacherCode) {
-  const teacherData = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), TEACHER_DATA_FOLDER);
-  const content = readFileContent_(teacherData, 'class_map.json');
-  if (!content) return {};
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    return {};
-  }
+  const settings = loadTeacherSettings_(teacherCode);
+  const map = {};
+  (settings.classes || []).forEach((cls, idx) => {
+    map[idx + 1] = `${cls[0]}-${cls[1]}`;
+  });
+  return map;
 }
 
 /**
@@ -962,60 +992,6 @@ function getCacheData(teacherCode, classId) {
 }
 
 /**
- * getStudentDataFolder_(teacherCode, studentId):
- * STUDYQUEST_<code>/student_data/<studentId> を取得/作成
- */
-function exportCacheToTabs(teacherCode) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return;
-
-  const map = getClassIdMap_(teacherCode);
-  const summarySheet = ss.getSheetByName('summary') || ss.insertSheet('summary');
-  summarySheet.clear();
-
-  let summaryHeader = null;
-  const summaryRows = [];
-
-  Object.keys(map).forEach(id => {
-    const cacheName = `_cache_data_${id}`;
-    const cacheSheet = ss.getSheetByName(cacheName) || ss.insertSheet(cacheName);
-    cacheSheet.clear();
-    const src = ss.getSheetByName('class_' + id);
-    if (!src) return;
-    const values = src.getDataRange().getValues();
-    if (!values.length) return;
-    cacheSheet.getRange(1, 1, values.length, values[0].length).setValues(values);
-    cacheSheet.hideSheet();
-
-    if (!summaryHeader) {
-      summaryHeader = ['classId'].concat(values[0]);
-    }
-    for (let i = 1; i < values.length; i++) {
-      summaryRows.push([id].concat(values[i]));
-    }
-  });
-
-  if (summaryHeader) {
-    summarySheet.getRange(1, 1, 1, summaryHeader.length).setValues([summaryHeader]);
-    if (summaryRows.length) {
-      summarySheet.getRange(2, 1, summaryRows.length, summaryHeader.length).setValues(summaryRows);
-    }
-    summarySheet.hideSheet();
-  }
-}
-
-/**
- * getCacheData(teacherCode, classId): `_cache_data_<classId>` から値を取得
- */
-function getCacheData(teacherCode, classId) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return [];
-  const sheet = ss.getSheetByName(`_cache_data_${classId}`);
-  if (!sheet) return [];
-  return sheet.getDataRange().getValues();
-}
-
-/**
  * include(filename):
  * HTML テンプレートを埋め込むためのヘルパー
  */
@@ -1027,31 +1003,18 @@ function include(filename) {
  * Gemini 設定を保存
  */
 function setGeminiSettings(teacherCode, apiKey, persona) {
-  const folder = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), TEACHER_DATA_FOLDER);
-  let obj = {};
-  const current = readFileContent_(folder, 'gemini_settings.json');
-  if (current) {
-    try { obj = JSON.parse(current); } catch(e) {}
-  }
-  if (apiKey !== undefined) obj.apiKey = Utilities.base64Encode(apiKey);
-  if (persona !== undefined) obj.persona = persona;
-  overwriteFile_(folder, 'gemini_settings.json', JSON.stringify(obj), MimeType.PLAIN_TEXT);
+  const data = loadTeacherSettings_(teacherCode);
+  if (apiKey !== undefined) data.apiKey = apiKey;
+  if (persona !== undefined) data.persona = persona;
+  saveTeacherSettings_(teacherCode, data);
 }
 
 /**
  * Gemini 設定を取得
  */
 function getGeminiSettings(teacherCode) {
-  const folder = getOrCreateSubFolder_(getTeacherRootFolder(teacherCode), TEACHER_DATA_FOLDER);
-  const content = readFileContent_(folder, 'gemini_settings.json');
-  if (!content) return { apiKey: '', persona: '' };
-  try {
-    const obj = JSON.parse(content);
-    const key = obj.apiKey ? Utilities.newBlob(Utilities.base64Decode(obj.apiKey)).getDataAsString() : '';
-    return { apiKey: key, persona: obj.persona || '' };
-  } catch(e) {
-    return { apiKey: '', persona: '' };
-  }
+  const data = loadTeacherSettings_(teacherCode);
+  return { apiKey: data.apiKey || '', persona: data.persona || '' };
 }
 
 /**
