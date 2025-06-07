@@ -2,16 +2,40 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>StudyQuest – ボード</title>
-  <!-- ゲームっぽいフォント -->
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
-  <!-- TailwindCSS + GSAP -->
+  <title>StudyQuest - 回答ボード</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: 'DotGothic16', monospace;
+      font-family: 'DotGothic16', sans-serif;
+      background-color: #1a1b26;
+    }
+    #particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .glass-panel {
+      background: rgba(26, 27, 38, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .game-btn {
+      transition: all 0.2s ease;
+      border-bottom-width: 4px;
+    }
+    .game-btn:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
     }
     /* デバッグパネル */
     #debugPanel {
@@ -44,16 +68,29 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-purple-800 to-indigo-700 text-gray-100 p-4 md:p-6">
-  <header class="mb-6 flex justify-between items-center">
-    <h1 id="boardHeading" class="text-2xl flex items-center gap-2">
-      <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
-      <span id="boardHeadingText">みんなの回答ボード</span>
-      <span id="answerCount" class="text-sm text-gray-400 ml-2"></span>
-    </h1>
-    <a href="#" id="backLink" class="text-sm hover:text-pink-400">&laquo; 管理パネルに戻る</a>
-  </header>
-  <div class="grid gap-4" id="answers" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));"></div>
+<body class="text-gray-200 p-4 md:p-6">
+
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="max-w-7xl mx-auto">
+    <header class="glass-panel rounded-xl p-4 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+      <div class="flex-grow w-full">
+        <div class="bg-gray-900/50 p-3 rounded-lg border-l-4 border-cyan-400">
+          <div class="flex justify-between items-center mb-1">
+            <p class="text-sm text-gray-400 flex items-center gap-2">
+              <i data-lucide="scroll-text" class="w-5 h-5"></i>
+              <span id="headingLabel">現在のクエスト</span>
+            </p>
+            <p class="text-sm text-gray-400" id="answerCount"></p>
+          </div>
+          <p id="questionText" class="font-bold text-white mt-1"></p>
+        </div>
+      </div>
+      <a href="#" id="backLink" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2 flex-shrink-0"></a>
+    </header>
+
+    <main id="answers" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></main>
+  </div>
 
   <script>
     function escapeHtml(text) {
@@ -66,6 +103,56 @@
       };
       return text == null ? '' : String(text).replace(/[&<>"']/g, m => map[m]);
     }
+
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const maxParticles = 80;
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.3;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+          this.reset();
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+        }
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < maxParticles; i++) particles.push(new Particle());
+    }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    initParticles();
+    animateParticles();
 
     // デバッグログ出力用
     let debugContentElem;
@@ -98,9 +185,38 @@
         location.href = '?page=login';
         return;
       }
-      document.getElementById('backLink').href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+      const backLink = document.getElementById('backLink');
+      const grade = params.get('grade');
+      const classroom = params.get('class');
+      const number = params.get('number');
+
+      if (grade && classroom && number) {
+        backLink.href = `?page=input&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
+        backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
+      } else {
+        backLink.href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+        backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
+      }
+
       if (taskId) {
-        document.getElementById('boardHeadingText').textContent = '課題別ボード';
+        document.getElementById('headingLabel').textContent = '課題別ボード';
+        google.script.run.withSuccessHandler(tasks => {
+          const t = tasks.find(x => x.id === taskId);
+          let txt = '';
+          if (t) {
+            try {
+              const q = JSON.parse(t.q);
+              txt = `【${q.subject || ''}】 ${q.question}`;
+            } catch (_) {
+              txt = t.q;
+            }
+          }
+          document.getElementById('questionText').textContent = txt;
+          lucide.createIcons();
+        }).listTasks(teacherCode);
+      } else {
+        document.getElementById('questionText').textContent = 'みんなの回答ボード';
+        lucide.createIcons();
       }
 
       function loadBoard() {
@@ -111,23 +227,29 @@
       function renderBoard(rows) {
         const container = document.getElementById('answers');
         container.innerHTML = '';
-        document.getElementById('answerCount').textContent = `(${rows.length}件)`;
+        document.getElementById('answerCount').textContent = `提出: ${rows.length}件`;
         if (rows.length == 0) {
           container.innerHTML = '<p class="text-center text-gray-500">まだ提出されていません。</p>';
           return;
         }
         rows.forEach((r, i) => {
           const card = document.createElement('div');
-          card.className = 'p-4 bg-gray-800 rounded-2xl shadow-2xl break-words opacity-0';
+          card.className = 'glass-panel rounded-xl p-4 flex flex-col gap-3 shadow-lg border-2 border-transparent hover:border-pink-500 transition-colors opacity-0';
           card.innerHTML = `
-            <h3 class="text-pink-400 text-sm mb-1">${escapeHtml(r.studentId)}</h3>
-            <p class="text-gray-200 whitespace-pre-wrap">${escapeHtml(r.answer)}</p>
-            <p class="text-xs text-gray-400 mt-2">XP: ${r.earnedXp} (累計 ${r.totalXp}) Lv${r.level}</p>
-            <p class="text-xs text-gray-400">トロフィー: ${escapeHtml(r.trophies)}</p>
-            <p class="text-xs text-gray-400">AIヒント: ${r.aiCalls}/2 回, 回答: ${r.attempts}/3 回</p>
+            <div class="flex items-center gap-2">
+              <i data-lucide="user-circle" class="w-6 h-6 text-pink-400"></i>
+              <p class="font-bold">${escapeHtml(r.studentId)}</p>
+            </div>
+            <div class="bg-gray-900/50 p-3 rounded-lg flex-grow">
+              <p class="whitespace-pre-wrap break-words">${escapeHtml(r.answer)}</p>
+            </div>
+            <div class="text-xs space-y-1 text-gray-400">
+              <div class="flex justify-between items-center"><span>ステータス:</span><span class="font-bold text-amber-300">Lv. ${r.level}</span></div>
+              <div class="flex justify-between items-center"><span>獲得XP:</span><span class="font-bold text-green-400">+${r.earnedXp} XP</span></div>
+              <div class="flex justify-between items-center"><span>AIヒント / 回答回数:</span><span>${r.aiCalls}/2回, ${r.attempts}/3回</span></div>
+            </div>
           `;
           container.appendChild(card);
-          // カードが順番に回転しながらフェードイン
           gsap.to(card, {
             delay: i * 0.1,
             opacity: 1,
@@ -136,6 +258,7 @@
             from: { rotationY: 90 }
           });
         });
+        lucide.createIcons();
       }
 
       loadBoard();
