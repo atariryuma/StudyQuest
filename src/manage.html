@@ -58,9 +58,7 @@
         </select>
       </div>
       <button id="saveGeminiBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-xl text-sm">保存</button>
-      <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>
-      <button id="classSettingBtn" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm">クラス設定</button>
-    </div>
+      <span id="geminiStatus" class="text-green-400 text-xs hidden">保存済み</span>    </div>
   </header>
   <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-lg text-6xl font-bold text-center tracking-widest"></div>
@@ -89,10 +87,11 @@
           新しい課題
         </h2>
         <form id="taskForm" class="space-y-4 text-base">
+          <button id="classSettingBtn" type="button" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">クラス設定</button>
           <!-- ■ 担当クラス -->
           <div>
             <label for="taskClass" class="text-sm">■ 担当クラス</label>
-            <select id="taskClass" class="w-full mt-1 p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-base"></select>
+            <div id="taskClassButtons" class="flex flex-wrap gap-2 mt-1"></div>
           </div>
 
           <!-- ■ 教科入力 -->
@@ -189,6 +188,10 @@
       }
     }
 
+    function toHalf(str) {
+      return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // 1) teacherCode が null/空文字 ならログインページに戻す
       if (!teacherCode) {
@@ -223,11 +226,9 @@
         const area = document.getElementById('classListArea');
         const div = document.createElement('div');
         div.className = 'flex gap-2';
-        const gradeOpts = [1,2,3,4,5,6].map(n => `<option value="${n}" ${n==g? 'selected':''}>${n}</option>`).join('');
-        const classOpts = ['A','B','C','D','E'].map(ch => `<option value="${ch}" ${ch==c? 'selected':''}>${ch}</option>`).join('');
         div.innerHTML = `
-          <select class="w-14 p-1 rounded bg-gray-700 text-sm">${gradeOpts}</select>
-          <select class="w-14 p-1 rounded bg-gray-700 text-sm">${classOpts}</select>
+          <input type="text" value="${g}" class="gradeInput w-14 p-1 rounded bg-gray-700 text-sm" placeholder="学年" />
+          <input type="text" value="${c}" class="classInput w-14 p-1 rounded bg-gray-700 text-sm" placeholder="組" />
           <button type="button" class="removeRow px-2 bg-gray-600 rounded text-xs">&#8722;</button>
         `;
         div.querySelector('.removeRow').onclick = () => div.remove();
@@ -247,9 +248,9 @@
       document.getElementById('confirmClassBtn').addEventListener('click', () => {
         const rows = Array.from(document.querySelectorAll('#classListArea div'));
         const list = rows.map(div => {
-          const g = div.children[0].value.trim();
-          const c = div.children[1].value.trim();
-          return g && c ? [g,c] : null;
+          const g = toHalf(div.querySelector('.gradeInput').value.replace(/[^0-9]/g,''));
+          const c = toHalf(div.querySelector('.classInput').value.replace(/[^0-9A-Za-z]/g,''));
+          return g && c ? [g, c.toUpperCase()] : null;
         }).filter(Boolean);
         if (list.length > 8) {
           alert('最大8件まで入力できます。');
@@ -289,7 +290,8 @@
       taskForm.addEventListener('submit', e => {
         e.preventDefault();
 
-        const cls = document.getElementById('taskClass').value;
+        const clsRadio = document.querySelector('input[name="taskClassRadio"]:checked');
+        const cls = clsRadio ? clsRadio.value : '';
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
@@ -416,14 +418,19 @@
 
       function loadClassOptions() {
         google.script.run.withSuccessHandler(map => {
-          const select = document.getElementById('taskClass');
-          if (!select) return;
-          select.innerHTML = '<option value="">-- クラスを選択 --</option>';
+          const area = document.getElementById('taskClassButtons');
+          if (!area) return;
+          area.innerHTML = '';
           Object.keys(map).forEach(id => {
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.textContent = map[id];
-            select.appendChild(opt);
+            const label = document.createElement('label');
+            label.className = 'flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer';
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'taskClassRadio';
+            input.value = id;
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(map[id]));
+            area.appendChild(label);
           });
         }).getClassIdMap_(teacherCode);
       }

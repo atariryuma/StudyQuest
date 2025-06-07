@@ -797,10 +797,29 @@ function convertRangeToJson_(sheet) {
 /**
  * getTeacherRootFolder(teacherCode): 教師用ルートフォルダを取得
  */
+/**
+ * getTeacherRootFolder(teacherCode):
+ * 同名フォルダが複数存在する場合は最古の1件を残し、
+ * その他はゴミ箱へ移動してからフォルダを返す
+ */
 function getTeacherRootFolder(teacherCode) {
   const name = FOLDER_NAME_PREFIX + teacherCode;
-  const folder = findLatestFolderByName_(name);
-  return folder || createFolder_('root', name);
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  let items = [];
+  try {
+    const res = Drive.Files.list({ q, orderBy: 'createdTime asc' });
+    items = res.items || [];
+  } catch (e) {
+    logError_('getTeacherRootFolder', e);
+  }
+  if (items.length) {
+    const keep = items[0];
+    for (let i = 1; i < items.length; i++) {
+      try { Drive.Files.trash(items[i].id); } catch (err) { logError_('trashDup', err); }
+    }
+    return DriveApp.getFolderById(keep.id);
+  }
+  return createFolder_('root', name);
 }
 
 /**
