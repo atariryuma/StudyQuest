@@ -116,6 +116,20 @@ StudyQuest_<TeacherCode>/
    npm install
    ```
 
+7. **Google Drive API (Advanced Service) を有効化**
+
+   Apps Script エディタの **サービス** から「Drive API」を追加し、Google Cloud Console 側でも同 API を有効にします。下記のように `Drive.Files` を利用する関数（例: `createFolder_`, `detectTeacherFolderOnDrive_`）が動作するために必須です。
+
+   ```javascript
+   const file = Drive.Files.insert({
+     title: name,
+     mimeType: MimeType.FOLDER,
+     parents: [{ id: parentId }]
+   });
+   ```
+
+   詳細手順は [Google Apps Script 公式ドキュメント](https://developers.google.com/apps-script/guides/services/advanced#enable) を参照してください。
+
 ## 6. CI / CD (GitHub Actions)
 
 `.github/workflows/deploy.yml`:
