@@ -23,7 +23,7 @@
        ======================================== -->
   <header class="p-4 bg-gray-800 flex justify-between items-center shadow-md">
     <div class="flex items-center gap-4">
-      <a id="backToLogin" href="?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
+      <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm shadow">ログインへ戻る</a>
       <h1 class="text-xl flex items-center gap-2">
         <svg data-icon="ClipboardList" class="w-6 h-6 text-pink-400"></svg>
         StudyQuest – 教師パネル
@@ -161,8 +161,9 @@
     </section>
   </main>
 
-  <!-- teacherCode を window オブジェクトにセット -->
+  <!-- SCRIPT_URL と teacherCode をグローバルへセット -->
   <script>
+    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
     window.teacherCode = '<?!= teacher ?>';
   </script>
 
@@ -183,7 +184,7 @@
       // 1) teacherCode が null/空文字 ならログインページに戻す
       if (!teacherCode) {
         alert('不正なアクセスです。');
-        location.href = '?page=login';
+        window.top.location.href = SCRIPT_URL + '?page=login';
         return;
       }
 
