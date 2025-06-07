@@ -1,10 +1,10 @@
 {
   "name": "studyquest",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "scripts": {
     "deploy": "clasp push --force --no-open",
-    "test": "jest",
+    "test": "node scripts/check-deps.js && jest",
     "postversion": "node scripts/postversion.js"
   },
   "devDependencies": {
