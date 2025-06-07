@@ -245,10 +245,10 @@
 
       if (isTeacher) {
         passWrap.classList.remove('hidden');
-        codeWrap.classList.remove('hidden');
+        codeWrap.classList.add('hidden');
         studentFields.classList.add('hidden');
         document.getElementById('passcode').required = true;
-        document.getElementById('teacherCode').required = true;
+        document.getElementById('teacherCode').required = false;
         document.getElementById('grade').required = false;
         document.getElementById('classroom').required = false;
         document.getElementById('number').required = false;
@@ -280,7 +280,6 @@
       if (isTeacher) {
         // ── 教師モード ──
         const passcode = document.getElementById('passcode').value.trim();
-        const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
         if (passcode !== 'kyoushi') {
           alert('パスコードが違います。');
           loading.classList.add('hidden');
@@ -321,7 +320,7 @@
             loading.classList.add('hidden');
             btn.disabled = false;
           })
-          .initTeacher(passcode, teacherCode);
+          .initTeacher(passcode);
 
       } else {
         // ── 児童モード ──
