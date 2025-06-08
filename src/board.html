@@ -158,6 +158,25 @@
     const version = '<?!= typeof version !== "undefined" ? version : "" ?>';
 
     let currentAnswersData = [];
+
+    function storePrefetchData(code, taskId, rows) {
+        try {
+            sessionStorage.setItem(
+                `prefetch_${code}_${taskId || 'all'}`,
+                JSON.stringify({ ts: Date.now(), data: rows })
+            );
+        } catch (e) {}
+    }
+
+    function loadPrefetchedData(code, taskId) {
+        try {
+            const raw = sessionStorage.getItem(`prefetch_${code}_${taskId || 'all'}`);
+            if (!raw) return null;
+            const obj = JSON.parse(raw);
+            if (Date.now() - obj.ts < 60000) return obj.data;
+        } catch (e) {}
+        return null;
+    }
     
     // Particle effect
     const canvas = document.getElementById('particleCanvas');
@@ -205,6 +224,13 @@
 
         debug('🔄 ページ読み込み完了');
         debug(`▶ teacherCode="${teacherCode}", taskId="${taskId || ''}"`);
+
+        const prefetched = loadPrefetchedData(teacherCode, taskId);
+        if (prefetched) {
+            debug('prefetched data found');
+            currentAnswersData = prefetched;
+            renderBoard(prefetched);
+        }
 
         if (!teacherCode) {
             alert('不正なアクセスです。');
@@ -287,6 +313,7 @@
             debug(`データ取得成功: ${rows.length}件`);
             currentAnswersData = rows;
             renderBoard(rows);
+            storePrefetchData(teacherParam, taskId, rows);
         }).withFailureHandler(err => debug(`データ取得エラー: ${err.message}`))[func](teacherParam, taskId);
     }
     

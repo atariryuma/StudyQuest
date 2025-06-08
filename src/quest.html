@@ -212,6 +212,29 @@
   }
   function renderIcons() { if (window.lucide) { window.lucide.createIcons(); } }
 
+  function storePrefetchData(code, taskId, rows) {
+    try {
+      sessionStorage.setItem(
+        `prefetch_${code}_${taskId || 'all'}`,
+        JSON.stringify({ ts: Date.now(), data: rows })
+      );
+    } catch (e) {}
+  }
+
+  function prefetchBoardData(code, taskId) {
+    try {
+      const raw = sessionStorage.getItem(`prefetch_${code}_${taskId || 'all'}`);
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (Date.now() - obj.ts < 60000) return;
+      }
+    } catch (e) {}
+    const fn = taskId ? 'listTaskBoard' : 'listBoard';
+    google.script.run.withSuccessHandler(rows => {
+      storePrefetchData(code, taskId, rows);
+    })[fn](code, taskId);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     if (!teacherCode || !grade || !classroom || !number) {
         document.getElementById('loadingOverlay').textContent = '不正なアクセスです。';
@@ -335,6 +358,7 @@
     const firstTask = unanswered[0] || answered[0];
     const link = document.getElementById('viewAnswersBtn');
     link.href = firstTask ? `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${firstTask.id}&grade=${grade}&class=${classroom}&number=${number}` : '#';
+    if (firstTask) prefetchBoardData(teacherCode, firstTask.id);
   }
 
   async function openTask(task, history) {
@@ -366,6 +390,7 @@
 
     const viewAnswersBtn = document.getElementById('viewAnswersBtn');
     viewAnswersBtn.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
+    prefetchBoardData(teacherCode, task.id);
   }
 
   function renderInputForStep(q, attempt) {
