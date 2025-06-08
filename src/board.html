@@ -91,10 +91,6 @@
         <i data-lucide="settings" class="w-4 h-4"></i>
         <span>管理パネル</span>
       </a>
-      <button type="button" id="closeTaskBtn" class="game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center gap-2 flex-shrink-0 hidden">
-        <i data-lucide="square-x" class="w-4 h-4"></i>
-        <span>クエストを閉じる</span>
-      </button>
     </header>
 
     <section id="aiFollowupSection" class="glass-panel rounded-xl p-4 mb-4 shadow-lg hidden space-y-2">
@@ -200,7 +196,6 @@
       }
       const backLink = document.getElementById('backLink');
       const manageBtn = document.getElementById('manageBtn');
-      const closeBtn = document.getElementById('closeTaskBtn');
       const grade = params.get('grade') || gradeParam;
       const classroom = params.get('class') || classParam;
       const number = params.get('number') || numberParam;
@@ -225,7 +220,6 @@
       }
 
       if (taskId) {
-        if (closeBtn) closeBtn.classList.remove('hidden');
         document.getElementById('headingLabel').textContent = '課題別ボード';
         google.script.run.withSuccessHandler(tasks => {
           const t = tasks.find(x => x.id === taskId);
@@ -246,7 +240,6 @@
         google.script.run.withSuccessHandler(id => {
           taskId = id || null;
           if (taskId) {
-            if (closeBtn) closeBtn.classList.remove('hidden');
             document.getElementById('headingLabel').textContent = '課題別ボード';
             google.script.run.withSuccessHandler(tasks => {
               const t = tasks.find(x => x.id === taskId);
@@ -298,6 +291,7 @@
             <div class="text-xs space-y-1 text-gray-400">
               <div class="flex justify-between items-center"><span>ステータス:</span><span class="font-bold text-amber-300">Lv. ${r.level}</span></div>
               <div class="flex justify-between items-center"><span>獲得XP:</span><span class="font-bold text-green-400">+${r.earnedXp} XP</span></div>
+              <div class="flex justify-between items-center"><span>累計XP:</span><span class="font-bold text-green-300">${r.totalXp} XP</span></div>
             </div>
           `;
           card.addEventListener('click', () => {
@@ -370,18 +364,6 @@
         });
       }
 
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          if (!confirm('このクエストを閉じますか？')) return;
-          google.script.run
-            .withSuccessHandler(() => {
-              closeBtn.disabled = true;
-              closeBtn.textContent = '閉じました';
-            })
-            .withFailureHandler(err => alert('クエストを閉じられません: ' + err.message))
-            .closeTask(teacherCode, taskId);
-        });
-      }
 
       if (!taskId) {
         // loadBoard will be called after resolving active task
