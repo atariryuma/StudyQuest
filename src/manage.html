@@ -731,19 +731,13 @@
             selectedClassId = null;
             const area = document.getElementById('taskClassButtons');
             if (area) {
-              area.innerHTML = '';
+              let html = '';
               Object.keys(map).forEach(id => {
-              const label = document.createElement('label');
-              label.className = 'flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer';
-              const input = document.createElement('input');
-              input.type = 'checkbox';
-              input.name = 'taskClassCheckbox';
-              input.value = id;
-              label.appendChild(input);
-              label.appendChild(document.createTextNode(map[id]));
-              area.appendChild(label);
-            });
-          }
+                html += `<label class="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer">` +
+                        `<input type="checkbox" name="taskClassCheckbox" value="${id}">${map[id]}</label>`;
+              });
+              area.innerHTML = html;
+            }
           renderClassCards(map);
         })
           .withFailureHandler(err => {
