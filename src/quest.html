@@ -2,18 +2,34 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>StudyQuest – クエスト画面</title>
+  <title>StudyQuest – クエスト画面 (機能統合版)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
+  <script>
+    // Lucide Iconsの動的読み込み
+    fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
+      .then(response => response.text())
+      .then(text => {
+        const script = document.createElement('script');
+        script.innerHTML = text;
+        document.head.appendChild(script);
+        script.onload = () => {
+            if (window.lucide) {
+                // 初期描画
+                window.lucide.createIcons();
+            }
+        };
+      });
+  </script>
   <style>
     body {
       font-family: 'DotGothic16', sans-serif;
       background-color: #1a1b26;
+      color: #c0caf5;
     }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #2a2f4a; }
@@ -23,101 +39,139 @@
       background-image:
         linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 16px 16px;
+      background-size: 20px 20px;
     }
     .glass-panel {
-      background: rgba(26, 27, 38, 0.6);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(26, 27, 38, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
+    .game-btn {
+      transition: all 0.2s ease-out;
+      border-bottom-width: 4px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+    }
     .game-btn:disabled { filter: grayscale(80%) opacity(50%); cursor: not-allowed; }
-    .game-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
+    .game-btn:not(:disabled):hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+    }
+    .game-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+      box-shadow: none;
+    }
     .step { transition: all 0.5s ease; }
     .step.active { color: #facc15; transform: scale(1.1); }
     .step.completed { color: #4ade80; }
     .step-line { transition: width 0.5s ease-in-out; }
-    #loadingOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 50;
+    .avatar {
+        width: 40px; height: 40px; border-radius: 9999px;
+        border: 2px solid #4a4f8a;
+        flex-shrink: 0;
+        object-fit: cover;
     }
-    #questActiveScreen.hidden {
-      display: none;
+    .thinking-dots span {
+        animation: blink 1.4s infinite both;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+        0%, 80%, 100% { opacity: 0; }
+        40% { opacity: 1; }
     }
   </style>
 </head>
-<body class="text-gray-200 min-h-screen p-4 pixel-bg">
+<body class="min-h-screen p-4 pixel-bg">
 
   <div class="max-w-7xl mx-auto h-[calc(100vh-2rem)] flex flex-col gap-4">
+    <!-- ===== ヘッダー ===== -->
     <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
-      <div class="flex items-center gap-3">
-        <i data-lucide="swords" class="w-8 h-8 text-cyan-400"></i>
-        <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest</h1>
+      <div class="flex items-center gap-4">
+        <img id="playerAvatar" src="" alt="Player Avatar" class="w-16 h-16 rounded-full border-2 border-purple-400 shadow-lg bg-gray-700">
+        <div>
+            <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest</h1>
+            <div id="studentIdContainer" class="flex items-center gap-2 text-sm text-gray-400"></div>
+        </div>
       </div>
       <div class="w-full sm:w-1/2 lg:w-1/3">
         <div class="flex justify-between items-center mb-1 text-sm text-gray-400">
           <span>Lv. <span id="playerLevel">1</span></span>
-          <span id="studentId"></span>
         </div>
-        <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden">
+        <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden relative">
           <div id="xpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0"></div>
+          <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white tracking-wider"><span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP</div>
         </div>
-        <div class="text-center text-xs mt-1 text-yellow-300"><span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP</div>
       </div>
     </header>
 
     <div class="flex-grow flex gap-4 overflow-hidden">
-      <aside class="w-64 flex-shrink-0 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
-        <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
-          <i data-lucide="scroll-text" class="w-5 h-5 text-amber-400"></i>
-          クエストボード
-        </h2>
+      <!-- ===== サイドバー: クエストボード ===== -->
+      <aside class="w-72 flex-shrink-0 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-bold flex items-center gap-2">
+              <i data-lucide="scroll-text" class="w-5 h-5 text-amber-400"></i>
+              クエストボード
+            </h2>
+            <select id="questSort" class="bg-gray-800 border border-gray-600 text-xs rounded p-1 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                <option value="newest">新着順</option>
+                <option value="subject">科目別</option>
+            </select>
+        </div>
         <div class="flex-1 overflow-y-auto space-y-3">
           <div>
-            <h3 class="text-sm font-bold text-pink-400 mb-1">未回答クエスト</h3>
+            <h3 class="text-sm font-bold text-pink-400 mb-2">未回答クエスト</h3>
             <div id="unanswered" class="space-y-2"></div>
           </div>
-          <div>
-            <h3 class="text-sm font-bold text-cyan-400 mb-1">完了済みクエスト</h3>
+          <div class="mt-4">
+            <h3 class="text-sm font-bold text-cyan-400 mb-2">完了済みクエスト</h3>
             <div id="answered" class="space-y-2"></div>
           </div>
         </div>
       </aside>
 
+      <!-- ===== メインパネル ===== -->
       <section id="mainPanel" class="flex-1 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden relative">
         <!-- Welcome Screen -->
         <div id="welcomeScreen" class="flex flex-col items-center justify-center h-full text-center p-4">
-          <i data-lucide="compass" class="w-24 h-24 text-cyan-400 mb-4 opacity-0"></i>
+          <i data-lucide="compass" class="w-24 h-24 text-cyan-400 mb-4 opacity-0 scale-50"></i>
           <p id="welcomeLine1" class="text-xl font-bold"></p>
           <p id="welcomeLine2" class="text-gray-400 mt-2"></p>
         </div>
 
         <!-- Quest Active Screen -->
-        <div id="questActiveScreen" class="flex-col h-full">
+        <div id="questActiveScreen" class="hidden flex flex-col h-full">
           <div class="p-4 border-b-2 border-gray-700">
-            <div id="questTitle" class="font-bold text-lg text-amber-300 mb-3"></div>
-            <div id="stepProgress" class="flex items-center justify-between text-xs text-gray-500">
-              <div id="step1" class="step text-center"><div class="step-icon">１</div>はじめの答え</div>
-              <div class="flex-1 h-0.5 bg-gray-600"><div id="line1" class="h-full bg-yellow-400 step-line w-0"></div></div>
-              <div id="step2" class="step text-center"><div class="step-icon">２</div>ふかぼり質問</div>
-              <div class="flex-1 h-0.5 bg-gray-600"><div id="line2" class="h-full bg-yellow-400 step-line w-0"></div></div>
-              <div id="step3" class="step text-center"><div class="step-icon">３</div>理由を説明</div>
-              <div class="flex-1 h-0.5 bg-gray-600"><div id="line3" class="h-full bg-yellow-400 step-line w-0"></div></div>
-              <div id="step4" class="step text-center"><div class="step-icon">４</div>最終提出</div>
+            <div id="questTitle" class="font-bold text-lg text-amber-300 mb-4"></div>
+            <div id="stepProgress" class="flex items-center justify-between text-xs text-gray-400">
+                <div id="step1" class="step text-center"><i data-lucide="pencil" class="mx-auto mb-1"></i>はじめの答え</div>
+                <div class="flex-1 h-0.5 bg-gray-600 mx-2"><div id="line1" class="h-full bg-yellow-400 step-line w-0"></div></div>
+                <div id="step2" class="step text-center"><i data-lucide="search" class="mx-auto mb-1"></i>ふかぼり質問</div>
+                <div class="flex-1 h-0.5 bg-gray-600 mx-2"><div id="line2" class="h-full bg-yellow-400 step-line w-0"></div></div>
+                <div id="step3" class="step text-center"><i data-lucide="lightbulb" class="mx-auto mb-1"></i>理由を説明</div>
+                <div class="flex-1 h-0.5 bg-gray-600 mx-2"><div id="line3" class="h-full bg-yellow-400 step-line w-0"></div></div>
+                <div id="step4" class="step text-center"><i data-lucide="send" class="mx-auto mb-1"></i>最終提出</div>
             </div>
           </div>
-          <div id="chatLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
+          <div id="chatLog" class="flex-1 p-4 space-y-6 overflow-y-auto"></div>
+          <!-- AI思考中インジケーター -->
+          <div id="thinkingIndicator" class="msg-gemini flex items-end gap-3 p-4 pt-0 hidden">
+                <img src="" alt="Navigator Avatar" class="avatar ai-avatar">
+                <div class="p-3 rounded-lg bg-gray-700">
+                    <div class="thinking-dots">
+                        <span class="text-2xl">.</span><span class="text-2xl">.</span><span class="text-2xl">.</span>
+                    </div>
+                </div>
+            </div>
           <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
             <div id="answerInputs" class="mb-3"></div>
             <div class="flex flex-col sm:flex-row items-center gap-3">
-              <button id="sendBtn" class="game-btn w-full sm:w-auto flex-grow text-white px-6 py-2 rounded-lg font-bold border flex items-center gap-2">
+              <button id="sendBtn" class="game-btn w-full sm:w-auto flex-grow bg-pink-600 text-white px-6 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex items-center justify-center gap-2">
                 <i data-lucide="send-horizontal"></i>
                 <span>送信</span>
               </button>
-              <a id="viewAnswersBtn" class="game-btn w-full sm:w-auto bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center gap-2" href="#" target="_blank">
+              <a id="viewAnswersBtn" class="game-btn w-full sm:w-auto bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center justify-center gap-2" href="#" target="_blank">
                 <i data-lucide="users"></i>
                 <span>みんなの回答を見る</span>
               </a>
@@ -125,505 +179,603 @@
           </div>
         </div>
 
-        <!-- Confirmation Screen -->
-        <div id="confirmationScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
-          <i data-lucide="help-circle" class="w-16 h-16 text-yellow-400 mb-4"></i>
-          <h3 class="text-xl font-bold mb-4">課題を提出します。よろしいですか？</h3>
-          <div class="flex gap-4">
-            <button id="confirmSubmitBtn" class="game-btn w-40 bg-green-600 text-white px-6 py-2 rounded-lg font-bold border-green-800 hover:bg-green-500 flex items-center justify-center gap-2">
-              <i data-lucide="check"></i><span>クエスト完了</span>
-            </button>
-            <button id="cancelSubmitBtn" class="game-btn w-40 bg-gray-600 text-white px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center justify-center gap-2">
-              <i data-lucide="x"></i><span>キャンセル</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Result Screen -->
-        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
-          <i data-lucide="award" class="w-24 h-24 text-amber-400"></i>
-          <h3 class="text-2xl font-bold mt-4">クエストクリア！</h3>
-          <p class="text-lg mt-2">このクエストで <span id="earnedXp" class="text-yellow-300 font-bold text-xl"></span> をかくとくした！</p>
-          <button id="nextQuestBtn" class="game-btn bg-pink-600 text-white px-6 py-2 mt-4 rounded-lg font-bold border-pink-800 hover:bg-pink-500">つぎのクエストへ</button>
-        </div>
+        <!-- Confirmation Screen: 動的に生成 -->
+        <div id="confirmationScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden"></div>
+        <!-- Result Screen: 動的に生成 -->
+        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden"></div>
       </section>
     </div>
   </div>
+  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"></div>
+  <div id="loadingOverlay" class="fixed inset-0 flex items-center justify-center text-white text-xl font-bold bg-black/80 z-50">ロード中…</div>
+
+
 <script>
-  <?!= include('shared/escapeHtml'); ?>
-const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
-const teacherCode = '<?!= teacher ?>';
-const grade = '<?!= grade ?>';
-const classroom = '<?!= classroom ?>';
-const number = '<?!= number ?>';
-const version = '<?!= version ?>';
+  // GASから渡される変数を定義
+  const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
+  const teacherCode = '<?!= teacher ?>';
+  const grade = '<?!= grade ?>';
+  const classroom = '<?!= classroom ?>';
+  const number = '<?!= number ?>';
+  const version = '<?!= version ?>';
+  const teacherPhotoUrl = '<?!= teacherPhotoUrl ?>' || "https://placehold.co/64x64/7e22ce/ffffff?text=ME";
+  const studentId = `${grade}-${classroom}-${number}`;
 
-const studentId = `${grade}-${classroom}-${number}`;
-let xp = 0;
-let level = 1;
-let totalXp = 0;
-const xpPerQuest = 10;
-let currentTask = null;
-let aiCalls = 0;
+  // AIナビゲーターのアイコン
+  const aiIconUrl = "https://placehold.co/40x40/4b5563/ffffff?text=🤖";
 
-const QuestStep = {
-  INITIAL_ANSWER: 0,
-  DEEPENING_QUESTION: 1,
-  REASONING: 2,
-  FINAL_ANSWER: 3,
-  COMPLETED: 4,
-};
-let questStep = QuestStep.INITIAL_ANSWER;
-let stepAnswers = ['', '', '', ''];
+  // アプリケーションの状態管理変数
+  let xp = 0;
+  let level = 1;
+  let totalXp = 0;
+  const xpPerQuest = 10;
+  let currentTask = null;
+  let aiCalls = 0;
 
-function debug(msg) { console.log(msg); }
+  const QuestStep = {
+    INITIAL_ANSWER: 0,
+    DEEPENING_QUESTION: 1,
+    REASONING: 2,
+    FINAL_ANSWER: 3,
+    COMPLETED: 4,
+  };
+  let questStep = QuestStep.INITIAL_ANSWER;
+  let stepAnswers = ['', '', '', ''];
 
-function renderIcons(scope) {
-  if (window.lucide) {
-    window.lucide.createIcons({ nameAttr: 'data-icon', icons: window.lucide.icons });
+  /**
+   * HTML内の特殊文字をエスケープする
+   */
+  function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderIcons(document);
-  showLoadingOverlay();
-  if (!teacherCode || !grade || !classroom || !number) {
-    alert('不正なアクセス');
-    hideLoadingOverlay();
-    return;
+  /**
+   * Lucideアイコンを再描画する
+   */
+  function renderIcons() {
+      if (window.lucide) {
+          window.lucide.createIcons();
+      }
   }
-  initStudent();
-  document.getElementById('sendBtn').addEventListener('click', handleSend);
-  document.getElementById('nextQuestBtn').addEventListener('click', () => {
-    document.getElementById('resultScreen').classList.add('hidden');
-    loadTasks();
+
+  /**
+   * DOM読み込み完了時の初期化処理
+   */
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!teacherCode || !grade || !classroom || !number) {
+        document.getElementById('loadingOverlay').textContent = '不正なアクセスです。';
+        return;
+    }
+    
+    // UIの初期設定
+    document.getElementById('playerAvatar').src = teacherPhotoUrl;
+    document.getElementById('versionInfo').textContent = version;
+    document.getElementById('studentIdContainer').textContent = `ID: ${studentId}`;
+    document.querySelectorAll('.ai-avatar').forEach(img => img.src = aiIconUrl);
+
+    // イベントリスナーの設定
+    document.getElementById('sendBtn').addEventListener('click', handleSend);
+    
+    startWelcomeSequence();
+    updateProgressBar();
+    updateSendButton();
+    
+    // 生徒情報の初期化とデータ読み込み
+    initStudent();
   });
-  document.getElementById('confirmSubmitBtn').addEventListener('click', finalizeSubmission);
-  document.getElementById('cancelSubmitBtn').addEventListener('click', cancelSubmission);
-  startWelcomeSequence();
-  updateProgressBar();
-  updateSendButton();
-});
 
-function initStudent() {
-  google.script.run.withSuccessHandler(() => { loadTasks(); loadXp(); })
-    .withFailureHandler(e => {
-      alert('初期化失敗: ' + e.message);
-      hideLoadingOverlay();
-    })
-    .initStudent(teacherCode, grade, classroom, number);
-}
-
-function loadTasks(callback) {
-  google.script.run.withSuccessHandler(tasks => {
+  /**
+   * 生徒情報をサーバーに登録し、課題と経験値を読み込む
+   */
+  function initStudent() {
     google.script.run
-      .withSuccessHandler(history => {
-        history = Array.isArray(history) ? history : [];
-        renderLists(tasks || [], history);
-        hideLoadingOverlay();
-        if (typeof callback === 'function') callback();
+      .withSuccessHandler(() => {
+        loadTasks();
+        loadXp();
       })
       .withFailureHandler(e => {
-        alert('履歴取得失敗: ' + e.message);
+        alert('初期化に失敗しました: ' + e.message);
         hideLoadingOverlay();
       })
-      .getStudentHistory(teacherCode, studentId);
-  })
-    .withFailureHandler(e => {
-      alert('課題取得失敗: ' + e.message);
-      hideLoadingOverlay();
-    })
-    .listTasksForClass(teacherCode, grade, classroom);
-}
-
-function renderLists(tasks, history) {
-  const answeredIds = new Set(history.filter(r => (r[3] || '').toString().trim() !== '').map(r => r[1]));
-  const unanswered = tasks.filter(t => !answeredIds.has(t.id));
-  const answered = tasks.filter(t => answeredIds.has(t.id));
-  const unEl = document.getElementById('unanswered');
-  const anEl = document.getElementById('answered');
-  unEl.innerHTML = '';
-  anEl.innerHTML = '';
-  unanswered.forEach(t => {
-    const div = document.createElement('div');
-    const q = JSON.parse(t.q);
-    div.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600';
-    div.textContent = `【${q.subject}】 ${q.question}`;
-    div.addEventListener('click', () => openTask(t, history));
-    unEl.appendChild(div);
-  });
-  answered.forEach(t => {
-    const div = document.createElement('div');
-    const q = JSON.parse(t.q);
-    div.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600 opacity-70 line-through';
-    div.textContent = `【${q.subject}】 ${q.question}`;
-    div.addEventListener('click', () => openTask(t, history));
-    anEl.appendChild(div);
-  });
-  const link = document.getElementById('viewAnswersBtn');
-  const firstTask = unanswered[0] || answered[0];
-  if (link) {
-    if (firstTask) {
-      link.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${firstTask.id}&grade=${grade}&class=${classroom}&number=${number}`;
-    } else {
-      link.href = '#';
-    }
-  }
-}
-
-let lastTaskId = null;
-async function openTask(task, history) {
-  currentTask = task;
-  aiCalls = 0;
-  questStep = QuestStep.INITIAL_ANSWER;
-  stepAnswers = ['', '', '', ''];
-  const q = JSON.parse(task.q);
-  const log = document.getElementById('chatLog');
-  document.getElementById('welcomeScreen').classList.add('hidden');
-  document.getElementById('questActiveScreen').classList.remove('hidden');
-  document.getElementById('resultScreen').classList.add('hidden');
-  document.getElementById('confirmationScreen').classList.add('hidden');
-
-  // 課題タイトルを変更 (listTasks では date プロパティ)
-  const postDate = new Date(task.date).toLocaleDateString();
-  document.getElementById('questTitle').textContent = `${postDate} ${q.subject}`;
-
-  log.innerHTML = '';
-  await typeWriter('こんにちわ！学習はどうかな？先生から課題が出ているよ！ええと…', 'system');
-  await delay(300);
-  await typeWriter(`【${q.subject}】 ${q.question}`, 'system');
-  const rows = history.filter(r => r[1] === task.id);
-  rows.forEach(r => appendMsg('student', r[3]));
-  renderInputForStep(q, rows.length);
-  log.scrollTop = log.scrollHeight;
-  updateProgressBar();
-  updateSendButton();
-  const link = document.getElementById('viewAnswersBtn');
-  link.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
-}
-
-function renderInputForStep(q, attempt) {
-  const area = document.getElementById('answerInputs');
-  area.innerHTML = '';
-  if (questStep === QuestStep.INITIAL_ANSWER) {
-    if (attempt >= 1) q.type = 'text';
-    if (q.type === 'text') {
-      area.innerHTML = '<textarea id="answerText" class="w-full p-2 bg-gray-600 rounded"></textarea>';
-    } else if (q.type === 'radio') {
-      q.choices.forEach((c, i) => {
-        const id = `r${i}`;
-        const opt = escapeHtml(c);
-        area.innerHTML += `<label class="flex items-center gap-1"><input type="radio" name="choice" value="${opt}" id="${id}">${opt}</label>`;
-      });
-    } else if (q.type === 'checkbox') {
-      q.choices.forEach((c, i) => {
-        const id = `c${i}`;
-        const opt = escapeHtml(c);
-        area.innerHTML += `<label class="flex items-center gap-1"><input type="checkbox" value="${opt}" class="cb">${opt}</label>`;
-      });
-    }
-  } else if (questStep === QuestStep.COMPLETED) {
-    area.innerHTML = '';
-  } else {
-    area.innerHTML = '<textarea id="answerText" class="w-full p-2 bg-gray-600 rounded"></textarea>';
-  }
-}
-
-async function handleSend() {
-  if (!currentTask) return;
-  const q = JSON.parse(currentTask.q);
-  let text = '';
-  if (q.type === 'text' || questStep !== QuestStep.INITIAL_ANSWER) {
-    text = document.getElementById('answerText').value.trim();
-  } else if (q.type === 'radio') {
-    const sel = document.querySelector('input[name="choice"]:checked');
-    text = sel ? sel.value : '';
-  } else if (q.type === 'checkbox') {
-    text = Array.from(document.querySelectorAll('.cb:checked')).map(x => x.value).join(',');
-  }
-  if (!text) {
-    alert('回答を入力してください');
-    return;
-  }
-  appendMsg('student', text);
-  stepAnswers[questStep] = text;
-  document.querySelectorAll('#answerInputs input, #answerInputs textarea').forEach(e => e.value = '');
-
-  if (questStep === QuestStep.INITIAL_ANSWER) {
-    await typeWriter(`そうなんだ！君は『${text}』だと思ったんだね...`, 'gemini');
-    await delay(300);
-    const follow = q.followup || q.followUp || q.deepeningQuestion || q.followupQuestion;
-    await typeWriter(follow ? String(follow) : 'どうしてそう思ったの？理由を聞かせて', 'gemini');
-    questStep = QuestStep.DEEPENING_QUESTION;
-    renderInputForStep(q, 1);
-    updateProgressBar();
-    updateSendButton();
-  } else if (questStep === QuestStep.DEEPENING_QUESTION) {
-    if (text.length <= 20) {
-      await typeWriter('シンプルだけど、君らしい意見だね！', 'system');
-      await delay(300);
-    }
-    await typeWriter('じゃあ、今日の学習について、生活とのつながりやもっと知りたいと思ったことを教えてね！', 'system');
-    questStep = QuestStep.FINAL_ANSWER;
-    renderInputForStep(q, 1);
-    updateProgressBar();
-    updateSendButton();
-  } else if (questStep === QuestStep.FINAL_ANSWER) {
-    document.getElementById('confirmationScreen').classList.remove('hidden');
-    document.getElementById('earnedXp').textContent = `+${xpPerQuest}`;
-  }
-}
-
-function appendMsg(type, text) {
-  const log = document.getElementById('chatLog');
-  const div = document.createElement('div');
-  div.className = `msg-${type} flex items-start gap-1`;
-
-  const p = document.createElement('p');
-  p.className = `p-2 rounded ${type === 'student' ? 'bg-indigo-600 ml-auto' : 'bg-gray-700'} max-w-[80%]`;
-  p.textContent = text;
-  div.appendChild(p);
-
-  if (type === 'student' && questStep !== QuestStep.COMPLETED) {
-    const btn = document.createElement('button');
-    btn.className = 'delete-msg text-gray-400 hover:text-white';
-    btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
-    btn.addEventListener('click', () => deleteMessage(div));
-    div.appendChild(btn);
+      .initStudent(teacherCode, grade, classroom, number);
   }
 
-  log.appendChild(div);
-  renderIcons(div);
-  log.scrollTop = log.scrollHeight;
-}
+  /**
+   * 課題一覧と回答履歴をサーバーから読み込む
+   */
+  function loadTasks(callback) {
+    google.script.run
+      .withSuccessHandler(tasks => {
+        google.script.run
+          .withSuccessHandler(history => {
+            renderLists(tasks || [], Array.isArray(history) ? history : []);
+            hideLoadingOverlay();
+            if (typeof callback === 'function') callback();
+          })
+          .withFailureHandler(e => {
+            alert('回答履歴の取得に失敗しました: ' + e.message);
+            hideLoadingOverlay();
+          })
+          .getStudentHistory(teacherCode, studentId);
+      })
+      .withFailureHandler(e => {
+        alert('課題の取得に失敗しました: ' + e.message);
+        hideLoadingOverlay();
+      })
+      .listTasksForClass(teacherCode, grade, classroom);
+  }
 
-/**
- * Display text in the chat log with a typing effect.
- * @param {string} text - The text to show.
- * @param {string} type - Message type such as 'system' or 'gemini'.
- * @returns {Promise<void>} Resolves when typing is done.
- */
-function typeWriter(text, type) {
-  return new Promise(resolve => {
+  /**
+   * 課題一覧をクエストボードに描画する
+   */
+  function renderLists(tasks, history) {
+    const answeredIds = new Set(history.filter(r => (r[3] || '').toString().trim() !== '').map(r => r[1]));
+    const unanswered = tasks.filter(t => !answeredIds.has(t.id));
+    const answered = tasks.filter(t => answeredIds.has(t.id));
+    
+    const unEl = document.getElementById('unanswered');
+    const anEl = document.getElementById('answered');
+    unEl.innerHTML = '';
+    anEl.innerHTML = '';
+
+    const createQuestItem = (task, isAnswered) => {
+        const q = JSON.parse(task.q);
+        const subjectIcons = {
+            '国語': 'book-open', '社会': 'map', '算数': 'calculator', '理科': 'flask-conical', '生活': 'home', '音楽': 'music', '図工': 'paintbrush-2', '体育': 'swords', '道徳': 'heart', '総合': 'globe', '英語': 'captions'
+        };
+        const icon = subjectIcons[q.subject] || 'help-circle';
+        
+        const item = document.createElement('div');
+        item.className = isAnswered 
+            ? 'bg-gray-800/50 p-3 rounded-lg opacity-60'
+            : 'bg-gray-800/50 p-3 rounded-lg cursor-pointer hover:bg-cyan-900/50 border border-transparent hover:border-cyan-400 transition-all';
+        
+        item.innerHTML = `
+            <div class="flex justify-between items-start">
+                <span class="font-bold ${isAnswered ? 'text-gray-300 line-through' : 'text-white'}">${escapeHtml(q.question)}</span>
+                <i data-lucide="${icon}" class="w-5 h-5 text-gray-400 flex-shrink-0 ml-2"></i>
+            </div>
+            <div class="text-xs text-gray-400 mt-2 flex justify-between items-center">
+                <span>${escapeHtml(q.subject) || 'その他'}</span>
+                <span class="font-bold ${isAnswered ? 'text-gray-500' : 'text-yellow-400'}">${isAnswered ? 'クリア済み' : `+${xpPerQuest} XP`}</span>
+            </div>
+        `;
+        if (!isAnswered) {
+            item.addEventListener('click', () => openTask(task, history));
+        }
+        return item;
+    };
+    
+    unanswered.forEach(t => unEl.appendChild(createQuestItem(t, false)));
+    answered.forEach(t => anEl.appendChild(createQuestItem(t, true)));
+
+    renderIcons();
+
+    const firstTask = unanswered[0] || answered[0];
+    const link = document.getElementById('viewAnswersBtn');
+    link.href = firstTask ? `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${firstTask.id}&grade=${grade}&class=${classroom}&number=${number}` : '#';
+  }
+
+  /**
+   * 選択したクエストを開始する
+   */
+  async function openTask(task, history) {
+    currentTask = task;
+    aiCalls = 0;
+    questStep = QuestStep.INITIAL_ANSWER;
+    stepAnswers = ['', '', '', ''];
+    const q = JSON.parse(task.q);
+
+    document.getElementById('welcomeScreen').classList.add('hidden');
+    document.getElementById('questActiveScreen').classList.remove('hidden');
+    document.getElementById('resultScreen').classList.add('hidden');
+    document.getElementById('confirmationScreen').classList.add('hidden');
+
+    const postDate = new Date(task.date).toLocaleDateString(); // task.date を使用
+    document.getElementById('questTitle').textContent = `${postDate} ${q.subject}`;
+    
     const log = document.getElementById('chatLog');
-    const div = document.createElement('div');
-    div.className = `msg-${type} flex items-start gap-1`;
-    const p = document.createElement('p');
-    p.className = `p-2 rounded ${type === 'student' ? 'bg-indigo-600 ml-auto' : 'bg-gray-700'} max-w-[80%] whitespace-pre-wrap`;
-    div.appendChild(p);
+    log.innerHTML = '';
+    showThinking(true);
+    await delay(500);
+    await typeWriter('こんにちわ！学習はどうかな？先生から課題が出ているよ！ええと…', 'system');
+    await typeWriter(`【${q.subject}】 ${q.question}`, 'system');
+    showThinking(false);
 
-    if (type === 'student' && questStep !== QuestStep.COMPLETED) {
-      const btn = document.createElement('button');
-      btn.className = 'delete-msg text-gray-400 hover:text-white';
-      btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
-      btn.addEventListener('click', () => deleteMessage(div));
-      div.appendChild(btn);
+    const rows = history.filter(r => r[1] === task.id);
+    rows.forEach(r => appendMsg('student', r[3]));
+    
+    renderInputForStep(q, rows.length);
+    updateProgressBar();
+    updateSendButton();
+
+    const viewAnswersBtn = document.getElementById('viewAnswersBtn');
+    viewAnswersBtn.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
+  }
+
+  /**
+   * 現在のステップに応じた入力欄を描画する
+   */
+  function renderInputForStep(q, attempt) {
+    const area = document.getElementById('answerInputs');
+    area.innerHTML = '';
+    let inputHtml = '';
+
+    if (questStep === QuestStep.COMPLETED) {
+        return;
     }
 
-    log.appendChild(div);
-    renderIcons(div);
-    log.scrollTop = log.scrollHeight;
-    let i = 0;
-    const timer = setInterval(() => {
-      p.textContent += text.charAt(i);
-      log.scrollTop = log.scrollHeight;
-      i++;
-      if (i >= text.length) {
-        clearInterval(timer);
-        resolve();
-      }
-    }, 40);
-  });
-}
-
-/**
- * Wait for the specified milliseconds.
- * @param {number} ms - Duration in milliseconds.
- * @returns {Promise<void>} Promise resolved after the delay.
- */
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function loadXp() { updateXpBar(); }
-function addXp(amount) {
-  totalXp += amount;
-  xp += amount;
-  while (xp >= level * 100) {
-    xp -= level * 100;
-    level++;
-  }
-  updateXpBar();
-}
-function updateXpBar() {
-  document.getElementById('playerLevel').textContent = level;
-  document.getElementById('xpCurrent').textContent = xp;
-  document.getElementById('xpNext').textContent = level * 100;
-  const pct = Math.min((xp / (level * 100)) * 100, 100);
-  gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
-}
-
-function updateProgressBar() {
-  const steps = ['step1', 'step2', 'step3', 'step4'];
-  const lines = ['line1', 'line2', 'line3'];
-  steps.forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.classList.remove('active', 'completed');
-      if (i < questStep) el.classList.add('completed');
-      else if (i === questStep) el.classList.add('active');
+    if (questStep === QuestStep.INITIAL_ANSWER && attempt < 1) {
+        if (q.type === 'radio' || q.type === 'checkbox') {
+            q.choices.forEach((c, i) => {
+                const id = `${q.type}${i}`;
+                const opt = escapeHtml(c);
+                inputHtml += `<label for="${id}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-700 cursor-pointer"><input type="${q.type}" name="choice" value="${opt}" id="${id}" class="accent-pink-500">${opt}</label>`;
+            });
+        }
     }
-  });
-  lines.forEach((id, i) => {
-    const line = document.getElementById(id);
-    if (line) gsap.to(line, { width: i < questStep ? '100%' : '0%', duration: 0.5 });
-  });
-}
+    
+    if (!inputHtml) {
+        inputHtml = `<textarea id="answerText" class="w-full p-2 bg-gray-800 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="ここに回答を入力してね..."></textarea>`;
+    }
 
-function updateSendButton() {
-  const btn = document.getElementById('sendBtn');
-  const label = btn.querySelector('span');
-  btn.classList.remove(
-    'bg-pink-600','border-pink-800','hover:bg-pink-500',
-    'bg-blue-600','border-blue-800','hover:bg-blue-500',
-    'bg-green-600','border-green-800','hover:bg-green-500',
-    'bg-gray-600','border-gray-800','hover:bg-gray-500'
-  );
-  switch (questStep) {
-    case QuestStep.INITIAL_ANSWER:
-      label.textContent = '送信';
-      btn.classList.add('bg-pink-600','border-pink-800','hover:bg-pink-500');
-      btn.disabled = false;
-      break;
-    case QuestStep.DEEPENING_QUESTION:
-      label.textContent = '送信';
-      btn.classList.add('bg-blue-600','border-blue-800','hover:bg-blue-500');
-      btn.disabled = false;
-      break;
-    case QuestStep.FINAL_ANSWER:
-      label.textContent = '提出';
-      btn.classList.add('bg-green-600','border-green-800','hover:bg-green-500');
-      btn.disabled = false;
-      break;
-    case QuestStep.COMPLETED:
-      label.textContent = '完了';
-      btn.classList.add('bg-gray-600','border-gray-800','hover:bg-gray-600');
-      btn.disabled = true;
-      break;
+    area.innerHTML = inputHtml;
+    const textarea = area.querySelector('textarea');
+    if (textarea) textarea.focus();
   }
-}
 
-function finalizeSubmission() {
-  addXp(xpPerQuest);
-  google.script.run.withSuccessHandler(() => {
-    loadTasks(() => {
-      document.getElementById('resultScreen').classList.remove('hidden');
+  /**
+   * 「送信」ボタンが押されたときの処理
+   */
+  async function handleSend() {
+    if (!currentTask) return;
+    const q = JSON.parse(currentTask.q);
+    let text = '';
+
+    const answerText = document.getElementById('answerText');
+    if (answerText) {
+        text = answerText.value.trim();
+    } else {
+        const checked = document.querySelectorAll('input[name="choice"]:checked');
+        if (q.type === 'radio' && checked.length > 0) {
+            text = checked[0].value;
+        } else if (q.type === 'checkbox') {
+            text = Array.from(checked).map(x => x.value).join(', ');
+        }
+    }
+
+    if (!text) {
+        alert('回答を入力してください');
+        return;
+    }
+    
+    appendMsg('student', text);
+    stepAnswers[questStep] = text;
+    
+    document.querySelectorAll('#answerInputs input, #answerInputs textarea').forEach(el => {
+        if (el.type !== 'radio' && el.type !== 'checkbox') el.value = '';
     });
-  }).submitAnswer(
-    teacherCode,
-    studentId,
-    currentTask.id,
-    stepAnswers[QuestStep.FINAL_ANSWER],
-    xpPerQuest,
-    totalXp,
-    level,
-    '',
-    aiCalls,
-    document.querySelectorAll('#chatLog .msg-student').length
-  );
-  questStep = QuestStep.COMPLETED;
-  document.getElementById('confirmationScreen').classList.add('hidden');
-  updateProgressBar();
-  updateSendButton();
-}
+    
+    showThinking(true);
+    await delay(300);
 
-function cancelSubmission() {
-  document.getElementById('confirmationScreen').classList.add('hidden');
-}
+    if (questStep === QuestStep.INITIAL_ANSWER) {
+        await typeWriter(`そうなんだ！君は『${text}』だと思ったんだね...`, 'gemini');
+        const follow = q.followup || q.followUp || q.deepeningQuestion || q.followupQuestion;
+        await typeWriter(follow ? String(follow) : 'どうしてそう思ったの？理由を聞かせて', 'gemini');
+        questStep = QuestStep.DEEPENING_QUESTION;
+    } else if (questStep === QuestStep.DEEPENING_QUESTION) {
+        if (text.length <= 20) {
+            await typeWriter('シンプルだけど、君らしい意見だね！', 'system');
+        }
+        await typeWriter('じゃあ、今日の学習について、生活とのつながりやもっと知りたいと思ったことを教えてね！', 'system');
+        questStep = QuestStep.FINAL_ANSWER;
+    } else if (questStep === QuestStep.FINAL_ANSWER) {
+        showConfirmation();
+    }
 
-function typeWriterToElement(element, text, speed = 60) {
-  return new Promise(resolve => {
-    element.innerHTML = '';
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < text.length) {
-        element.textContent += text.charAt(i);
-        i++;
-      } else {
-        clearInterval(timer);
-        element.classList.add('typewriter-text');
-        setTimeout(() => {
-          element.classList.remove('typewriter-text');
-          resolve();
-        }, 1200);
+    showThinking(false);
+    renderInputForStep(q, 1); // 次の入力欄を表示
+    updateProgressBar();
+    updateSendButton();
+  }
+
+  /**
+   * チャットログにメッセージを追加する
+   */
+  function appendMsg(type, text) {
+      const log = document.getElementById('chatLog');
+      const div = document.createElement('div');
+      
+      const avatarImg = document.createElement('img');
+      avatarImg.className = 'avatar';
+      
+      const textDiv = document.createElement('div');
+      textDiv.className = 'p-3 rounded-lg max-w-[80%]';
+      
+      const p = document.createElement('p');
+      p.textContent = text;
+      textDiv.appendChild(p);
+
+      if (type === 'student') {
+          div.className = 'msg-student flex items-end gap-3 flex-row-reverse';
+          avatarImg.src = teacherPhotoUrl.replace(/=s\d+/, '=s40'); // チャット用に小さいアイコンに
+          avatarImg.alt = "Player Avatar";
+          textDiv.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none');
+
+          const btn = document.createElement('button');
+          btn.className = 'delete-msg text-gray-400 hover:text-white self-center ml-2 flex-shrink-0';
+          btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
+          btn.addEventListener('click', () => deleteMessage(div));
+          div.appendChild(btn);
+
+      } else { // 'gemini' or 'system'
+          div.className = `msg-${type} flex items-end gap-3`;
+          avatarImg.src = aiIconUrl;
+          avatarImg.alt = "Navigator Avatar";
+          textDiv.classList.add('bg-gray-700', 'rounded-bl-none', 'whitespace-pre-wrap');
       }
-    }, speed);
-  });
-}
 
-async function startWelcomeSequence() {
-  const icon = document.querySelector('#welcomeScreen i');
-  const line1 = document.getElementById('welcomeLine1');
-  const line2 = document.getElementById('welcomeLine2');
-  gsap.to(icon, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out', delay: 0.2 });
-  await delay(500);
-  await typeWriterToElement(line1, 'やあ！今日の調子はどう？');
-  await delay(300);
-  await typeWriterToElement(line2, '左のクエスト一覧から課題を選んでね！');
-}
+      div.prepend(textDiv);
+      div.prepend(avatarImg);
 
-function deleteMessage(div) {
-  const log = document.getElementById('chatLog');
-  let next = div.nextElementSibling;
-  while (next && !next.classList.contains('msg-student')) {
-    const toRemove = next;
-    next = next.nextElementSibling;
-    log.removeChild(toRemove);
-  }
-  log.removeChild(div);
-
-  const msgs = log.querySelectorAll('.msg-student p');
-  stepAnswers = ['', '', '', ''];
-  msgs.forEach((p, i) => { stepAnswers[i] = p.textContent.trim(); });
-
-  switch (msgs.length) {
-    case 0:
-      questStep = QuestStep.INITIAL_ANSWER;
-      break;
-    case 1:
-      questStep = QuestStep.DEEPENING_QUESTION;
-      break;
-    case 2:
-      questStep = QuestStep.FINAL_ANSWER;
-      break;
-    default:
-      questStep = QuestStep.COMPLETED;
+      log.appendChild(div);
+      renderIcons();
+      log.scrollTop = log.scrollHeight;
+      return div;
   }
 
-  if (currentTask) {
-    renderInputForStep(JSON.parse(currentTask.q), msgs.length);
+  /**
+   * メッセージをタイプライター風に表示する
+   */
+  function typeWriter(text, type) {
+    return new Promise(resolve => {
+        const msgDiv = appendMsg(type, '');
+        const p = msgDiv.querySelector('p');
+        p.textContent = '';
+        let i = 0;
+        const timer = setInterval(() => {
+            if (i < text.length) {
+                p.textContent += text.charAt(i);
+                document.getElementById('chatLog').scrollTop = document.getElementById('chatLog').scrollHeight;
+                i++;
+            } else {
+                clearInterval(timer);
+                resolve();
+            }
+        }, 40);
+    });
   }
-  updateProgressBar();
-  updateSendButton();
-}
+  
+  /**
+   * メッセージを削除する
+   */
+  function deleteMessage(div) {
+      const log = document.getElementById('chatLog');
+      let next = div.nextElementSibling;
+      while (next && !next.classList.contains('msg-student')) {
+          const toRemove = next;
+          next = next.nextElementSibling;
+          log.removeChild(toRemove);
+      }
+      log.removeChild(div);
 
-/**
- * Show the loading overlay.
- */
-function showLoadingOverlay() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.remove('hidden');
-}
+      const msgs = log.querySelectorAll('.msg-student p');
+      stepAnswers = ['', '', '', ''];
+      msgs.forEach((p, i) => { if(i < stepAnswers.length) stepAnswers[i] = p.textContent.trim(); });
 
-/**
- * Hide the loading overlay.
- */
-function hideLoadingOverlay() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('hidden');
-}
+      questStep = msgs.length; // ステップをメッセージの数に合わせる
+      
+      if (currentTask) {
+          renderInputForStep(JSON.parse(currentTask.q), msgs.length);
+      }
+      updateProgressBar();
+      updateSendButton();
+  }
+
+  /**
+   * 経験値関連
+   */
+  function loadXp() {
+    // TODO: GASからXPを読み込む処理を実装
+    updateXpBar();
+  }
+  function addXp(amount) {
+      totalXp += amount;
+      xp += amount;
+      while (xp >= level * 100) {
+          xp -= level * 100;
+          level++;
+      }
+      updateXpBar();
+  }
+  function updateXpBar() {
+    document.getElementById('playerLevel').textContent = level;
+    document.getElementById('xpCurrent').textContent = xp;
+    const nextXp = level * 100;
+    document.getElementById('xpNext').textContent = nextXp;
+    const pct = Math.min((xp / nextXp) * 100, 100);
+    gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
+  }
+
+  /**
+   * ステッププログレスバーを更新する
+   */
+  function updateProgressBar() {
+    const steps = ['step1', 'step2', 'step3', 'step4'];
+    steps.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('active', 'completed');
+        if (i < questStep) el.classList.add('completed');
+        else if (i === questStep) el.classList.add('active');
+    });
+    for(let i = 1; i < steps.length; i++) {
+        const line = document.getElementById(`line${i}`);
+        if(line) gsap.to(line, { width: i < questStep ? '100%' : '0%', duration: 0.5 });
+    }
+  }
+
+  /**
+   * 送信ボタンの表示を更新する
+   */
+  function updateSendButton() {
+    const btn = document.getElementById('sendBtn');
+    const label = btn.querySelector('span');
+    const colors = ['pink', 'blue', 'green', 'gray'];
+    colors.forEach(color => btn.classList.remove(`bg-${color}-600`, `border-${color}-800`, `hover:bg-${color}-500`));
+
+    const stepConfig = {
+        [QuestStep.INITIAL_ANSWER]: { label: '送信', color: 'pink', disabled: false },
+        [QuestStep.DEEPENING_QUESTION]: { label: '送信', color: 'blue', disabled: false },
+        [QuestStep.REASONING]: { label: '送信', color: 'blue', disabled: false },
+        [QuestStep.FINAL_ANSWER]: { label: '提出する', color: 'green', disabled: false },
+        [QuestStep.COMPLETED]: { label: '完了', color: 'gray', disabled: true },
+    };
+    const config = stepConfig[questStep] || { label: '送信', color: 'gray', disabled: true };
+    label.textContent = config.label;
+    btn.classList.add(`bg-${config.color}-600`, `border-${config.color}-800`, `hover:bg-${config.color}-500`);
+    btn.disabled = config.disabled;
+  }
+
+  /**
+   * 提出確認画面を表示する
+   */
+  function showConfirmation() {
+    const confirmationScreen = document.getElementById('confirmationScreen');
+    confirmationScreen.innerHTML = `
+        <i data-lucide="help-circle" class="w-16 h-16 text-yellow-400 mb-4"></i>
+        <h3 class="text-xl font-bold mb-4">課題を提出します。よろしいですか？</h3>
+        <div class="flex gap-4">
+            <button id="confirmSubmitBtn" class="game-btn w-48 bg-green-600 text-white px-6 py-2 rounded-lg font-bold border-green-800 hover:bg-green-500 flex items-center justify-center gap-2">
+              <i data-lucide="check"></i><span>クエスト完了</span>
+            </button>
+            <button id="cancelSubmitBtn" class="game-btn w-48 bg-gray-600 text-white px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center justify-center gap-2">
+              <i data-lucide="x"></i><span>キャンセル</span>
+            </button>
+        </div>
+    `;
+    confirmationScreen.classList.remove('hidden');
+    confirmationScreen.classList.add('flex');
+    renderIcons();
+    document.getElementById('confirmSubmitBtn').addEventListener('click', finalizeSubmission);
+    document.getElementById('cancelSubmitBtn').addEventListener('click', () => {
+        confirmationScreen.classList.add('hidden');
+        confirmationScreen.classList.remove('flex');
+    });
+  }
+  
+  /**
+   * 回答を最終提出する
+   */
+  function finalizeSubmission() {
+    showLoadingOverlay();
+    addXp(xpPerQuest);
+    
+    google.script.run
+        .withSuccessHandler(() => {
+            showResultScreen();
+            loadTasks();
+        })
+        .withFailureHandler(e => {
+            alert('提出に失敗しました: ' + e.message);
+            hideLoadingOverlay();
+        })
+        .submitAnswer(
+            teacherCode,
+            studentId,
+            currentTask.id,
+            stepAnswers[QuestStep.FINAL_ANSWER], // 最後の回答のみ送信
+            xpPerQuest,
+            totalXp,
+            level,
+            '',
+            aiCalls,
+            document.querySelectorAll('#chatLog .msg-student').length
+        );
+    
+    questStep = QuestStep.COMPLETED;
+    document.getElementById('confirmationScreen').classList.add('hidden');
+    updateProgressBar();
+    updateSendButton();
+  }
+
+  /**
+   * クエストクリア画面を表示する
+   */
+  function showResultScreen() {
+    const resultScreen = document.getElementById('resultScreen');
+    resultScreen.innerHTML = `
+        <div class="relative">
+            <i data-lucide="award" class="w-32 h-32 text-amber-400"></i>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <i data-lucide="star" class="w-16 h-16 text-white"></i>
+            </div>
+        </div>
+        <h3 class="text-3xl font-bold mt-4">クエストクリア！</h3>
+        <p class="text-lg mt-2">このクエストで <span class="text-yellow-300 font-bold text-xl">+${xpPerQuest} XP</span> をかくとくした！</p>
+        <button id="nextQuestBtn" class="game-btn bg-pink-600 text-white px-8 py-3 mt-6 rounded-lg font-bold border-pink-800 hover:bg-pink-500 text-lg">つぎのクエストへ</button>
+    `;
+    resultScreen.classList.remove('hidden');
+    resultScreen.classList.add('flex');
+    hideLoadingOverlay();
+    renderIcons();
+
+    document.getElementById('nextQuestBtn').addEventListener('click', () => {
+        resultScreen.classList.add('hidden');
+        resultScreen.classList.remove('flex');
+        document.getElementById('questActiveScreen').classList.add('hidden');
+        document.getElementById('welcomeScreen').classList.remove('hidden');
+    });
+  }
+
+  /**
+   * ユーティリティ関数
+   */
+  async function startWelcomeSequence() {
+    const icon = document.querySelector('#welcomeScreen i');
+    const line1 = document.getElementById('welcomeLine1');
+    const line2 = document.getElementById('welcomeLine2');
+    gsap.to(icon, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out', delay: 0.2 });
+    await delay(500);
+    await typeWriterToElement(line1, 'やあ！今日の調子はどう？');
+    await delay(300);
+    await typeWriterToElement(line2, '左のクエスト一覧から課題を選んでね！');
+  }
+
+  function typeWriterToElement(element, text, speed = 60) {
+    return new Promise(resolve => {
+        element.innerHTML = '';
+        let i = 0;
+        const timer = setInterval(() => {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(timer);
+                resolve();
+            }
+        }, speed);
+    });
+  }
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function showLoadingOverlay() {
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    document.getElementById('loadingOverlay').classList.add('flex');
+  }
+  function hideLoadingOverlay() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('loadingOverlay').classList.remove('flex');
+  }
+  function showThinking(isThinking) {
+    document.getElementById('thinkingIndicator').classList.toggle('hidden', !isThinking);
+    if(isThinking) document.getElementById('chatLog').scrollTop = document.getElementById('chatLog').scrollHeight;
+  }
 </script>
-<div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?!= version ?></div>
-<div id="loadingOverlay" class="hidden flex items-center justify-center text-white text-xl font-bold">ロード中…</div>
 </body>
 </html>
