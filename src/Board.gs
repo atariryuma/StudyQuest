@@ -7,7 +7,7 @@ function listBoard(teacherCode) {
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const lastCol = Math.min(sheet.getLastColumn(), 14);
+  const lastCol = Math.min(sheet.getLastColumn(), 12);
   const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   const sliceStart = Math.max(0, data.length - 30);
   const slice = data.slice(sliceStart).reverse();
@@ -17,9 +17,7 @@ function listBoard(teacherCode) {
     earnedXp: row[8],
     totalXp: row[9],
     level: row[10],
-    trophies: row[11],
-    aiCalls: row[12] || 0,
-    attempts: row[13] || 0
+    trophies: row[11]
   }));
 }
 
@@ -34,7 +32,7 @@ function listTaskBoard(teacherCode, taskId) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const lastCol = Math.min(sheet.getLastColumn(), 14);
+  const lastCol = Math.min(sheet.getLastColumn(), 12);
   const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   const filtered = data.filter(r => r[1] === taskId).reverse();
   return filtered.map(row => ({
@@ -43,9 +41,7 @@ function listTaskBoard(teacherCode, taskId) {
     earnedXp: row[8],
     totalXp: row[9],
     level: row[10],
-    trophies: row[11],
-    aiCalls: row[12] || 0,
-    attempts: row[13] || 0
+    trophies: row[11]
   }));
 }
 

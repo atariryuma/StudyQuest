@@ -11,12 +11,23 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   if (!taskSheet) {
     throw new Error(`システムエラー: 「${SHEET_TASKS}」シートが見つかりません。`);
   }
-  const taskId = Utilities.getUuid();
-  let classId = '';
+  let parsed;
   try {
-    const obj = JSON.parse(payloadAsJson);
-    classId = obj.classId || '';
-  } catch (e) {}
+    parsed = JSON.parse(payloadAsJson);
+  } catch (e) {
+    parsed = null;
+  }
+
+  if (parsed && Array.isArray(parsed.classIds)) {
+    parsed.classIds.forEach(cid => {
+      const rowPayload = JSON.stringify(Object.assign({}, parsed, { classId: cid }));
+      taskSheet.appendRow([Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), persona || '', '', '']);
+    });
+    return;
+  }
+
+  const taskId = Utilities.getUuid();
+  const classId = parsed && parsed.classId ? parsed.classId : '';
   taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '', '']);
 }
 

@@ -139,6 +139,71 @@ test('initTeacher tasks sheet header includes draft column', () => {
   expect(header[header.length-1]).toBe('draft');
 });
 
+test('initTeacher submissions sheet header matches README order', () => {
+  const props = {};
+  const dummyRange = {
+    setFontWeight: jest.fn().mockReturnThis(),
+    setFontSize: jest.fn().mockReturnThis(),
+    setHorizontalAlignment: jest.fn().mockReturnThis(),
+    mergeAcross: jest.fn()
+  };
+  const sheetStub = {
+    setName: jest.fn(),
+    clear: jest.fn(),
+    appendRow: jest.fn(),
+    getRange: jest.fn(() => dummyRange),
+    getDataRange: jest.fn(() => ({ getValues: jest.fn(() => [['type','value1','value2']]) })),
+    setColumnWidth: jest.fn(),
+    setTabColor: jest.fn(),
+    getSheetId: jest.fn(() => 1),
+    getLastRow: jest.fn(() => 1),
+    autoResizeColumn: jest.fn()
+  };
+  const inserted = {};
+  const ssStub = {
+    getId: jest.fn(() => 'sid'),
+    getSheets: jest.fn(() => [sheetStub]),
+    getUrl: jest.fn(() => 'url'),
+    insertSheet: jest.fn(name => { const s = { appendRow: jest.fn(), setTabColor: jest.fn(), getSheetId: jest.fn(() => 2), getLastRow: jest.fn(() => 1) }; inserted[name] = s; return s; }),
+    getSheetByName: jest.fn(() => sheetStub)
+  };
+  const context = {
+    PropertiesService: {
+      getScriptProperties: () => ({ setProperty: (k,v)=>{ props[k]=v; }, getKeys: () => Object.keys(props), getProperty: k=>props[k] })
+    },
+    FOLDER_NAME_PREFIX: 'StudyQuest_',
+    SHEET_TOC: '📜 目次',
+    SHEET_TASKS: 'Tasks',
+    SHEET_STUDENTS: 'Students',
+    SHEET_SUBMISSIONS: 'Submissions',
+    SHEET_AI_FEEDBACK: 'AI',
+    STUDENT_SHEET_PREFIX: 'stu_',
+    DriveApp: {
+      createFolder: jest.fn(() => ({ getId: ()=>'fid' })),
+      getFileById: jest.fn(() => ({ moveTo: jest.fn() })),
+      searchFolders: jest.fn()
+    },
+    SpreadsheetApp: { create: jest.fn(() => ssStub) },
+    logError_: () => {},
+    Utilities: {
+      base64Encode: str => Buffer.from(str).toString('base64'),
+      base64Decode: str => Buffer.from(str, 'base64'),
+      newBlob: data => ({ getDataAsString: () => data.toString() })
+    },
+    SHEET_SETTINGS: 'Settings',
+    getSpreadsheetByTeacherCode: () => ssStub
+  };
+  context.detectTeacherFolderOnDrive_ = jest.fn(() => null);
+  context.findLatestFolderByName_ = jest.fn(() => null);
+  loadTeacher(context);
+  context.getSpreadsheetByTeacherCode = () => ssStub;
+  context.generateTeacherCode = jest.fn(() => 'ABC123');
+  context.initTeacher('kyoushi');
+  const header = inserted['Submissions'].appendRow.mock.calls[0][0];
+  const expected = ['生徒ID','課題ID','問題文','開始日時','提出日時','成果物URL','問題概要','回答概要','付与XP','累積XP','レベル','トロフィー'];
+  expect(header).toEqual(expected);
+});
+
 test('saveTeacherSettings persists values correctly and global key handling', () => {
   const props = {};
   const sheetData = [['type', 'value1', 'value2']];
