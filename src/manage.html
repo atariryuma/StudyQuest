@@ -775,11 +775,9 @@
         } catch (_) {
           hist = [];
         }
-        hist.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s;
-          list.appendChild(opt);
-        });
+        let html = '';
+        hist.forEach(s => { html += `<option value="${escapeHtml(s)}"></option>`; });
+        list.innerHTML = html;
       }
 
       function addSubjectHistory(subj) {
@@ -838,17 +836,15 @@
           return;
         }
         wrapper.classList.remove('hidden');
-        container.innerHTML = '';
+        let html = '';
         generationHistory.forEach((historySet, index) => {
-          const historyEntry = document.createElement('div');
-          historyEntry.className = 'border-t border-gray-700 pt-2';
           const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-          historyEntry.innerHTML = `
+          html = `<div class="border-t border-gray-700 pt-2">
             <p class="text-xs font-bold text-gray-500">履歴 ${index + 1}</p>
             <ul class="list-disc list-inside text-xs">${listItems}</ul>
-          `;
-          container.prepend(historyEntry);
+          </div>` + html;
         });
+        container.innerHTML = html;
       }
 
 
@@ -881,15 +877,15 @@
         if (controls) controls.innerHTML = '';
         if (choices.length === 0) choices = [''];
 
+        let html = '';
         choices.forEach((choice, index) => {
-          const div = document.createElement('div');
-          div.className = 'flex items-center gap-2';
-          div.innerHTML = `
-            <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
-            <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
-          `;
-          container.appendChild(div);
+          html += `
+            <div class="flex items-center gap-2">
+              <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
+              <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+            </div>`;
         });
+        container.innerHTML = html;
 
         if (controls) {
           controls.innerHTML = `

@@ -290,12 +290,9 @@
         history = [];
       }
       const list = document.getElementById('teacherHistory');
-      list.innerHTML = '';
-      history.forEach(code => {
-        const opt = document.createElement('option');
-        opt.value = code;
-        list.appendChild(opt);
-      });
+      let html = '';
+      history.forEach(code => { html += `<option value="${escapeHtml(code)}"></option>`; });
+      list.innerHTML = html;
       toggleTeacherMode();
       document.getElementById('teacherMode').addEventListener('change', toggleTeacherMode);
       document.getElementById('loginForm').addEventListener('submit', handleSubmit);

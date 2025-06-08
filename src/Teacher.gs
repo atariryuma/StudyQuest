@@ -325,11 +325,23 @@ function loadTeacherSettings_(teacherCode) {
  * フォルダ ID は教師コードをキーとしてスクリプトプロパティに保存される。
  */
 function getTeacherRootFolder(teacherCode) {
+  const cacheKey = 'rootId_' + teacherCode;
+  let cached = getCacheValue_(cacheKey);
+  if (cached) {
+    try {
+      return DriveApp.getFolderById(cached);
+    } catch (e) {
+      removeCacheValue_(cacheKey);
+    }
+  }
+
   const props = PropertiesService.getScriptProperties();
   const stored = props.getProperty(teacherCode);
   if (stored) {
     try {
-      return DriveApp.getFolderById(stored);
+      const f = DriveApp.getFolderById(stored);
+      putCacheValue_(cacheKey, stored, 3600);
+      return f;
     } catch (e) {
       logError_('getTeacherRootFolder-open', e);
     }
@@ -350,10 +362,12 @@ function getTeacherRootFolder(teacherCode) {
       try { Drive.Files.trash(items[i].id); } catch (err) { logError_('trashDup', err); }
     }
     props.setProperty(teacherCode, keep.id);
+    putCacheValue_(cacheKey, keep.id, 3600);
     return DriveApp.getFolderById(keep.id);
   }
   const folder = DriveApp.createFolder(name);
   props.setProperty(teacherCode, folder.getId());
+  putCacheValue_(cacheKey, folder.getId(), 3600);
   return folder;
 }
 
