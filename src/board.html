@@ -3,25 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <title>StudyQuest - 回答ボード</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    // Lucide Iconsの動的読み込み
+    fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
+      .then(response => response.text())
+      .then(text => {
+        const script = document.createElement('script');
+        script.innerHTML = text;
+        document.head.appendChild(script);
+        script.onload = () => { if (window.lucide) { window.lucide.createIcons(); } };
+      });
+  </script>
   <style>
     body {
       font-family: 'DotGothic16', sans-serif;
       background-color: #1a1b26;
+      color: #c0caf5;
+      padding-bottom: 100px; /* フッター分の余白 */
     }
     #particleCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
     }
     .glass-panel {
       background: rgba(26, 27, 38, 0.7);
@@ -32,290 +39,105 @@
     .game-btn {
       transition: all 0.2s ease;
       border-bottom-width: 4px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
-    .game-btn:active {
-      transform: translateY(2px);
-      border-bottom-width: 2px;
+    .game-btn:not(:disabled):hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
     }
-    /* デバッグパネル */
-    #debugPanel {
-      position: fixed;
-      bottom: 1rem;
-      left: 1rem;
-      width: 320px;
-      max-height: 200px;
-      background: rgba(31, 41, 55, 0.9);
-      border: 1px solid #4b5563;
-      border-radius: 0.5rem;
-      overflow-y: auto;
-      padding: 0.75rem;
-      font-size: 0.75rem;
-      line-height: 1.2;
-      color: #d1d5db;
-      z-index: 50;
+    .game-btn:active:not(:disabled) {
+      transform: translateY(2px); border-bottom-width: 2px; box-shadow: none;
+    }
+    .rank-legendary { animation: rainbow-border 4s linear infinite; }
+    @keyframes rainbow-border {
+        0% { border-color: #ff79c6; box-shadow: 0 0 15px #ff79c6; }
+        25% { border-color: #8be9fd; box-shadow: 0 0 15px #8be9fd;}
+        50% { border-color: #50fa7b; box-shadow: 0 0 15px #50fa7b;}
+        75% { border-color: #f1fa8c; box-shadow: 0 0 15px #f1fa8c;}
+        100% { border-color: #ff79c6; box-shadow: 0 0 15px #ff79c6;}
+    }
+    input[type=range] { -webkit-appearance: none; background: transparent; }
+    input[type=range]::-webkit-slider-runnable-track {
+        height: 8px; background: #2a2f4a; border-radius: 4px; border: 1px solid #4a4f8a;
+    }
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none; height: 24px; width: 24px;
+        background: #c0caf5; border-radius: 50%;
+        border: 2px solid #ff79c6; margin-top: -9px; cursor: pointer;
+    }
+    .answer-preview {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      height: 96px; 
+    }
+     #debugPanel {
+      position: fixed; bottom: 1rem; left: 1rem; width: 320px;
+      max-height: 200px; background: rgba(31, 41, 55, 0.9);
+      border: 1px solid #4b5563; border-radius: 0.5rem;
+      overflow-y: auto; padding: 0.75rem; font-size: 0.75rem;
+      line-height: 1.2; color: #d1d5db; z-index: 100;
     }
     #debugPanelHeader {
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      color: #9ca3af;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-weight: bold; margin-bottom: 0.5rem; color: #9ca3af;
+      display: flex; justify-content: space-between; align-items: center;
     }
-    #debugClose {
-      cursor: pointer;
-      color: #f87171;
-    }
+    #debugClose { cursor: pointer; color: #f87171; }
   </style>
 </head>
-<body class="text-gray-200 p-4 md:p-6">
+<body class="p-4 md:p-6">
 
   <canvas id="particleCanvas"></canvas>
 
   <div class="w-full mx-auto">
-    <header class="glass-panel rounded-xl p-4 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
-      <div class="flex-grow w-full">
-        <div class="bg-gray-900/50 p-3 rounded-lg border-l-4 border-cyan-400">
-          <div class="flex justify-between items-center mb-1">
-            <p class="text-sm text-gray-400 flex items-center gap-2">
-              <i data-lucide="scroll-text" class="w-5 h-5"></i>
-              <span id="headingLabel">現在のクエスト</span>
-            </p>
-            <p class="text-sm text-gray-400" id="answerCount"></p>
-          </div>
-          <p id="questionText" class="font-bold text-white mt-1"></p>
+    <header class="glass-panel rounded-xl p-4 mb-4 flex flex-col lg:flex-row justify-between items-center gap-4 shadow-lg">
+        <div class="flex items-center gap-4 w-full lg:w-1/4">
+            <a href="#" id="backLink" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2 flex-shrink-0"></a>
+            <p id="answerCount" class="text-sm text-gray-400 hidden sm:flex items-center gap-2"></p>
         </div>
-      </div>
-      <a href="#" id="backLink" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2 flex-shrink-0"></a>
-      <button id="closeQuestBtn" class="game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center gap-2 flex-shrink-0" type="button">
-        <i data-lucide="x-circle" class="w-4 h-4"></i>
-        <span>クエストを閉じる</span>
-      </button>
+        <div class="flex-grow text-center w-full lg:w-1/2">
+             <p id="headingLabel" class="text-sm text-cyan-400">現在のクエスト</p>
+            <p id="questionText" class="font-bold text-white text-lg mt-1"></p>
+        </div>
+        <div class="flex items-center justify-end gap-4 w-full lg:w-1/4">
+            <button id="closeQuestBtn" class="game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center gap-2 flex-shrink-0" type="button">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                <span>クエストを閉じる</span>
+            </button>
+        </div>
     </header>
 
-
-    <main id="answers" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"></main>
+    <main id="answers" class="grid grid-cols-4 gap-4"></main>
+  </div>
+  
+  <div id="modalContainer" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+      <div id="modalCard" class="glass-panel rounded-xl p-6 flex flex-col shadow-2xl border-2 w-full max-w-5xl h-auto max-h-[85vh] transform scale-95 transition-transform duration-300">
+          <button id="modalCloseBtn" class="absolute -top-3 -right-3 bg-red-600 rounded-full p-2 text-white hover:scale-110 transition-transform"><i data-lucide="x" class="w-6 h-6"></i></button>
+          <div id="modalAnswer" class="flex-grow min-h-[200px] mb-4 overflow-y-auto pr-4">
+              <p class="whitespace-pre-wrap break-words text-3xl leading-relaxed text-gray-100"></p>
+          </div>
+          <div id="modalFooter" class="text-xs text-gray-400 pt-4 border-t-2 border-dashed flex justify-between items-center">
+              <div><span id="modalStudentId" class="font-bold text-2xl text-gray-200"></span></div>
+              <div class="flex items-center gap-8">
+                  <span class="flex items-center gap-2" title="レベル"><i data-lucide="star" class="w-8 h-8 text-amber-400"></i><span id="modalLevel" class="font-bold text-4xl text-amber-300"></span></span>
+                  <span class="flex items-center gap-2" title="獲得XP"><i data-lucide="trending-up" class="w-8 h-8 text-green-400"></i><span id="modalEarnedXp" class="font-bold text-3xl text-green-400"></span></span>
+                  <span class="flex items-center gap-2" title="累計XP"><i data-lucide="sigma" class="w-8 h-8 text-cyan-400"></i><span id="modalTotalXp" class="font-bold text-3xl text-cyan-300"></span></span>
+              </div>
+          </div>
+      </div>
   </div>
 
-  <script>
-  <?!= include('shared/escapeHtml'); ?>
-  const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
-  const teacherParam = '<?!= teacher ?>';
-  const gradeParam = '<?!= grade ?>';
-  const classParam = '<?!= classroom ?>';
-  const numberParam = '<?!= number ?>';
+  <footer id="controlsFooter" class="fixed bottom-0 left-0 right-0 z-40 p-4">
+      <div class="glass-panel max-w-md mx-auto rounded-xl p-3 flex items-center justify-center gap-3">
+          <i data-lucide="grid-2x2"></i>
+          <input type="range" id="sizeSlider" min="2" max="6" value="4" class="w-1/2">
+          <span id="sliderValue" class="font-bold w-4 text-center text-lg">4</span>
+      </div>
+  </footer>
 
-    const canvas = document.getElementById('particleCanvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    const maxParticles = 80;
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    class Particle {
-      constructor() { this.reset(); }
-      reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.3;
-        this.vy = (Math.random() - 0.5) * 0.3;
-        this.size = Math.random() * 2 + 1;
-        this.alpha = Math.random() * 0.5 + 0.3;
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-          this.reset();
-          this.x = Math.random() * canvas.width;
-          this.y = Math.random() * canvas.height;
-        }
-      }
-      draw() {
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function initParticles() {
-      particles = [];
-      for (let i = 0; i < maxParticles; i++) particles.push(new Particle());
-    }
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => { p.update(); p.draw(); });
-      requestAnimationFrame(animateParticles);
-    }
-    initParticles();
-    animateParticles();
-
-    // デバッグログ出力用
-    let debugContentElem;
-    function debug(msg) {
-      if (!debugContentElem) return;
-      const t = new Date().toLocaleTimeString();
-      debugContentElem.innerHTML += `<p>[${t}] ${msg}</p>`;
-      debugContentElem.scrollTop = debugContentElem.scrollHeight;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      debugContentElem = document.getElementById('debugContent');
-      const debugPanel = document.getElementById('debugPanel');
-      debugPanel.classList.remove('hidden');
-
-      const params = new URLSearchParams(location.search);
-      let teacherCode = params.get('teacher') || teacherParam;
-      let taskId = params.get('task');
-
-      debug('🔄 ページ読み込み完了');
-      debug(`▶ teacherCode="${teacherCode}", taskId="${taskId || ''}"`);
-
-      if (!teacherCode) {
-        alert('不正なアクセスです。');
-        location.href = '?page=login';
-        return;
-      }
-      const backLink = document.getElementById('backLink');
-      const closeQuestBtn = document.getElementById('closeQuestBtn');
-      const grade = params.get('grade') || gradeParam;
-      const classroom = params.get('class') || classParam;
-      const number = params.get('number') || numberParam;
-      const isStudent = grade && classroom && number;
-
-      if (isStudent) {
-        backLink.href = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
-        backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
-        if (closeQuestBtn) closeQuestBtn.style.display = 'none';
-      } else {
-        backLink.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
-        backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
-        if (closeQuestBtn) {
-          closeQuestBtn.style.display = taskId ? '' : 'none';
-          closeQuestBtn.addEventListener('click', () => {
-            if (!taskId) return;
-            if (confirm('このクエストを閉じますか？')) {
-              google.script.run
-                .withSuccessHandler(() => {
-                  alert('クエストを閉じました');
-                  closeQuestBtn.style.display = 'none';
-                })
-                .withFailureHandler(err => alert('閉じる際にエラーが発生しました: ' + err.message))
-                .closeTask(teacherCode, taskId);
-            }
-          });
-        }
-      }
-
-      if (taskId) {
-        document.getElementById('headingLabel').textContent = '課題別ボード';
-        google.script.run.withSuccessHandler(tasks => {
-          const t = tasks.find(x => x.id === taskId);
-          let txt = '';
-          if (t) {
-            try {
-              const q = JSON.parse(t.q);
-              txt = `【${q.subject || ''}】 ${q.question}`;
-            } catch (_) {
-              txt = t.q;
-            }
-          }
-          document.getElementById('questionText').textContent = txt;
-          lucide.createIcons();
-          loadBoard();
-        }).listTasks(teacherCode);
-      } else {
-        google.script.run.withSuccessHandler(id => {
-          taskId = id || null;
-          if (taskId) {
-            document.getElementById('headingLabel').textContent = '課題別ボード';
-            google.script.run.withSuccessHandler(tasks => {
-              const t = tasks.find(x => x.id === taskId);
-              let txt = '';
-              if (t) {
-                try {
-                  const q = JSON.parse(t.q);
-                  txt = `【${q.subject || ''}】 ${q.question}`;
-                } catch (_) {
-                  txt = t.q;
-                }
-              }
-              document.getElementById('questionText').textContent = txt;
-              lucide.createIcons();
-              loadBoard();
-            }).listTasks(teacherCode);
-          } else {
-            document.getElementById('questionText').textContent = 'みんなの回答ボード';
-            lucide.createIcons();
-            loadBoard();
-          }
-        }).getLatestActiveTaskId(teacherCode);
-      }
-
-      function loadBoard() {
-        const func = taskId ? 'listTaskBoard' : 'listBoard';
-        google.script.run.withSuccessHandler(renderBoard)[func](teacherCode, taskId);
-      }
-
-      function renderBoard(rows) {
-        const container = document.getElementById('answers');
-        container.innerHTML = '';
-        document.getElementById('answerCount').textContent = `提出: ${rows.length}件`;
-        if (rows.length == 0) {
-          container.innerHTML = '<p class="text-center text-gray-500">まだ提出されていません。</p>';
-          return;
-        }
-        rows.forEach((r, i) => {
-          const card = document.createElement('div');
-          card.className = 'glass-panel rounded-xl p-4 flex flex-col gap-3 shadow-lg border-2 border-transparent hover:border-pink-500 transition-colors opacity-0';
-          card.innerHTML = `
-            <div class="flex items-center gap-2">
-              <i data-lucide="user-circle" class="w-6 h-6 text-pink-400"></i>
-              <p class="font-bold">${escapeHtml(r.studentId)}</p>
-            </div>
-            <div class="bg-gray-900/50 p-3 rounded-lg flex-grow">
-              <p class="whitespace-pre-wrap break-words">${escapeHtml(r.answer)}</p>
-            </div>
-            <div class="text-xs space-y-1 text-gray-400">
-              <div class="flex justify-between items-center"><span>ステータス:</span><span class="font-bold text-amber-300">Lv. ${r.level}</span></div>
-              <div class="flex justify-between items-center"><span>獲得XP:</span><span class="font-bold text-green-400">+${r.earnedXp} XP</span></div>
-              <div class="flex justify-between items-center"><span>累計XP:</span><span class="font-bold text-green-300">${r.totalXp} XP</span></div>
-            </div>
-          `;
-          card.addEventListener('click', () => {
-            /* no-op: answer selection handler removed */
-          });
-          container.appendChild(card);
-          gsap.to(card, {
-            delay: i * 0.1,
-            opacity: 1,
-            rotationY: 0,
-            duration: 0.6,
-            from: { rotationY: 90 }
-          });
-        });
-        lucide.createIcons();
-      }
-
-
-
-
-      if (!taskId) {
-        // loadBoard will be called after resolving active task
-      } else {
-        loadBoard();
-      }
-      setInterval(loadBoard, 15000);
-    });
-  </script>
-
-  <!-- デバッグパネル（左下） -->
-  <div id="debugPanel">
+  <div id="debugPanel" class="hidden">
     <div id="debugPanelHeader">
       <span>デバッグログ</span>
       <span id="debugClose">✕</span>
@@ -323,7 +145,237 @@
     <div id="debugContent"></div>
   </div>
 
-  <!-- バージョン表示 -->
-  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
+  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"></div>
+
+
+  <script>
+    <?!= include('shared/escapeHtml'); ?>
+    const SCRIPT_URL = '<?!= typeof scriptUrl !== "undefined" ? scriptUrl.replace("/dev","/exec") : "" ?>';
+    const teacherParam = '<?!= typeof teacher !== "undefined" ? teacher : "" ?>';
+    const gradeParam = '<?!= typeof grade !== "undefined" ? grade : "" ?>';
+    const classParam = '<?!= typeof classroom !== "undefined" ? classroom : "" ?>';
+    const numberParam = '<?!= typeof number !== "undefined" ? number : "" ?>';
+    const version = '<?!= typeof version !== "undefined" ? version : "" ?>';
+
+    let currentAnswersData = [];
+    
+    // Particle effect
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+    class Particle {
+        constructor() { this.reset(); }
+        reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3; this.size = Math.random() * 2 + 1; this.alpha = Math.random() * 0.5 + 0.3; }
+        update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) { this.reset(); } }
+        draw() { ctx.fillStyle = `rgba(255,255,255,${this.alpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+    }
+    function initParticles() { particles = []; for (let i = 0; i < 80; i++) particles.push(new Particle()); }
+    function animateParticles() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animateParticles); }
+    initParticles(); animateParticles();
+
+    let debugContentElem;
+    function debug(msg) {
+      if (!debugContentElem) return;
+      const t = new Date().toLocaleTimeString();
+      debugContentElem.innerHTML += `<p class="break-all">[${t}] ${escapeHtml(msg)}</p>`;
+      debugContentElem.scrollTop = debugContentElem.scrollHeight;
+    }
+
+    function getCardStyle(level) {
+        if (level >= 10) return 'border-pink-500/80 rank-legendary'; 
+        if (level >= 8) return 'border-amber-400/80';    
+        if (level >= 6) return 'border-purple-400/80';   
+        if (level >= 4) return 'border-cyan-400/80';     
+        if (level >= 2) return 'border-orange-400/80';   
+        return 'border-gray-600/80';                     
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        debugContentElem = document.getElementById('debugContent');
+        const debugPanel = document.getElementById('debugPanel');
+        debugPanel.classList.remove('hidden');
+        document.getElementById('debugClose').addEventListener('click', () => debugPanel.classList.add('hidden'));
+        document.getElementById('versionInfo').textContent = version;
+
+        const params = new URLSearchParams(location.search);
+        let teacherCode = params.get('teacher') || teacherParam;
+        let taskId = params.get('task');
+
+        debug('🔄 ページ読み込み完了');
+        debug(`▶ teacherCode="${teacherCode}", taskId="${taskId || ''}"`);
+
+        if (!teacherCode) {
+            alert('不正なアクセスです。');
+            location.href = '?page=login';
+            return;
+        }
+
+        const backLink = document.getElementById('backLink');
+        const closeQuestBtn = document.getElementById('closeQuestBtn');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const modalContainer = document.getElementById('modalContainer');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const grade = params.get('grade') || gradeParam;
+        const classroom = params.get('class') || classParam;
+        const number = params.get('number') || numberParam;
+        const isStudent = grade && classroom && number;
+
+        if (isStudent) {
+            backLink.href = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
+            backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
+            if (closeQuestBtn) closeQuestBtn.style.display = 'none';
+        } else {
+            backLink.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+            backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
+            if (closeQuestBtn) {
+                closeQuestBtn.style.display = taskId ? 'flex' : 'none';
+                closeQuestBtn.addEventListener('click', () => {
+                    if (!taskId || !confirm('このクエストを閉じますか？')) return;
+                    google.script.run
+                        .withSuccessHandler(() => { alert('クエストを閉じました'); closeQuestBtn.style.display = 'none'; })
+                        .withFailureHandler(err => alert('エラー: ' + err.message))
+                        .closeTask(teacherCode, taskId);
+                });
+            }
+        }
+
+        const loadAndRender = (id) => {
+            taskId = id;
+            if(closeQuestBtn) closeQuestBtn.style.display = taskId ? 'flex' : 'none';
+            debug(`TaskIDを決定: ${taskId}`);
+
+            if (taskId) {
+                google.script.run.withSuccessHandler(tasks => {
+                    const task = tasks.find(x => x.id === taskId);
+                    let question = '';
+                    if (task) {
+                        try {
+                            const qData = JSON.parse(task.q);
+                            question = `【${qData.subject || ''}】 ${qData.question}`;
+                        } catch (e) { question = task.q || ''; }
+                    }
+                    document.getElementById('questionText').textContent = question;
+                    loadBoard(taskId);
+                }).listTasks(teacherCode);
+            } else {
+                document.getElementById('questionText').textContent = 'みんなの回答ボード';
+                loadBoard(null);
+            }
+        };
+
+        if (taskId) {
+            loadAndRender(taskId);
+        } else {
+            google.script.run.withSuccessHandler(id => loadAndRender(id)).getLatestActiveTaskId(teacherCode);
+        }
+
+        sizeSlider.addEventListener('input', () => renderBoard(currentAnswersData));
+        modalCloseBtn.addEventListener('click', hideModal);
+        modalContainer.addEventListener('click', (e) => {
+            if (e.target === modalContainer) { hideModal(); }
+        });
+
+        setInterval(() => loadBoard(taskId), 15000);
+    });
+    
+    function loadBoard(taskId) {
+        debug(`ボード読み込み開始 (TaskID: ${taskId || '指定なし'})`);
+        const func = taskId ? 'listTaskBoard' : 'listBoard';
+        google.script.run.withSuccessHandler(rows => {
+            debug(`データ取得成功: ${rows.length}件`);
+            currentAnswersData = rows;
+            renderBoard(rows);
+        }).withFailureHandler(err => debug(`データ取得エラー: ${err.message}`))[func](teacherParam, taskId);
+    }
+    
+    function renderBoard(rows) {
+        const container = document.getElementById('answers');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const sliderValue = document.getElementById('sliderValue');
+        const cols = sizeSlider.value;
+        
+        sliderValue.textContent = cols;
+        const classList = ['grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6'];
+        container.classList.remove(...classList);
+        container.classList.add(`grid-cols-${cols}`);
+
+        container.innerHTML = '';
+        document.querySelector('#answerCount').innerHTML = `<i data-lucide="users" class="w-4 h-4"></i><span>${rows.length}件</span>`;
+        
+        if (rows.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 col-span-full mt-8">まだ提出されていません。</p>';
+            return;
+        }
+
+        rows.sort((a, b) => b.level - a.level);
+
+        rows.forEach((r, i) => {
+            const card = document.createElement('div');
+            const cardStyle = getCardStyle(r.level);
+            card.className = `glass-panel rounded-xl p-4 flex flex-col shadow-lg border-2 transition-all opacity-0 cursor-pointer ${cardStyle}`;
+            
+            let footerHtml;
+            if (cols >= 5) {
+                 footerHtml = `
+                    <div class="text-xs text-gray-400 pt-3 border-t-2 ${cardStyle} border-dashed flex justify-between items-center">
+                        <div><span class="font-bold text-sm text-gray-200">${escapeHtml(r.studentId)}</span></div>
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1" title="レベル"><i data-lucide="star" class="w-4 h-4 text-amber-400"></i><span class="font-bold text-lg text-amber-300">${r.level}</span></span>
+                        </div>
+                    </div>`;
+            } else {
+                footerHtml = `
+                    <div class="text-xs text-gray-400 pt-3 border-t-2 ${cardStyle} border-dashed flex justify-between items-center">
+                        <div><span class="font-bold text-sm text-gray-200">${escapeHtml(r.studentId)}</span></div>
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1" title="レベル"><i data-lucide="star" class="w-4 h-4 text-amber-400"></i><span class="font-bold text-lg text-amber-300">${r.level}</span></span>
+                            <span class="flex items-center gap-1" title="獲得XP"><i data-lucide="trending-up" class="w-4 h-4 text-green-400"></i><span class="font-bold text-green-400">+${r.earnedXp}</span></span>
+                            <span class="flex items-center gap-1" title="累計XP"><i data-lucide="sigma" class="w-4 h-4 text-cyan-400"></i><span class="font-bold text-cyan-300">${r.totalXp}</span></span>
+                        </div>
+                    </div>`;
+            }
+
+            card.innerHTML = `
+                <div class="flex-grow mb-3">
+                    <p class="answer-preview whitespace-pre-wrap break-words text-base leading-relaxed text-gray-200">${escapeHtml(r.answer)}</p>
+                </div>
+                ${footerHtml}`;
+            
+            card.addEventListener('click', () => showModal(r));
+            container.appendChild(card);
+            gsap.fromTo(card, { opacity: 0, y: 50, scale: 0.95 }, { delay: i * 0.08, opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' });
+        });
+        if (window.lucide) { window.lucide.createIcons(); }
+    }
+
+    function showModal(data) {
+        const modalContainer = document.getElementById('modalContainer');
+        const modalCard = document.getElementById('modalCard');
+        const cardStyle = getCardStyle(data.level);
+        
+        document.getElementById('modalAnswer').querySelector('p').textContent = data.answer;
+        document.getElementById('modalStudentId').textContent = data.studentId;
+        document.getElementById('modalLevel').textContent = data.level;
+        document.getElementById('modalEarnedXp').textContent = `+${data.earnedXp}`;
+        document.getElementById('modalTotalXp').textContent = data.totalXp;
+        
+        modalCard.className = `glass-panel rounded-xl p-6 flex flex-col shadow-2xl border-2 w-full max-w-5xl h-auto max-h-[85vh] transform scale-95 transition-transform duration-300 ${cardStyle}`;
+        document.getElementById('modalFooter').className = `text-xs text-gray-400 pt-4 border-t-2 border-dashed flex justify-between items-center ${cardStyle}`;
+        
+        modalContainer.classList.remove('hidden');
+        gsap.to(modalContainer, { opacity: 1, duration: 0.3 });
+        gsap.to(modalCard, { scale: 1, duration: 0.3, ease: 'back.out' });
+        if (window.lucide) { window.lucide.createIcons(); }
+    }
+
+    function hideModal() {
+        const modalContainer = document.getElementById('modalContainer');
+        const modalCard = document.getElementById('modalCard');
+        gsap.to(modalContainer, { opacity: 0, duration: 0.3, onComplete: () => modalContainer.classList.add('hidden') });
+        gsap.to(modalCard, { scale: 0.95, duration: 0.3, ease: 'power2.in' });
+    }
+  </script>
 </body>
 </html>
