@@ -122,7 +122,7 @@ function initTeacher(passcode) {
     {
       name: SHEET_STUDENTS,
       color: "4285f4",
-      header: ['生徒ID', '学年', '組', '番号', '初回ログイン日時'],
+      header: ['生徒ID', '学年', '組', '番号', '初回ログイン日時', '最終ログイン日時', '累計ログイン回数', '累積XP', '現在レベル', '最終獲得トロフィーID'],
       description: "ログインした生徒の情報が記録されます。"
     },
     {
