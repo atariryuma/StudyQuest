@@ -9,7 +9,7 @@ function loadStudent(context) {
 
 test('updateStudentLogin increments count and sets timestamp', () => {
   const sheetData = [
-    ['生徒ID','学年','組','番号','初回ログイン日時','最終ログイン日時','累計ログイン回数','累積XP','現在レベル','最終獲得トロフィーID'],
+    ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID'],
     ['1-1-1',1,'A',1,new Date('2021-01-01'),new Date('2021-01-01'),1,0,1,'']
   ];
   const sheetStub = {
@@ -39,7 +39,7 @@ test('updateStudentLogin increments count and sets timestamp', () => {
 
 test('initStudent adds placeholder rows to Submissions', () => {
   const students = [
-    ['生徒ID','学年','組','番号','初回ログイン日時','最終ログイン日時','累計ログイン回数','累積XP','現在レベル','最終獲得トロフィーID']
+    ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID']
   ];
   const studentSheetStub = {
     appendRow: jest.fn(),
@@ -85,7 +85,7 @@ test('initStudent adds placeholder rows to Submissions', () => {
   context.initStudent('ABC', 1, 1, 1);
   expect(subsSheet.appendRow).toHaveBeenCalled();
   const row = subsSheet.appendRow.mock.calls[0][0];
-  expect(row.length).toBe(12);
+  expect(row.length).toBe(13);
   expect(row).toEqual([
     '1-1-1',
     't1',
@@ -93,6 +93,7 @@ test('initStudent adds placeholder rows to Submissions', () => {
     taskRows[0][4],
     '', '', '', '',
     0, 0, 0,
-    ''
+    '',
+    0
   ]);
 });

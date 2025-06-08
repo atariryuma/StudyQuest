@@ -149,7 +149,7 @@ function initStudent(teacherCode, grade, classroom, number) {
   if (!studentSheet) {
     // 個別シートを作成
     studentSheet = ss.insertSheet(studentSheetName);
-    studentSheet.appendRow(['日時', '課題ID', '課題内容', '回答本文', '付与XP', '累積XP', 'レベル', 'トロフィー', '回答回数']);
+    studentSheet.appendRow(['Timestamp', 'TaskID', 'Question', 'Answer', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Attempts']);
     studentSheet.setTabColor("f4b400");
 
   // 既存タスクを Submissions シートにも空行として登録
@@ -179,7 +179,8 @@ function initStudent(teacherCode, grade, classroom, number) {
           startTime || '',
           '', '', '', '',
           0, 0, 0,
-          ''
+          '',
+          0
         ]);
       });
     }

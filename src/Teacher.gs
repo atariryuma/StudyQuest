@@ -99,14 +99,14 @@ function initTeacher(passcode) {
   props.setProperty(newCode, folderInstance.getId());
   initializeFolders(newCode, [], folderInstance);
 
-  const ss = SpreadsheetApp.create('StudyQuest_DB');
+  const ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
   DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
   // 目次シート作成
   const tocSheet = ss.getSheets()[0];
   tocSheet.setName(SHEET_TOC);
   tocSheet.clear();
-  tocSheet.appendRow(['StudyQuest データシート']);
+  tocSheet.appendRow(['StudyQuest Data Sheet']);
   tocSheet.getRange('A1').setFontWeight('bold').setFontSize(14).setHorizontalAlignment('center');
   tocSheet.setColumnWidth(1, 200);
   tocSheet.setColumnWidth(2, 400);
@@ -116,20 +116,20 @@ function initTeacher(passcode) {
     {
       name: SHEET_TASKS,
       color: "ff9900",
-      header: ['ID', 'ClassID', '問題データ(JSON)', '自己評価許可', '作成日時', 'ペルソナ', '状態', 'draft'],
+      header: ['TaskID', 'ClassID', 'Payload(JSON)', 'AllowSelfEval', 'CreatedAt', 'Persona', 'Status', 'draft'],
       description: "作成された課題の一覧です。"
     },
     {
       name: SHEET_STUDENTS,
       color: "4285f4",
-      header: ['生徒ID', '学年', '組', '番号', '初回ログイン日時', '最終ログイン日時', '累計ログイン回数', '累積XP', '現在レベル', '最終獲得トロフィーID'],
+      header: ['StudentID', 'Grade', 'Class', 'Number', 'FirstLogin', 'LastLogin', 'LoginCount', 'TotalXP', 'Level', 'LastTrophyID'],
       description: "ログインした生徒の情報が記録されます。"
     },
     {
       name: SHEET_SUBMISSIONS,
       color: "008080",
-      header: ['生徒ID', '課題ID', '問題文', '開始日時', '提出日時', '成果物URL',
-               '問題概要', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー'],
+      header: ['StudentID', 'TaskID', 'Question', 'StartedAt', 'SubmittedAt', 'ProductURL',
+               'QuestionSummary', 'AnswerSummary', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Status'],
       description: "全生徒の回答の概要（ボード表示用）です。"
     },
     {

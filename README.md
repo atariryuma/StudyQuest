@@ -17,17 +17,15 @@ Google Workspace（Drive／Spreadsheet／Apps Script）を活用し、以下の�
 
 ```txt
 StudyQuest_<TeacherCode>/
-├── StudyQuest_DB_<TeacherCode># すべてのデータを集約した Google Spreadsheet
-│   ├── タブ: 目次
-│   ├── タブ: Tasks
-│   ├── タブ: Students
-│   ├── タブ: Submissions
-│   ├── タブ: AIフィードバックログ
-│   ├── タブ: Settings
-│   └── タブ: 生徒_<StudentID>（個別回答ログ）
-└── Apps Script プロジェクト一式
-    ├── Code.gs, Task.gs, Student.gs, …  
-    └── HTML テンプレート: login.html, manage.html, board.html, quest.html
+├── StudyQuest_DB_<TeacherCode># Central Google Spreadsheet
+│   ├── Tab: TOC
+│   ├── Tab: Tasks
+│   ├── Tab: Students
+│   ├── Tab: Submissions
+│   ├── Tab: AI_Log
+│   ├── Tab: Settings
+│   └── Tab: student_<StudentID>
+└── Apps Script project files
 ```
 
 * **StudyQuest\_DB**
@@ -53,17 +51,16 @@ StudyQuest_<TeacherCode>/
 
 ### 2. 主要タブ一覧
 
-#### 2.1 Tasks（課題マスタ）
+#### 2.1 Tasks (master)
 
-| 列 | 項目名          | 型          | 説明                                                 |
-| - | ------------ | ---------- | -------------------------------------------------- |
-| A | 課題 ID       | 文字列        | 一意の課題 ID                                           |
-| B | ClassID      | 文字列        | 対象クラスの ID                                          |
-| C | 問題データ (JSON) | JSON       | `{ subject, question, type, choices?, followup? }` |
-| D | 自己評価許可       | TRUE/FALSE | 生徒の自己評価を許可するか                                      |
-| E | 作成日時         | 日付時刻       | 配信日時                                               |
-| F | 公開    | 数値 | クエストが公開されているか、閉じられているか。               |
-
+| Col | Name | Type | Description |
+| - | -------------- | ---------- | ----------- |
+| A | TaskID | string | unique task ID |
+| B | ClassID | string | target class ID |
+| C | Payload (JSON) | JSON | `{ subject, question, type, choices?, followup? }` |
+| D | AllowSelfEval | TRUE/FALSE | whether self evaluation allowed |
+| E | CreatedAt | datetime | publish time |
+| F | Status | string | `open` or `closed` |
 #### 2.2 Students（生徒マスタ）
 
 | 列 | 項目名         | 型    | 説明                    |
