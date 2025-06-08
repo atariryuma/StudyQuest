@@ -162,21 +162,24 @@ function initStudent(teacherCode, grade, classroom, number) {
       rows.forEach(r => {
         if (String(r[6] || '').toLowerCase() === 'closed') return;
         if (String(r[7] || '') === '1') return;
-        const taskId = r[0];
-        const createdAt = r[3];
+        const taskId     = r[0];
+        const payload    = r[2];
+        const startTime  = r[4];
+        let questionText = '';
+        try {
+          const parsed = JSON.parse(payload);
+          questionText = parsed.question || payload;
+        } catch (e) {
+          questionText = payload;
+        }
         subsSheet.appendRow([
           studentId,
           taskId,
-          '',              // 問題文
-          createdAt,        // 開始日時（課題作成日時）
-          '',               // 提出日時
-          '',               // 成果物URL
-          '',               // 問題概要
-          '',               // 回答概要
-          0,                // 付与XP
-          0,                // 累積XP
-          0,                // レベル
-          ''                // トロフィー
+          questionText,
+          startTime || '',
+          '', '', '', '',
+          0, 0, 0,
+          ''
         ]);
       });
     }
