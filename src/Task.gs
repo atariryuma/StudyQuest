@@ -221,22 +221,39 @@ function closeTask(teacherCode, taskId) {
       }
     }
     range.setValues(data);
-    Object.keys(bonusMap).forEach(id => giveBonusXp_(ss, id, 5));
+    applyBonusXp_(ss, teacherCode, Object.keys(bonusMap), 5);
   }
 }
 
-function giveBonusXp_(ss, studentId, amount) {
+function applyBonusXp_(ss, teacherCode, ids, amount) {
+  if (!ids || ids.length === 0) return;
   const sheet = ss.getSheetByName(SHEET_STUDENTS);
   if (!sheet) return;
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === studentId) {
-      const total = Number(data[i][7] || 0) + amount;
-      sheet.getRange(i + 1, 8, 1, 2)
-           .setValues([[total, calcLevelFromXp_(total)]]);
-      break;
-    }
+
+  const lastRow = (typeof sheet.getLastRow === 'function') ?
+                   sheet.getLastRow() :
+                   (sheet.getDataRange().getValues().length);
+  if (lastRow < 2) return;
+
+  const range = sheet.getRange(2, 1, lastRow - 1, 9);
+  const data = range.getValues();
+  const rowMap = {};
+  for (let i = 0; i < data.length; i++) {
+    const id = String(data[i][0] || '').trim();
+    if (id) rowMap[id] = i;
   }
+
+  ids.forEach(id => {
+    const idx = rowMap[id];
+    if (idx !== undefined) {
+      const row = data[idx];
+      const total = Number(row[7] || 0) + amount;
+      row[7] = total;
+      row[8] = calcLevelFromXp_(total);
+    }
+  });
+
+  range.setValues(data);
 }
 
 function calcLevelFromXp_(totalXp) {
