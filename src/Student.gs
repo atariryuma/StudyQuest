@@ -162,9 +162,25 @@ function initStudent(teacherCode, grade, classroom, number) {
       rows.forEach(r => {
         if (String(r[6] || '').toLowerCase() === 'closed') return;
         if (String(r[7] || '') === '1') return;
-        const taskId = r[0];
-        const createdAt = r[3];
-        subsSheet.appendRow([createdAt, studentId, taskId, '', 0, 0, 0, '', 0, 0]);
+        const taskId     = r[0];
+        const payload    = r[2];
+        const startTime  = r[4];
+        let questionText = '';
+        try {
+          const parsed = JSON.parse(payload);
+          questionText = parsed.question || payload;
+        } catch (e) {
+          questionText = payload;
+        }
+        subsSheet.appendRow([
+          studentId,
+          taskId,
+          questionText,
+          startTime || '',
+          '', '', '', '',
+          0, 0, 0,
+          ''
+        ]);
       });
     }
   }
