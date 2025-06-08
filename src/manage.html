@@ -348,6 +348,29 @@
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
 
+    function storePrefetchData(code, taskId, rows) {
+      try {
+        sessionStorage.setItem(
+          `prefetch_${code}_${taskId || 'all'}`,
+          JSON.stringify({ ts: Date.now(), data: rows })
+        );
+      } catch (e) {}
+    }
+
+    function prefetchBoardData(code, taskId) {
+      try {
+        const raw = sessionStorage.getItem(`prefetch_${code}_${taskId || 'all'}`);
+        if (raw) {
+          const obj = JSON.parse(raw);
+          if (Date.now() - obj.ts < 60000) return;
+        }
+      } catch (e) {}
+      const fn = taskId ? 'listTaskBoard' : 'listBoard';
+      google.script.run.withSuccessHandler(rows => {
+        storePrefetchData(code, taskId, rows);
+      })[fn](code, taskId);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
@@ -947,6 +970,7 @@
               </button>
             </div>
           `;
+          card.addEventListener('mouseenter', () => prefetchBoardData(teacherCode, x.id));
           card.addEventListener('click', e => {
             if (
               !e.target.closest('.deleteBtn') &&
@@ -957,6 +981,8 @@
           });
           container.appendChild(card);
         });
+
+        if (rows[0]) prefetchBoardData(teacherCode, rows[0].id);
 
         // アイコン描画
         renderIcons(document);
