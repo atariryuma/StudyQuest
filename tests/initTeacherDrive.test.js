@@ -8,7 +8,9 @@ function loadTeacher(context) {
 }
 
 test('initTeacher rejects wrong passcode', () => {
-  const context = {};
+  const context = {
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) }
+  };
   loadTeacher(context);
   const result = context.initTeacher('wrong');
   expect(result.status).toBe('error');
@@ -26,7 +28,8 @@ test('initTeacher returns existing code if already stored', () => {
     },
     FOLDER_NAME_PREFIX: 'StudyQuest_',
     DriveApp: { getFolderById: jest.fn(()=>({})), searchFolders: jest.fn() },
-    logError_: () => {}
+    logError_: () => {},
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) }
   };
   loadTeacher(context);
   context.detectTeacherFolderOnDrive_ = jest.fn(() => null);
