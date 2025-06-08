@@ -153,11 +153,45 @@ function closeTask(teacherCode, taskId) {
   }
   const subs = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (subs && subs.getLastRow() > 1) {
-    const subIds = subs.getRange(2, 2, subs.getLastRow() - 1, 1).getValues().flat();
-    subIds.forEach((v, i) => {
-      if (v === taskId) subs.getRange(i + 2, 13).setValue(1);
-    });
+    const range = subs.getRange(2, 1, subs.getLastRow() - 1, 13);
+    const data = range.getValues();
+    const bonusMap = {};
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      if (row[1] === taskId) {
+        if (Number(row[12]) === 1) {
+          bonusMap[row[0]] = true;
+        }
+        row[12] = 1;
+      }
+    }
+    range.setValues(data);
+    Object.keys(bonusMap).forEach(id => giveBonusXp_(ss, id, 5));
   }
+}
+
+function giveBonusXp_(ss, studentId, amount) {
+  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === studentId) {
+      const total = Number(data[i][7] || 0) + amount;
+      sheet.getRange(i + 1, 8).setValue(total);
+      sheet.getRange(i + 1, 9).setValue(calcLevelFromXp_(total));
+      break;
+    }
+  }
+}
+
+function calcLevelFromXp_(totalXp) {
+  let level = 1;
+  let xp = totalXp;
+  while (xp >= level * 100) {
+    xp -= level * 100;
+    level++;
+  }
+  return level;
 }
 
 /**

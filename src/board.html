@@ -91,6 +91,10 @@
         <i data-lucide="settings" class="w-4 h-4"></i>
         <span>管理パネル</span>
       </a>
+      <button id="closeQuestBtn" class="game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center gap-2 flex-shrink-0 hidden" type="button">
+        <i data-lucide="x-circle" class="w-4 h-4"></i>
+        <span>クエストを閉じる</span>
+      </button>
     </header>
 
     <section id="aiFollowupSection" class="glass-panel rounded-xl p-4 mb-4 shadow-lg hidden space-y-2">
@@ -196,6 +200,7 @@
       }
       const backLink = document.getElementById('backLink');
       const manageBtn = document.getElementById('manageBtn');
+      const closeQuestBtn = document.getElementById('closeQuestBtn');
       const grade = params.get('grade') || gradeParam;
       const classroom = params.get('class') || classParam;
       const number = params.get('number') || numberParam;
@@ -208,6 +213,7 @@
         backLink.href = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
         manageBtn.style.display = 'none';
+        if (closeQuestBtn) closeQuestBtn.style.display = 'none';
       } else {
         if (followupSection) {
           followupSection.classList.remove('hidden');
@@ -217,6 +223,21 @@
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
         manageBtn.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
         manageBtn.style.display = '';
+        if (closeQuestBtn) {
+          closeQuestBtn.style.display = taskId ? '' : 'none';
+          closeQuestBtn.addEventListener('click', () => {
+            if (!taskId) return;
+            if (confirm('このクエストを閉じますか？')) {
+              google.script.run
+                .withSuccessHandler(() => {
+                  alert('クエストを閉じました');
+                  closeQuestBtn.style.display = 'none';
+                })
+                .withFailureHandler(err => alert('閉じる際にエラーが発生しました: ' + err.message))
+                .closeTask(teacherCode, taskId);
+            }
+          });
+        }
       }
 
       if (taskId) {
