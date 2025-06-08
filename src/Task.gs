@@ -197,6 +197,7 @@ function getTask(teacherCode, taskId) {
  * 課題を完了状態としてマーク
  */
 function closeTask(teacherCode, taskId) {
+  console.time('closeTask');
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
   const sheet = ss.getSheetByName(SHEET_TASKS);
@@ -226,6 +227,7 @@ function closeTask(teacherCode, taskId) {
     range.setValues(data);
     applyBonusXp_(ss, teacherCode, Object.keys(bonusMap), 5);
   }
+  console.timeEnd('closeTask');
 }
 
 function applyBonusXp_(ss, teacherCode, ids, amount) {
@@ -323,6 +325,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
                       earnedXp, totalXp, level, trophies,
                       aiCalls, attemptCount,
                       startAt, submitAt, productUrl, qSummary, aSummary) {
+  console.time('submitAnswer');
   studentId = String(studentId || '').trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
@@ -368,11 +371,11 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
       level,
       trophies || '',
       1
-    ]);
+      ]);
   } else {
     console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
   }
-
+  console.timeEnd('submitAnswer');
 }
 
 /**

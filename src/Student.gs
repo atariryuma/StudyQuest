@@ -112,6 +112,7 @@ function findStudentSheet_(ss, studentId) {
  * ・課題一覧からすべてのタスクをインポート
  */
 function initStudent(teacherCode, grade, classroom, number) {
+  console.time('initStudent');
   grade      = String(grade).trim();
   classroom  = String(classroom).trim();
   number     = String(number).trim();
@@ -277,6 +278,7 @@ function initStudent(teacherCode, grade, classroom, number) {
     }
   }
 
+  console.timeEnd('initStudent');
   return { status: 'ok' };
 }
 
