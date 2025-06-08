@@ -17,9 +17,9 @@
 * **データベース (Spreadsheet)**: 教師ごとに専用のスプレッドシート（DB）を生成し、全てのデータをシート（テーブル）で管理。
 * **フロントエンド (HTML/CSS/JS)**: GASから配信されるUI。`google.script.run` を介してバックエンドと非同期通信。
 
-## 3. ログインとGoogle認証 🔐
+## 3. ログイン方法 🔐
 
-StudyQuest では、パスコードに基づくシンプルなログイン方式を採用しています。Google OAuth および Google Identity Services を利用した認証機能は今後のリリースに向けて `legacy/google-auth/` にアーカイブ済みです。そのため OAuth クライアント ID や GSI スクリプトの準備は不要です。
+StudyQuest では、パスコードに基づくシンプルなログイン方式を採用しています。Google OAuth および Google Identity Services を利用した認証機能は `legacy/google-auth/` ディレクトリにアーカイブ済みで、現在は不要です。
 
 1. **教師ログイン**
    * ログイン画面で「教師」を選択し、合言葉 `kyoushi` を入力します。
@@ -150,7 +150,7 @@ StudyQuest では、パスコードに基づくシンプルなログイン方式
 2.  **状態管理**:
     * 頻繁にアクセスするが変更の少ないデータ（例: `Settings`シートの内容、`Tasks`マスタ）は、**`CacheService` を積極的に利用**し、スプレッドシートへのアクセス回数を削減してください。
     * 例えば最新の公開クエストIDは `getLatestActiveTaskId()` で取得し、30秒間キャッシュして余分なシート読み込みを避けます。
-    * **ログイン処理もキャッシュ対象**です。Google認証トークンの検証結果や `registration.json` の内容は短時間 `CacheService` に保存し、Drive へのアクセス回数を減らします。
+    * **ログイン処理もキャッシュ対象**です。`registration.json` の内容などは短時間 `CacheService` に保存し、Drive へのアクセス回数を減らします。
 
 ### 6.2. クライアントサイド (ブラウザ) の基本原則 📝**新規追加**
 
