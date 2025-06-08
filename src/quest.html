@@ -93,7 +93,7 @@
         </div>
 
         <!-- Quest Active Screen -->
-        <div id="questActiveScreen" class="hidden flex-col h-full">
+        <div id="questActiveScreen" class="flex-col h-full">
           <div class="p-4 border-b-2 border-gray-700">
             <div id="questTitle" class="font-bold text-lg text-amber-300 mb-3"></div>
             <div id="stepProgress" class="flex items-center justify-between text-xs text-gray-500">
@@ -282,9 +282,6 @@ function renderLists(tasks, history) {
 
 let lastTaskId = null;
 async function openTask(task, history) {
-  if (lastTaskId === task.id) return; // 連続クリック時は何もしない
-  lastTaskId = task.id;
-
   currentTask = task;
   aiCalls = 0;
   questStep = QuestStep.INITIAL_ANSWER;
@@ -295,7 +292,11 @@ async function openTask(task, history) {
   document.getElementById('questActiveScreen').classList.remove('hidden');
   document.getElementById('resultScreen').classList.add('hidden');
   document.getElementById('confirmationScreen').classList.add('hidden');
-  document.getElementById('questTitle').textContent = `【${q.subject}】 ${q.question}`;
+
+  // 課題タイトルを変更
+  const postDate = new Date(task.postDate).toLocaleDateString(); // 投稿日をフォーマット
+  document.getElementById('questTitle').textContent = `${postDate} ${q.subject}`;
+
   log.innerHTML = '';
   await typeWriter('こんにちわ！学習はどうかな？先生から課題が出ているよ！ええと…', 'system');
   await delay(300);
