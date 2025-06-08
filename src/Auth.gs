@@ -40,6 +40,14 @@ function verifyGoogleToken(idToken) {
     console.timeEnd('verifyGoogleToken');
     throw new Error('OAuth client ID mismatch');
   }
+  if (data.iss !== 'https://accounts.google.com' && data.iss !== 'accounts.google.com') {
+    console.timeEnd('verifyGoogleToken');
+    throw new Error('Invalid token issuer');
+  }
+  if (Number(data.exp) <= Math.floor(Date.now() / 1000)) {
+    console.timeEnd('verifyGoogleToken');
+    throw new Error('Token expired');
+  }
   const info = { email: data.email, name: data.name || '', sub: data.sub };
   putCacheValue_(cacheKey, info, 300);
   console.timeEnd('verifyGoogleToken');
