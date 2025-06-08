@@ -432,10 +432,17 @@ function deleteDraftTask(teacherCode, taskId) {
  * 現在公開中の最新課題IDを返す
  */
 function getLatestActiveTaskId(teacherCode) {
+  const cacheKey = 'latestActiveTask_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+
   const tasks = listTasks(teacherCode);
   if (!tasks || tasks.length === 0) return null;
   for (let i = 0; i < tasks.length; i++) {
-    if (!tasks[i].closed) return tasks[i].id;
+    if (!tasks[i].closed) {
+      putCacheValue_(cacheKey, tasks[i].id, 30);
+      return tasks[i].id;
+    }
   }
   return null;
 }
