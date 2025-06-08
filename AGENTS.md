@@ -1,83 +1,116 @@
-# AGENTS.md
+#### 最適化の基本方針
 
-### 高速化・効率化のための3大原則
-
-#### 原則1：I/O（読み書き）は必ず「まとめて」行う (バルク処理)
-
-これが最も重要です。スプレッドシートやドキュメントなどのGoogleサービスとの通信は、処理の中で最も時間がかかる部分です。通信回数を1回でも減らすことが、劇的な速度向上に繋がります。
-
-**良い例 ✅ (最初にまとめて読み、最後にまとめて書く)**
-```javascript
-// 最初にまとめて500行分を読み込み、最後にまとめて書き出す
-const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('データ');
-const dataRange = sheet.getRange("A1:A500");
-
-const allValues = dataRange.getValues(); // 1回の読み込み！
-
-const newValues = allValues.map(row => {
-  const value = row[0];
-  return [value * 2]; // 書き込み用の新しい配列を作成
-});
-
-sheet.getRange("B1:B500").setValues(newValues); // 1回の書き込み！
-// 合計2回の通信で完了し、圧倒的に速い！
-```
-`getValue` / `setValue` の代わりに `getValues` / `setValues` を使うのが基本中の基本です。
-
-#### 原則2：キャッシュを積極的に使う (`CacheService`)
-
-何度も同じデータを取得する場合、その都度スプレッドシートや外部APIにアクセスするのは無駄です。`CacheService`を使うと、一度取得したデータをGASの高速なキャッシュ領域に一定時間保存できます。
-
-**利用シーンの例**
-* 全ユーザー共通の設定情報
-* 外部APIから取得した、頻繁には更新されないデータ（例：商品マスター、天気予報）
-* 重い計算の結果
-
-**簡単なコード例**
-```javascript
-function getHeavyData() {
-  const cache = CacheService.getScriptCache();
-  const cachedData = cache.get('heavy_data_key');
-
-  if (cachedData != null) {
-    // キャッシュにデータがあれば、それをすぐに返す
-    console.log('キャッシュからデータを取得しました');
-    return JSON.parse(cachedData);
-  }
-  
-  // キャッシュになければ、重い処理を実行
-  console.log('データベースからデータを取得しています...');
-  const result = SpreadsheetApp.getActiveSheet().getDataRange().getValues(); // 重い処理の例
-  
-  // 処理結果をキャッシュに保存（例：10分間保存）
-  cache.put('heavy_data_key', JSON.stringify(result), 600); 
-
-  return result;
-}
-```
-2回目以降の呼び出しでは、スプレッドシートへのアクセス自体が発生せず、瞬時に結果が返るようになります。
-
-#### 原則3：データ加工はGAS (JavaScript) の中で完結させる
-
-前回の話題の核心ですが、データの絞り込み、並び替え、重複排除などの処理のために**一時的なシートを作成するのは避けましょう。**
-
-スプレッドシートから `getValues()` でデータを2次元配列として取得したら、あとはJavaScriptの強力な配列メソッド（`filter`, `map`, `sort`, `reduce`など）を使ってメモリ上で効率的に加工します。
-
-* **`filter`**: 条件に合うデータだけを抽出する
-* **`map`**: 配列の各要素を変換して新しい配列を作る
-* **`sort`**: データを並び替える
-* **`reduce`**: 配列から単一の結果（合計値、グループ化されたオブジェクトなど）を生成する
-
-この方法なら、シート操作という重い処理を挟むことなく、高速にデータを整形できます。
+GAS高速化の鍵は**「Googleサービス（スプレッドシート等）との通信回数を徹底的に減らすこと」**です。これから行う作業は、すべてこの基本方針に繋がります。
 
 ---
 
-### まとめ
+### 最適化作業の具体的な手順
 
-GASで高速なWebアプリを作るための基本は、以下の3つに集約されます。
+#### フェーズ1：現状分析（ボトルネックの特定）
 
-1.  **バルク処理**: 読み書きは `getValues` / `setValues` で一括で行う。
-2.  **キャッシュ**: 繰り返し使うデータは `CacheService` に保存する。
-3.  **JSで完結**: データ加工は一時シートを使わず、JavaScriptの配列メソッドで行う。
+まず、アプリのどこに時間がかかっているのかを特定しましょう。主要な関数や、`doGet`/`doPost`関数内の処理時間を計測してください。
 
-この「**いかに通信回数を減らし、処理をメモリ上で完結させるか**」という意識を持つだけで、アプリのパフォーマンスは劇的に向上し、1日の実行時間上限（クォータ）にも引っかかりにくくなります。
+**【具体的な作業】**
+1.  処理の開始地点と終了地点に、実行時間をログ出力するコードを挿入します。
+    ```javascript
+    function someFunction() {
+      console.time('someFunctionの処理時間'); // 計測開始
+
+      // ...既存の処理...
+
+      console.timeEnd('someFunctionの処理時間'); // 計測終了
+    }
+    ```
+2.  アプリを実際に操作し、Apps Scriptの「実行数」ダッシュボードでログを確認します。特に時間がかかっている処理を特定し、メモしておいてください。
+
+---
+
+#### フェーズ2：改善作業（3つのステップ）
+
+分析で見つかったボトルネックや、以下の指針に該当する箇所を修正していきます。**特にSTEP 1は効果が絶大ですので、最優先でお願いします。**
+
+#### STEP 1：I/O（読み書き）処理の最適化【最優先】
+
+スプレッドシートへのアクセスは、1回ずつ行うと非常に遅くなります。データを「まとめて取得」し、「まとめて書き込む」ように変更してください。
+
+**【具体的な作業】**
+* **`getValue()` / `setValue()` の撲滅**:
+    コード全体から `getValue()` や `setValue()` がループ処理の中で使われている箇所を探します。
+    
+    **【修正前 ❌】**
+    ```javascript
+    for (let i = 1; i <= 100; i++) {
+      const value = sheet.getRange(i, 1).getValue(); // 100回の通信
+      // ...処理...
+    }
+    ```
+    **【修正後 ✅】**
+    ```javascript
+    const allValues = sheet.getRange("A1:A100").getValues(); // 1回の通信で済む！
+    for (let i = 0; i < allValues.length; i++) {
+      const value = allValues[i][0];
+      // ...処理...
+    }
+    ```
+    書き込み時も同様に、`setValues()` を使って一括で更新してください。
+
+#### STEP 2：キャッシュの導入による高速化
+
+同じデータを何度も取得する処理がある場合、2回目以降は「キャッシュ」という一時保管場所から高速に読み込むようにします。
+
+**【具体的な作業】**
+1.  **キャッシュ候補の特定**:
+    アプリ内で、頻繁に呼び出されるが、内容はあまり変わらないデータを取得している処理を探します。（例：設定シートの読み込み、分類マスターの取得など）
+2.  **`CacheService` の実装**:
+    特定した処理にキャッシュ機能を実装します。
+
+    **【修正前 ❌】**
+    ```javascript
+    function getSettings() {
+      // 毎回シートにアクセスしている
+      return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('設定').getRange("A1:B10").getValues();
+    }
+    ```
+    **【修正後 ✅】**
+    ```javascript
+    function getSettings() {
+      const cache = CacheService.getScriptCache();
+      const cached = cache.get('settings_data'); // まずキャッシュを探す
+      if (cached != null) {
+        return JSON.parse(cached); // あれば即座に返す
+      }
+      
+      const data = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('設定').getRange("A1:B10").getValues();
+      cache.put('settings_data', JSON.stringify(data), 3600); // なければ取得し、キャッシュに保存（例：1時間）
+      return data;
+    }
+    ```
+#### STEP 3：データ加工処理の効率化
+
+データの並び替えや絞り込みのために、一時的なシートを作成している場合は、それを廃止し、すべてスクリプト内で完結させます。
+
+**【具体的な作業】**
+* **一時シート作成処理の廃止**:
+    `insertSheet()`, `deleteSheet()` や、シートの `QUERY` 関数をスクリプトから呼び出している箇所を探し、その処理をJavaScriptの配列メソッドに置き換えます。
+    
+    **【置き換えに使うと便利なメソッド】**
+    * **絞り込み**: `Array.prototype.filter()`
+    * **データ変換**: `Array.prototype.map()`
+    * **並び替え**: `Array.prototype.sort()`
+    * **集計・グループ化**: `Array.prototype.reduce()`
+    
+    これらのメソッドを使えば、シートを操作することなく、高速にデータ加工が可能です。
+
+---
+
+#### フェーズ3：最終確認と効果測定
+
+すべての修正が完了したら、以下の確認をお願いします。
+
+1.  **動作確認**: アプリの全機能が、修正前と同樣に正しく動作することを確認します。
+2.  **効果測定**: フェーズ1と同様の方法で再度パフォーマンスを計測し、処理時間が大幅に短縮されていることを確認します。
+3.  **コードのクリーンアップ**: デバッグ用に挿入した `console.log` などを削除し、コードをきれいな状態に戻します。
+
+---
+
+お忙しいところ恐縮ですが、本件、何卒よろしくお願いいたします。
