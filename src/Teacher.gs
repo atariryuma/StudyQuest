@@ -27,6 +27,15 @@ function generateTeacherCode() {
  * 同名フォルダが複数ある場合、作成日が最新のものを返す
  */
 function findLatestFolderByName_(name) {
+  const cacheKey = 'latestFolder_' + name;
+  const cachedId = getCacheValue_(cacheKey);
+  if (cachedId) {
+    try {
+      return DriveApp.getFolderById(cachedId);
+    } catch (e) {
+      removeCacheValue_(cacheKey);
+    }
+  }
   const q = "mimeType='application/vnd.google-apps.folder' " +
             `and name='${name}' and 'root' in parents and trashed=false`;
   try {
@@ -37,6 +46,9 @@ function findLatestFolderByName_(name) {
       if (!latest || f.getDateCreated() > latest.getDateCreated()) {
         latest = f;
       }
+    }
+    if (latest) {
+      putCacheValue_(cacheKey, latest.getId(), 300);
     }
     return latest;
   } catch (e) {
@@ -51,6 +63,9 @@ function findLatestFolderByName_(name) {
  * 最も新しいものの教師コードとIDを返す
  */
 function detectTeacherFolderOnDrive_() {
+  const cacheKey = 'teacherFolderLatest';
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
   const q = `mimeType='application/vnd.google-apps.folder' ` +
             `and title contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
@@ -60,7 +75,9 @@ function detectTeacherFolderOnDrive_() {
       const item = items[i];
       const m = item.title.match(new RegExp('^' + FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
       if (m) {
-        return { code: m[1], id: item.id };
+        const info = { code: m[1], id: item.id };
+        putCacheValue_(cacheKey, info, 300);
+        return info;
       }
     }
     return null;
