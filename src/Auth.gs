@@ -31,10 +31,19 @@ function verifyGoogleToken(idToken) {
 /**
  * Handle teacher authentication and registration.json management.
  * @param {string} idToken
+ * @param {string} passcode
  */
-function handleTeacherAuth(idToken) {
+function handleTeacherAuth(idToken, passcode) {
   console.time('handleTeacherAuth');
   const user = verifyGoogleToken(idToken);
+  const props = PropertiesService.getScriptProperties();
+  const storedPass = props.getProperty('teacherPasscode');
+  if (!storedPass) {
+    props.setProperty('teacherPasscode', passcode);
+  } else if (storedPass !== passcode) {
+    console.timeEnd('handleTeacherAuth');
+    throw new Error('Invalid passcode');
+  }
   const cacheKey = 'reg_' + user.sub;
   let registration = getCacheValue_(cacheKey);
   if (!registration) {
