@@ -72,8 +72,8 @@
         /* デバッグパネル */
         #debugPanel {
             position: fixed;
-            bottom: 1rem;
-            left: 1rem;
+            bottom: 3rem;
+            right: 1rem;
             width: 320px;
             max-height: 200px;
             background: rgba(31, 41, 55, 0.9);
@@ -98,6 +98,7 @@
             cursor: pointer;
             color: #f87171;
         }
+        #versionInfo { cursor: pointer; }
     </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
@@ -374,7 +375,10 @@
     document.addEventListener('DOMContentLoaded', () => {
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
-      debugPanel.classList.remove('hidden');
+      const versionEl = document.getElementById('versionInfo');
+      const debugCloseBtn = document.getElementById('debugClose');
+      versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
+      debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
 
       debug('🔄 ページ読み込み完了');
       debug(`▶ teacherCode="${teacherCode}"`);
@@ -1137,7 +1141,7 @@
   </script>
 
   <!-- デバッグパネル（左下） -->
-  <div id="debugPanel">
+  <div id="debugPanel" class="hidden">
     <div id="debugPanelHeader">
       <span>デバッグログ</span>
       <span id="debugClose">✕</span>
