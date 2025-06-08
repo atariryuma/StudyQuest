@@ -245,6 +245,15 @@
       .withSuccessHandler(tasks => {
         google.script.run
           .withSuccessHandler(history => {
+            if (Array.isArray(history) && history.length > 0) {
+              const last = history[history.length - 1];
+              totalXp = Number(last[5] || 0);
+              level = Number(last[6] || 1);
+              xp = totalXp;
+              for (let l = 1; l < level; l++) { xp -= l * 100; }
+              if (xp < 0) xp = 0;
+              updateXpBar();
+            }
             renderLists(tasks || [], Array.isArray(history) ? history : []);
             hideLoadingOverlay();
             // ▼▼▼ ウェルカムメッセージ表示処理の変更 ▼▼▼
