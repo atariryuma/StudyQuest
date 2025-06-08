@@ -18,6 +18,7 @@ const SQ_VERSION           = 'v1.0.136';
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */
 function doGet(e) {
+  console.time('doGet');
   const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'login';
   const template = HtmlService.createTemplateFromFile(page);
   template.scriptUrl   = ScriptApp.getService().getUrl();
@@ -26,10 +27,12 @@ function doGet(e) {
   template.classroom   = (e && e.parameter && e.parameter['class'])  ? e.parameter['class']  : '';
   template.number      = (e && e.parameter && e.parameter.number)    ? e.parameter.number    : '';
   template.version     = getSqVersion();
-  return template
+  const result = template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .setTitle('StudyQuest');
+  console.timeEnd('doGet');
+  return result;
 }
 
 /**

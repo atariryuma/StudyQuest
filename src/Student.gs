@@ -310,6 +310,7 @@ function updateStudentLogin(teacherCode, studentId) {
 }
 
 function getStudentHistory(teacherCode, studentId) {
+  console.time('getStudentHistory');
   studentId = String(studentId || '').trim();
   const cacheKey = 'history_' + teacherCode + '_' + studentId;
   const cached = getCacheValue_(cacheKey);
@@ -323,5 +324,6 @@ function getStudentHistory(teacherCode, studentId) {
   if (lastRow < 2) return [];
   const rows = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
   putCacheValue_(cacheKey, rows, 30);
+  console.timeEnd('getStudentHistory');
   return rows;
 }
