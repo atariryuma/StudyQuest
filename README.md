@@ -26,7 +26,7 @@
 3. **getStudentInfo(idToken)** — 生徒モードで `registration.json` を取得し、無ければ `status: 'new'` を返します。【F:src/Auth.gs†L71-L91】
 4. **registerStudentToClass(idToken, info)** — 生徒登録情報を `registration.json` に追加し、`initStudent()` を呼び出します。結果は5分間キャッシュされます。【F:src/Auth.gs†L94-L134】
 
-`OAUTH_CLIENT_ID` はスクリプトプロパティに登録するか、`src/Auth.gs` の定数を書き換えて設定してください。
+`OAUTH_CLIENT_ID` はスクリプトプロパティまたは環境変数 `OAUTH_CLIENT_ID` に登録してください。ログインページでは `doGet` から埋め込まれた値を使用して Google Identity Services を初期化します。
 
 フォームでは教師/生徒を切り替えられます。教師はチェックを入れてGoogle認証するだけで `manage.html` へ進みます。生徒は `quest.html` に遷移します。IDトークン取得処理は次の通りです。【F:src/login.html†L460-L493】
 
@@ -229,7 +229,10 @@
 
 4. Drive API、Sheets APIの有効化（必要に応じて Apps Script エディタから追加）
 
-5. 教師として初回ログインした際に、README で定義されたシート構造の
+5. Apps Script の **スクリプトプロパティ** に `OAUTH_CLIENT_ID` を登録します。
+   ローカルテストを行う場合は環境変数 `OAUTH_CLIENT_ID` を設定してください。
+
+6. 教師として初回ログインした際に、README で定義されたシート構造の
    **StudyQuest_DB** スプレッドシートが自動生成されます。
    生成後は Apps Script の `initTeacher()` を呼び出して確認してください。
 
