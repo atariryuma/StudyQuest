@@ -1,547 +1,406 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>StudyQuest – チャット</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
-  <style>
-    body {
-      font-family: 'DotGothic16', sans-serif;
-      background-color: #1a1b26;
-    }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #2a2f4a; }
-    ::-webkit-scrollbar-thumb { background: #4a4f8a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #5a5f9a; }
-    .pixel-bg {
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 16px 16px;
-    }
-    .glass-panel {
-      background: rgba(26, 27, 38, 0.6);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
-    .game-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
-    #loadingOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 50;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <title>StudyQuest – クエスト画面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js"></script>
+    <style>
+        body { font-family: 'DotGothic16', sans-serif; background-color: #1a1b26; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2a2f4a; }
+        ::-webkit-scrollbar-thumb { background: #4a4f8a; border-radius: 4px; }
+        .pixel-bg {
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .glass-panel {
+            background: rgba(26, 27, 38, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
+        .game-btn:disabled { filter: grayscale(80%) opacity(50%); cursor: not-allowed; }
+        .game-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
+        
+        .step { transition: all 0.5s ease; }
+        .step.active { color: #facc15; transform: scale(1.1); }
+        .step.completed { color: #4ade80; }
+        .step-line { transition: width 0.5s ease-in-out; }
+        
+        .typewriter-text::after { content: '█'; animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
 
   <div class="max-w-7xl mx-auto h-[calc(100vh-2rem)] flex flex-col gap-4">
-    <header class="glass-panel rounded-xl p-3 flex justify-between items-center gap-4 shadow-lg">
+    <!-- Header: Player Status -->
+    <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
       <div class="flex items-center gap-3">
         <i data-lucide="swords" class="w-8 h-8 text-cyan-400"></i>
-        <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest</h1>
+        <h1 class="text-2xl font-bold tracking-wider text-white">クエスト画面</h1>
       </div>
-      <div class="flex items-center gap-6">
-        <span id="studentId" class="text-sm text-gray-400"></span>
-        <div class="w-64 sm:w-80">
-          <div class="flex justify-between items-center text-sm text-gray-400 mb-1">
-            <span>Lv.<span id="playerLevel">1</span></span>
-            <span><span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP</span>
-          </div>
-          <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden">
-            <div id="xpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0"></div>
-          </div>
+      <div class="w-full sm:w-1/2 lg:w-1/3">
+        <div class="flex justify-between items-center mb-1 text-sm text-gray-400">
+          <span>Lv. <span id="playerLevel">1</span></span>
+          <span id="studentId"></span>
         </div>
+        <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden">
+          <div id="xpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0"></div>
+        </div>
+        <div class="text-center text-xs mt-1 text-yellow-300"><span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP</div>
       </div>
     </header>
 
-    <div class="flex-grow flex gap-4 overflow-hidden">
-      <aside class="w-64 flex-shrink-0 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
-        <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
-          <i data-lucide="scroll-text" class="w-5 h-5 text-amber-400"></i>
-          クエストボード
-        </h2>
-        <div class="flex-1 overflow-y-auto space-y-3">
-          <div>
-            <h3 class="text-sm font-bold text-pink-400 mb-1">未回答クエスト</h3>
-            <div id="unanswered" class="space-y-2"></div>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-cyan-400 mb-1">完了済みクエスト</h3>
-            <div id="answered" class="space-y-2"></div>
-          </div>
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+      <!-- Left: Quest Board -->
+      <aside class="w-full md:w-1/3 lg:w-1/4 flex flex-col glass-panel rounded-xl p-4 shadow-lg">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-amber-400"></i>クエストボード</h2>
+        <div class="space-y-3 overflow-y-auto flex-grow">
+          <div><h3 class="text-sm font-bold text-pink-400 mb-2">未回答クエスト</h3><div id="unanswered" class="space-y-2"></div></div>
+          <div><h3 class="text-sm font-bold text-cyan-400 mb-2">完了済みクエスト</h3><div id="answered" class="space-y-2"></div></div>
         </div>
       </aside>
 
-      <section class="flex-1 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden relative">
-        <div id="stepProgress" class="flex items-center gap-2 p-3"></div>
-        <div id="questArea" class="flex flex-col flex-1">
-          <div id="chatLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
-          <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
-            <div id="answerInputs" class="mb-3"></div>
-            <div class="flex items-center justify-between gap-3">
-              <button id="sendBtn" class="game-btn text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 flex-1 border">
-                <i data-lucide="send-horizontal"></i>
-                <span>送信</span>
-              </button>
-              <a id="viewAnswersBtn" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center gap-2 flex-1" href="#" target="_blank">
-                <i data-lucide="users"></i>
-                <span>みんなの回答を見る</span>
-              </a>
+      <!-- Right: Quest Interaction -->
+      <section id="mainPanel" class="w-full md:w-2/3 lg:w-3/4 flex flex-col glass-panel rounded-xl shadow-lg overflow-hidden relative">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="flex flex-col items-center justify-center h-full text-center p-4">
+            <i data-lucide="compass" class="w-24 h-24 text-cyan-400 mb-4 opacity-0"></i>
+            <p id="welcomeLine1" class="text-xl font-bold"></p>
+            <p id="welcomeLine2" class="text-gray-400 mt-2"></p>
+        </div>
+
+        <!-- Quest Active Screen -->
+        <div id="questActiveScreen" class="hidden flex-col h-full">
+            <div class="p-4 border-b-2 border-gray-700">
+                <div id="questTitle" class="font-bold text-lg text-amber-300 mb-3"></div>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <div id="step1" class="step text-center"><div class="step-icon">１</div>はじめの答え</div>
+                    <div class="flex-1 h-0.5 bg-gray-600"><div id="line1" class="h-full bg-yellow-400 step-line w-0"></div></div>
+                    <div id="step2" class="step text-center"><div class="step-icon">２</div>ふかぼり質問</div>
+                    <div class="flex-1 h-0.5 bg-gray-600"><div id="line2" class="h-full bg-yellow-400 step-line w-0"></div></div>
+                    <div id="step3" class="step text-center"><div class="step-icon">３</div>理由を説明</div>
+                    <div class="flex-1 h-0.5 bg-gray-600"><div id="line3" class="h-full bg-yellow-400 step-line w-0"></div></div>
+                    <div id="step4" class="step text-center"><div class="step-icon">４</div>最終提出</div>
+                </div>
             </div>
-          </div>
+            <div id="interactionLog" class="flex-1 p-4 space-y-4 overflow-y-auto"></div>
+            <div id="inputArea" class="bg-gray-900/70 p-4 border-t-2 border-gray-700">
+              <div id="answerInputs" class="mb-3"></div>
+              <div class="flex flex-col sm:flex-row items-center gap-3">
+                <button id="sendBtn" class="game-btn w-full sm:w-auto flex-grow bg-pink-600 text-white px-8 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 active:border-pink-700 flex items-center justify-center gap-2">
+                  <i data-lucide="send-horizontal"></i>
+                  <span>送信</span>
+                </button>
+                <button id="viewBoardBtn" class="game-btn w-full sm:w-auto bg-gray-600 text-gray-200 px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 active:border-gray-700 flex items-center justify-center gap-2">
+                  <i data-lucide="users"></i>
+                  <span>みんなの回答を見る</span>
+                </button>
+              </div>
+            </div>
         </div>
-        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex items-center justify-center hidden">
-          <div class="text-center space-y-4">
-            <p class="text-xl font-bold">クエストクリア！</p>
-            <p><span id="earnedXp">+0</span> XP 獲得</p>
-            <button id="nextQuestBtn" class="game-btn bg-pink-600 text-white px-6 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500">次のクエストへ</button>
-          </div>
+
+        <!-- Confirmation Screen -->
+        <div id="confirmationScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
+             <i data-lucide="help-circle" class="w-16 h-16 text-yellow-400 mb-4"></i>
+             <h3 class="text-xl font-bold mb-4">課題を提出します。よろしいですか？</h3>
+             <div class="flex gap-4">
+                <button id="confirmSubmitBtn" class="game-btn w-40 bg-green-600 text-white px-6 py-2 rounded-lg font-bold border-green-800 hover:bg-green-500 flex items-center justify-center gap-2">
+                    <i data-lucide="check"></i><span>クエスト完了</span>
+                </button>
+                <button id="cancelSubmitBtn" class="game-btn w-40 bg-gray-600 text-white px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center justify-center gap-2">
+                    <i data-lucide="x"></i><span>キャンセル</span>
+                </button>
+             </div>
         </div>
+        
+        <!-- Result Screen -->
+        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
+            <i data-lucide="award" class="w-24 h-24 text-amber-400"></i>
+            <h3 class="text-2xl font-bold mt-4">クエストクリア！</h3>
+            <p class="text-lg mt-2">このクエストで <span id="earnedXp" class="text-yellow-300 font-bold text-xl"></span> をかくとくした！</p>
+        </div>
+
       </section>
-    </div>
+    </main>
   </div>
 <script>
-  <?!= include('shared/escapeHtml'); ?>
-const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
-const teacherCode = '<?!= teacher ?>';
-const grade = '<?!= grade ?>';
-const classroom = '<?!= classroom ?>';
-const number = '<?!= number ?>';
-const version = '<?!= version ?>';
-
-const studentId = `${grade}-${classroom}-${number}`;
-let xp = 0;
-let level = 1;
-let totalXp = 0;
-const xpPerQuest = 10;
-let currentTask = null;
-let aiCalls = 0;
-
-const QuestStep = {
-  INITIAL_ANSWER: 0,
-  DEEPENING_QUESTION: 1,
-  REASONING: 2,
-  FINAL_ANSWER: 3,
-  COMPLETED: 4,
-};
-let questStep = QuestStep.INITIAL_ANSWER;
-let stepAnswers = ['', '', '', ''];
-
-function debug(msg) { console.log(msg); }
-
-function renderIcons(scope) {
-  if (window.lucide) {
-    window.lucide.createIcons({ nameAttr: 'data-icon', icons: window.lucide.icons });
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  renderIcons(document);
-  showLoadingOverlay();
-  if (!teacherCode || !grade || !classroom || !number) {
-    alert('不正なアクセス');
-    hideLoadingOverlay();
-    return;
-  }
-  initStudent();
-  document.getElementById('sendBtn').addEventListener('click', handleSend);
-  document.getElementById('nextQuestBtn').addEventListener('click', () => {
-    document.getElementById('resultScreen').classList.add('hidden');
-    loadTasks();
-  });
-  updateProgressBar();
-  updateSendButton();
+    lucide.createIcons();
+    
+    // --- State ---
+    const QuestStep = { INITIAL_ANSWER: 0, DEEPENING_QUESTION: 1, REASONING: 2, FINAL_ANSWER: 3, COMPLETED: 4 };
+    let currentQuestStep = QuestStep.INITIAL_ANSWER;
+    let currentTask = null;
+    let player = { level: 1, xp: 0, totalXp: 0 };
+
+    // --- UI Elements ---
+    const mainPanel = document.getElementById('mainPanel');
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const questActiveScreen = document.getElementById('questActiveScreen');
+    const interactionLog = document.getElementById('interactionLog');
+    const resultScreen = document.getElementById('resultScreen');
+    const confirmationScreen = document.getElementById('confirmationScreen');
+    const inputArea = document.getElementById('inputArea');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // --- Event Listeners ---
+    sendBtn.addEventListener('click', handleSend);
+    document.getElementById('confirmSubmitBtn').addEventListener('click', finalizeSubmission);
+    document.getElementById('cancelSubmitBtn').addEventListener('click', cancelSubmission);
+    
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    function typeWriterToElement(element, text, speed = 60) {
+        return new Promise(resolve => {
+            element.innerHTML = '';
+            let i = 0;
+            const timer = setInterval(() => {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(timer);
+                    element.classList.add('typewriter-text');
+                    setTimeout(() => {
+                        element.classList.remove('typewriter-text');
+                        resolve();
+                    }, 1200); 
+                }
+            }, speed);
+        });
+    }
+
+    async function startWelcomeSequence() {
+        const icon = document.querySelector('#welcomeScreen i');
+        const line1 = document.getElementById('welcomeLine1');
+        const line2 = document.getElementById('welcomeLine2');
+        
+        gsap.to(icon, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out', delay: 0.2 });
+        await delay(500);
+
+        await typeWriterToElement(line1, "やあ！今日の調子はどう？");
+        await delay(300);
+        await typeWriterToElement(line2, "左のクエスト一覧から課題を選んでね！");
+    }
+
+    // --- Core Functions ---
+    function openTask(task) {
+        currentTask = task;
+        welcomeScreen.classList.add('hidden');
+        questActiveScreen.style.display = 'flex';
+        
+        currentQuestStep = QuestStep.INITIAL_ANSWER;
+        interactionLog.innerHTML = '';
+        inputArea.classList.remove('hidden');
+        resultScreen.style.display = 'none';
+        confirmationScreen.style.display = 'none';
+
+        document.getElementById('questTitle').textContent = `【${task.q.subject}】 ${task.q.question}`;
+        
+        if (task.isClosed) {
+            showResultScreen(task.earnedXp);
+        } else {
+            appendMessage('system', `【${task.q.subject}】 ${task.q.question}`);
+            updateQuestUI();
+        }
+    }
+    
+    function showResultScreen(earnedXp) {
+        questActiveScreen.style.display = 'none';
+        resultScreen.style.display = 'flex';
+        confirmationScreen.style.display = 'none';
+        document.getElementById('earnedXp').textContent = `+${earnedXp} XP`;
+        
+        gsap.from("#resultScreen", { scale: 0.5, opacity: 0, duration: 0.5, ease: 'back.out' });
+        
+        addXp(earnedXp);
+    }
+    
+    function handleSend() {
+        if (!currentTask) return;
+        const q = currentTask.q;
+        let text = '';
+        
+        if (currentQuestStep === QuestStep.FINAL_ANSWER) {
+            confirmationScreen.style.display = 'flex';
+            gsap.from("#confirmationScreen", { scale: 0.8, opacity: 0, duration: 0.3 });
+            return;
+        }
+
+        if (q.type === 'radio' && currentQuestStep === QuestStep.INITIAL_ANSWER) {
+            const sel = document.querySelector('input[name="choice"]:checked');
+            if (!sel) { alert('答えを選んでください'); return; }
+            text = sel.value;
+        } else {
+            const textarea = document.getElementById('answerText');
+            if (!textarea || !textarea.value.trim()) { alert('答えを入力してください'); return; }
+            text = textarea.value.trim();
+        }
+        
+        appendMessage('student', text);
+        
+        switch (currentQuestStep) {
+            case QuestStep.INITIAL_ANSWER:
+                addXp(10);
+                currentQuestStep = QuestStep.DEEPENING_QUESTION;
+                setTimeout(() => appendMessage('system', "なるほど！" + q.deepeningQuestion), 500);
+                break;
+            case QuestStep.DEEPENING_QUESTION:
+                addXp(10);
+                currentQuestStep = QuestStep.REASONING;
+                setTimeout(() => appendMessage('system', "そう考えたんだね。その理由を教えてくれる？"), 500);
+                break;
+            case QuestStep.REASONING:
+                currentQuestStep = QuestStep.FINAL_ANSWER;
+                break;
+        }
+        updateQuestUI();
+    }
+    
+    function finalizeSubmission() {
+        showResultScreen(100);
+        currentQuestStep = QuestStep.COMPLETED;
+        updateQuestUI();
+    }
+    
+    function cancelSubmission() {
+        confirmationScreen.style.display = 'none';
+    }
+
+    function updateQuestUI() {
+        renderInputForStep();
+        updateSendButton();
+        updateProgressBar();
+    }
+    
+    function renderInputForStep() {
+        const answerInputs = document.getElementById('answerInputs');
+        answerInputs.innerHTML = '';
+        if (currentQuestStep === QuestStep.INITIAL_ANSWER) {
+            const choicesHtml = currentTask.q.choices.map(c => 
+                `<label class="flex items-center gap-2 p-2 bg-gray-800 rounded-md hover:bg-gray-700 cursor-pointer"><input type="radio" name="choice" value="${c}"> <span>${c}</span></label>`
+            ).join('');
+            answerInputs.innerHTML = `<div class="space-y-2">${choicesHtml}</div>`;
+        } else if (currentQuestStep < QuestStep.FINAL_ANSWER) {
+            answerInputs.innerHTML = '<textarea id="answerText" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-600" rows="3" placeholder="答えを入力..."></textarea>';
+        } else if(currentQuestStep === QuestStep.FINAL_ANSWER) {
+            answerInputs.innerHTML = '<p class="text-center text-sm text-yellow-300">最後に「提出」ボタンを押してクエスト完了！</p>';
+        } else {
+             answerInputs.innerHTML = '';
+        }
+    }
+    
+    function updateSendButton() {
+        const btnText = sendBtn.querySelector('span');
+        sendBtn.classList.remove('bg-yellow-500', 'border-yellow-700', 'hover:bg-yellow-400', 'bg-pink-600', 'border-pink-800', 'hover:bg-pink-500');
+        sendBtn.disabled = false;
+        
+        if (currentQuestStep <= QuestStep.REASONING) {
+            btnText.textContent = '送信';
+            sendBtn.classList.add('bg-pink-600', 'border-pink-800', 'hover:bg-pink-500');
+        } else if (currentQuestStep === QuestStep.FINAL_ANSWER) {
+            btnText.textContent = '提出';
+            sendBtn.classList.add('bg-yellow-500', 'border-yellow-700', 'hover:bg-yellow-400');
+        } else {
+            btnText.textContent = 'クリア！';
+            sendBtn.disabled = true;
+        }
+    }
+
+    function updateProgressBar() {
+        const steps = ['step1', 'step2', 'step3', 'step4'];
+        const lines = ['line1', 'line2', 'line3'];
+        
+        steps.forEach((id, i) => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.remove('active', 'completed');
+                if (i < currentQuestStep) el.classList.add('completed');
+                else if (i === currentQuestStep) el.classList.add('active');
+            }
+        });
+        lines.forEach((id, i) => {
+            gsap.to(`#${id}`, { width: (i < currentQuestStep) ? '100%' : '0%', duration: 0.5 });
+        });
+    }
+
+    function appendMessage(type, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start gap-3';
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'p-3 rounded-lg max-w-xl';
+        bubble.textContent = text;
+        
+        if (type === 'system' || type === 'receptive') {
+            const icon = document.createElement('i');
+            icon.dataset.lucide = 'bot';
+            icon.className = 'w-8 h-8 text-cyan-400 flex-shrink-0 mt-1';
+            
+            bubble.classList.add(type === 'receptive' ? 'bg-purple-800/50' : 'bg-gray-700');
+            
+            messageDiv.appendChild(icon);
+            messageDiv.appendChild(bubble);
+        } else { // student
+            messageDiv.classList.add('justify-end');
+            
+            const icon = document.createElement('i');
+            icon.dataset.lucide = 'user-circle';
+            icon.className = 'w-8 h-8 text-pink-400 flex-shrink-0 mt-1';
+            
+            bubble.classList.add('bg-indigo-600/80');
+            
+            messageDiv.appendChild(bubble);
+            messageDiv.appendChild(icon);
+        }
+        
+        interactionLog.appendChild(messageDiv);
+        interactionLog.scrollTop = interactionLog.scrollHeight;
+        lucide.createIcons();
+    }
+    
+    function addXp(amount) {
+        player.totalXp += amount;
+        player.xp += amount;
+        while (player.xp >= player.level * 100) {
+            player.xp -= player.level * 100;
+            player.level++;
+        }
+        updateXpBar();
+    }
+    function updateXpBar() {
+        document.getElementById('playerLevel').textContent = player.level;
+        document.getElementById('xpCurrent').textContent = player.xp;
+        document.getElementById('xpNext').textContent = player.level * 100;
+        const pct = Math.min((player.xp / (player.level * 100)) * 100, 100);
+        gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
+    }
+
+    // --- Mock Data & Initial Load ---
+    const mockTasks = [
+        { id: 1, isClosed: false, q: { subject: '理科', question: '植物が栄養を作る働きは？', type: 'radio', choices: ['光合成', '呼吸', '蒸散'], deepeningQuestion: 'では、その「光合成」には、何が必要だと思いますか？' } },
+        { id: 3, isClosed: true, earnedXp: 50, q: { subject: '算数', question: '3 x 8 は？' } }
+    ];
+
+    document.getElementById('unanswered').innerHTML = mockTasks.filter(t => !t.isClosed).map(t => `<div data-id="${t.id}" class="task-item bg-gray-700/50 p-3 rounded-lg border border-transparent hover:border-pink-400 cursor-pointer">【${t.q.subject}】 ${t.q.question}</div>`).join('');
+    document.getElementById('answered').innerHTML = mockTasks.filter(t => t.isClosed).map(t => `<div data-id="${t.id}" class="task-item bg-gray-800/80 p-3 rounded-lg opacity-60 line-through cursor-pointer">【${t.q.subject}】 ${t.q.question}</div>`).join('');
+    document.querySelectorAll('.task-item').forEach(el => el.addEventListener('click', () => openTask(mockTasks.find(t => t.id == el.dataset.id))));
+
+    startWelcomeSequence();
 });
-
-function initStudent() {
-  google.script.run.withSuccessHandler(() => { loadTasks(); loadXp(); })
-    .withFailureHandler(e => {
-      alert('初期化失敗: ' + e.message);
-      hideLoadingOverlay();
-    })
-    .initStudent(teacherCode, grade, classroom, number);
-}
-
-function loadTasks(callback) {
-  google.script.run.withSuccessHandler(tasks => {
-    google.script.run
-      .withSuccessHandler(history => {
-        history = Array.isArray(history) ? history : [];
-        renderLists(tasks || [], history);
-        hideLoadingOverlay();
-        if (typeof callback === 'function') callback();
-      })
-      .withFailureHandler(e => {
-        alert('履歴取得失敗: ' + e.message);
-        hideLoadingOverlay();
-      })
-      .getStudentHistory(teacherCode, studentId);
-  })
-    .withFailureHandler(e => {
-      alert('課題取得失敗: ' + e.message);
-      hideLoadingOverlay();
-    })
-    .listTasksForClass(teacherCode, grade, classroom);
-}
-
-function renderLists(tasks, history) {
-  const answeredIds = new Set(history.filter(r => (r[3] || '').toString().trim() !== '').map(r => r[1]));
-  const unanswered = tasks.filter(t => !answeredIds.has(t.id));
-  const answered = tasks.filter(t => answeredIds.has(t.id));
-  const unEl = document.getElementById('unanswered');
-  const anEl = document.getElementById('answered');
-  unEl.innerHTML = '';
-  anEl.innerHTML = '';
-  unanswered.forEach(t => {
-    const div = document.createElement('div');
-    const q = JSON.parse(t.q);
-    div.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600';
-    div.textContent = `【${q.subject}】 ${q.question}`;
-    div.addEventListener('click', () => openTask(t, history));
-    unEl.appendChild(div);
-  });
-  answered.forEach(t => {
-    const div = document.createElement('div');
-    const q = JSON.parse(t.q);
-    div.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600 opacity-70 line-through';
-    div.textContent = `【${q.subject}】 ${q.question}`;
-    div.addEventListener('click', () => openTask(t, history));
-    anEl.appendChild(div);
-  });
-  const link = document.getElementById('viewAnswersBtn');
-  const firstTask = unanswered[0] || answered[0];
-  if (link) {
-    if (firstTask) {
-      link.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${firstTask.id}&grade=${grade}&class=${classroom}&number=${number}`;
-    } else {
-      link.href = '#';
-    }
-  }
-  if (!currentTask && unanswered.length) openTask(unanswered[0], history);
-}
-
-async function openTask(task, history) {
-  currentTask = task;
-  aiCalls = 0;
-  questStep = QuestStep.INITIAL_ANSWER;
-  stepAnswers = ['', '', '', ''];
-  const q = JSON.parse(task.q);
-  const log = document.getElementById('chatLog');
-  log.innerHTML = '';
-  await typeWriter('こんにちわ！学習はどうかな？先生から課題が出ているよ！ええと…', 'system');
-  await delay(300);
-  await typeWriter(`【${q.subject}】 ${q.question}`, 'system');
-  const rows = history.filter(r => r[1] === task.id);
-  rows.forEach(r => appendMsg('student', r[3]));
-  renderInputForStep(q, rows.length);
-  log.scrollTop = log.scrollHeight;
-  updateProgressBar();
-  updateSendButton();
-  const link = document.getElementById('viewAnswersBtn');
-  link.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${task.id}&grade=${grade}&class=${classroom}&number=${number}`;
-}
-
-function renderInputForStep(q, attempt) {
-  const area = document.getElementById('answerInputs');
-  area.innerHTML = '';
-  if (questStep === QuestStep.INITIAL_ANSWER) {
-    if (attempt >= 1) q.type = 'text';
-    if (q.type === 'text') {
-      area.innerHTML = '<textarea id="answerText" class="w-full p-2 bg-gray-600 rounded"></textarea>';
-    } else if (q.type === 'radio') {
-      q.choices.forEach((c, i) => {
-        const id = `r${i}`;
-        const opt = escapeHtml(c);
-        area.innerHTML += `<label class="flex items-center gap-1"><input type="radio" name="choice" value="${opt}" id="${id}">${opt}</label>`;
-      });
-    } else if (q.type === 'checkbox') {
-      q.choices.forEach((c, i) => {
-        const id = `c${i}`;
-        const opt = escapeHtml(c);
-        area.innerHTML += `<label class="flex items-center gap-1"><input type="checkbox" value="${opt}" class="cb">${opt}</label>`;
-      });
-    }
-  } else if (questStep === QuestStep.COMPLETED) {
-    area.innerHTML = '';
-  } else {
-    area.innerHTML = '<textarea id="answerText" class="w-full p-2 bg-gray-600 rounded"></textarea>';
-  }
-}
-
-async function handleSend() {
-  if (!currentTask) return;
-  const q = JSON.parse(currentTask.q);
-  let text = '';
-  if (q.type === 'text' || questStep !== QuestStep.INITIAL_ANSWER) {
-    text = document.getElementById('answerText').value.trim();
-  } else if (q.type === 'radio') {
-    const sel = document.querySelector('input[name="choice"]:checked');
-    text = sel ? sel.value : '';
-  } else if (q.type === 'checkbox') {
-    text = Array.from(document.querySelectorAll('.cb:checked')).map(x => x.value).join(',');
-  }
-  if (!text) {
-    alert('回答を入力してください');
-    return;
-  }
-  appendMsg('student', text);
-  stepAnswers[questStep] = text;
-  document.querySelectorAll('#answerInputs input, #answerInputs textarea').forEach(e => e.value = '');
-
-  if (questStep === QuestStep.INITIAL_ANSWER) {
-    await typeWriter(`そうなんだ！君は『${text}』だと思ったんだね...`, 'gemini');
-    await delay(300);
-    const follow = q.followup || q.followUp || q.deepeningQuestion || q.followupQuestion;
-    await typeWriter(follow ? String(follow) : 'どうしてそう思ったの？理由を聞かせて', 'gemini');
-    questStep = QuestStep.DEEPENING_QUESTION;
-    renderInputForStep(q, 1);
-    updateProgressBar();
-    updateSendButton();
-  } else if (questStep === QuestStep.DEEPENING_QUESTION) {
-    if (text.length <= 20) {
-      await typeWriter('シンプルだけど、君らしい意見だね！', 'system');
-      await delay(300);
-    }
-    await typeWriter('じゃあ、今日の学習について、生活とのつながりやもっと知りたいと思ったことを教えてね！', 'system');
-    questStep = QuestStep.FINAL_ANSWER;
-    renderInputForStep(q, 1);
-    updateProgressBar();
-    updateSendButton();
-  } else if (questStep === QuestStep.FINAL_ANSWER) {
-    addXp(xpPerQuest);
-    google.script.run.withSuccessHandler(() => {
-      loadTasks(() => {
-        document.getElementById('earnedXp').textContent = `+${xpPerQuest}`;
-        document.getElementById('resultScreen').classList.remove('hidden');
-      });
-    }).submitAnswer(
-      teacherCode,
-      studentId,
-      currentTask.id,
-      text,
-      xpPerQuest,
-      totalXp,
-      level,
-      '',
-      aiCalls,
-      document.querySelectorAll('#chatLog .msg-student').length
-    );
-    questStep = QuestStep.COMPLETED;
-    updateProgressBar();
-    updateSendButton();
-  }
-}
-
-function appendMsg(type, text) {
-  const log = document.getElementById('chatLog');
-  const div = document.createElement('div');
-  div.className = `msg-${type} flex items-start gap-1`;
-
-  const p = document.createElement('p');
-  p.className = `p-2 rounded ${type === 'student' ? 'bg-indigo-600 ml-auto' : 'bg-gray-700'} max-w-[80%]`;
-  p.textContent = text;
-  div.appendChild(p);
-
-  if (type === 'student' && questStep !== QuestStep.COMPLETED) {
-    const btn = document.createElement('button');
-    btn.className = 'delete-msg text-gray-400 hover:text-white';
-    btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
-    btn.addEventListener('click', () => deleteMessage(div));
-    div.appendChild(btn);
-  }
-
-  log.appendChild(div);
-  renderIcons(div);
-  log.scrollTop = log.scrollHeight;
-}
-
-/**
- * Display text in the chat log with a typing effect.
- * @param {string} text - The text to show.
- * @param {string} type - Message type such as 'system' or 'gemini'.
- * @returns {Promise<void>} Resolves when typing is done.
- */
-function typeWriter(text, type) {
-  return new Promise(resolve => {
-    const log = document.getElementById('chatLog');
-    const div = document.createElement('div');
-    div.className = `msg-${type} flex items-start gap-1`;
-    const p = document.createElement('p');
-    p.className = `p-2 rounded ${type === 'student' ? 'bg-indigo-600 ml-auto' : 'bg-gray-700'} max-w-[80%] whitespace-pre-wrap`;
-    div.appendChild(p);
-
-    if (type === 'student' && questStep !== QuestStep.COMPLETED) {
-      const btn = document.createElement('button');
-      btn.className = 'delete-msg text-gray-400 hover:text-white';
-      btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
-      btn.addEventListener('click', () => deleteMessage(div));
-      div.appendChild(btn);
-    }
-
-    log.appendChild(div);
-    renderIcons(div);
-    log.scrollTop = log.scrollHeight;
-    let i = 0;
-    const timer = setInterval(() => {
-      p.textContent += text.charAt(i);
-      log.scrollTop = log.scrollHeight;
-      i++;
-      if (i >= text.length) {
-        clearInterval(timer);
-        resolve();
-      }
-    }, 40);
-  });
-}
-
-/**
- * Wait for the specified milliseconds.
- * @param {number} ms - Duration in milliseconds.
- * @returns {Promise<void>} Promise resolved after the delay.
- */
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function loadXp() { updateXpBar(); }
-function addXp(amount) {
-  totalXp += amount;
-  xp += amount;
-  while (xp >= level * 100) {
-    xp -= level * 100;
-    level++;
-  }
-  updateXpBar();
-}
-function updateXpBar() {
-  document.getElementById('playerLevel').textContent = level;
-  document.getElementById('xpCurrent').textContent = xp;
-  document.getElementById('xpNext').textContent = level * 100;
-  const pct = Math.min((xp / (level * 100)) * 100, 100);
-  gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
-}
-
-function updateProgressBar() {
-  const container = document.getElementById('stepProgress');
-  if (!container) return;
-  container.innerHTML = '';
-  const total = 3;
-  const stepIndex =
-    questStep === QuestStep.INITIAL_ANSWER ? 0 :
-    questStep === QuestStep.DEEPENING_QUESTION ? 1 : 2;
-  for (let i = 0; i < total; i++) {
-    const circle = document.createElement('div');
-    circle.textContent = i + 1;
-    circle.className = 'w-6 h-6 rounded-full text-xs flex items-center justify-center';
-    if (stepIndex >= i) {
-      circle.classList.add('bg-pink-600', 'text-white');
-    } else {
-      circle.classList.add('bg-gray-700', 'text-gray-400');
-    }
-    container.appendChild(circle);
-    if (i < total - 1) {
-      const line = document.createElement('div');
-      line.className = 'flex-1 h-1';
-      line.classList.add(stepIndex > i ? 'bg-pink-600' : 'bg-gray-700');
-      container.appendChild(line);
-    }
-  }
-}
-
-function updateSendButton() {
-  const btn = document.getElementById('sendBtn');
-  const label = btn.querySelector('span');
-  btn.classList.remove(
-    'bg-pink-600','border-pink-800','hover:bg-pink-500',
-    'bg-blue-600','border-blue-800','hover:bg-blue-500',
-    'bg-green-600','border-green-800','hover:bg-green-500',
-    'bg-gray-600','border-gray-800','hover:bg-gray-500'
-  );
-  switch (questStep) {
-    case QuestStep.INITIAL_ANSWER:
-      label.textContent = '送信';
-      btn.classList.add('bg-pink-600','border-pink-800','hover:bg-pink-500');
-      btn.disabled = false;
-      break;
-    case QuestStep.DEEPENING_QUESTION:
-      label.textContent = '送信';
-      btn.classList.add('bg-blue-600','border-blue-800','hover:bg-blue-500');
-      btn.disabled = false;
-      break;
-    case QuestStep.FINAL_ANSWER:
-      label.textContent = '提出';
-      btn.classList.add('bg-green-600','border-green-800','hover:bg-green-500');
-      btn.disabled = false;
-      break;
-    case QuestStep.COMPLETED:
-      label.textContent = '完了';
-      btn.classList.add('bg-gray-600','border-gray-800','hover:bg-gray-600');
-      btn.disabled = true;
-      break;
-  }
-}
-
-function deleteMessage(div) {
-  const log = document.getElementById('chatLog');
-  let next = div.nextElementSibling;
-  while (next && !next.classList.contains('msg-student')) {
-    const toRemove = next;
-    next = next.nextElementSibling;
-    log.removeChild(toRemove);
-  }
-  log.removeChild(div);
-
-  const msgs = log.querySelectorAll('.msg-student p');
-  stepAnswers = ['', '', '', ''];
-  msgs.forEach((p, i) => { stepAnswers[i] = p.textContent.trim(); });
-
-  switch (msgs.length) {
-    case 0:
-      questStep = QuestStep.INITIAL_ANSWER;
-      break;
-    case 1:
-      questStep = QuestStep.DEEPENING_QUESTION;
-      break;
-    case 2:
-      questStep = QuestStep.FINAL_ANSWER;
-      break;
-    default:
-      questStep = QuestStep.COMPLETED;
-  }
-
-  if (currentTask) {
-    renderInputForStep(JSON.parse(currentTask.q), msgs.length);
-  }
-  updateProgressBar();
-  updateSendButton();
-}
-
-/**
- * Show the loading overlay.
- */
-function showLoadingOverlay() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.remove('hidden');
-}
-
-/**
- * Hide the loading overlay.
- */
-function hideLoadingOverlay() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('hidden');
-}
 </script>
 <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?!= version ?></div>
-<div id="loadingOverlay" class="hidden flex items-center justify-center text-white text-xl font-bold">ロード中…</div>
 </body>
 </html>
