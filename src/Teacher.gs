@@ -188,7 +188,7 @@ function initTeacher(passcode) {
 /**
  * getSpreadsheetByTeacherCode(teacherCode):
  * スクリプトプロパティからフォルダ ID を取得し、
- * そのフォルダ内の StudyQuest_<teacherCode>_Log を開く
+ * そのフォルダ内の StudyQuest_DB_<teacherCode> を開く
  */
 function getSpreadsheetByTeacherCode(teacherCode) {
   if (!teacherCode) return null;
@@ -197,7 +197,8 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   if (!folderId) return null;
   try {
     const folder = DriveApp.getFolderById(folderId);
-    const files = folder.getFilesByName('StudyQuest_DB');
+    const targetName = 'StudyQuest_DB_' + teacherCode;
+    const files = folder.getFilesByName(targetName);
     if (files.hasNext()) {
       return SpreadsheetApp.openById(files.next().getId());
     }
