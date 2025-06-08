@@ -17,18 +17,21 @@
 * **データベース (Spreadsheet)**: 教師ごとに専用のスプレッドシート（DB）を生成し、全てのデータをシート（テーブル）で管理。
 * **フロントエンド (HTML/CSS/JS)**: GASから配信されるUI。`google.script.run` を介してバックエンドと非同期通信。
 
-## 3. ログインとGoogle認証 🔐
+## 3. ログイン方法 🔐
 
-ログインページ(`login.html`)では **Google Identity Services** を利用してIDトークンを取得します。得られたトークンは `google.script.run` を介してサーバーに送られ、次の処理を実行します。
+現在のログイン処理は OAuth を使用せず、`Session.getEffectiveUser().getEmail()` で取得できる Google アカウントを基準にしています。以前の Google Identity Services を使った実装は `legacy/google-auth/` 以下に保管されています。
 
-1. **verifyGoogleToken(idToken)** — `https://oauth2.googleapis.com/tokeninfo` でトークンを検証し、結果を5分間キャッシュします。`aud` フィールドが `OAUTH_CLIENT_ID` と一致しない場合はエラーになります。【F:src/Auth.gs†L11-L38】
-2. **handleTeacherAuth(idToken, passcode)** — 教師モード時に `registration.json` を確認し、存在しなければ `initTeacher()` でフォルダとスプレッドシートを作成します。登録情報は5分間キャッシュされます。【F:src/Auth.gs†L31-L74】
-3. **getStudentInfo(idToken)** — 生徒モードで `registration.json` を取得し、無ければ `status: 'new'` を返します。【F:src/Auth.gs†L71-L91】
-4. **registerStudentToClass(idToken, info)** — 生徒登録情報を `registration.json` に追加し、`initStudent()` を呼び出します。結果は5分間キャッシュされます。【F:src/Auth.gs†L94-L134】
+1. **教師ログイン**
+   * ログイン画面で「教師」を選択し、合言葉を入力して送信します。
+   * 合言葉が未設定の場合、最初に入力した値が保存されます。以降は同じ合言葉を入力すると認証されます。
+   * 認証に成功するとフォルダとスプレッドシートが自動生成され、`manage.html` に遷移します。
+   * デフォルトの合言葉は `kyoushi` です。
 
-`OAUTH_CLIENT_ID` はスクリプトプロパティまたは環境変数 `OAUTH_CLIENT_ID` に登録してください。ログインページでは `doGet` から埋め込まれた値を使用して Google Identity Services を初期化します。
+2. **生徒ログイン**
+   * 教師コード・学年・組・番号を入力して送信します。
+   * `initStudent()` が呼び出され、生徒シートが準備された後 `quest.html` に移動します。
 
-フォームでは教師/生徒を切り替えられます。教師はチェックを入れてGoogle認証するだけで `manage.html` へ進みます。生徒は `quest.html` に遷移します。IDトークン取得処理は次の通りです。【F:src/login.html†L340-L382】
+これにより OAuth クライアント ID の設定や ID トークン取得は不要になりました。
 
 ---
 
