@@ -9,7 +9,7 @@ function listBoard(teacherCode) {
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const lastCol = Math.min(sheet.getLastColumn(), 12);
+  const lastCol = Math.min(sheet.getLastColumn(), 13);
   const numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
   const startRow = lastRow - numRows + 1;
   const data = sheet.getRange(startRow, 1, numRows, lastCol).getValues().reverse();
@@ -34,12 +34,12 @@ function listTaskBoard(teacherCode, taskId) {
   if (!sheet) return [];
 
   const temp = ss.insertSheet();
-  const query = `=QUERY(${SHEET_SUBMISSIONS}!A:L,"where B='${taskId}' order by E desc limit ${BOARD_FETCH_LIMIT}",0)`;
+  const query = `=QUERY(${SHEET_SUBMISSIONS}!A:M,"where B='${taskId}' order by E desc limit ${BOARD_FETCH_LIMIT}",0)`;
   temp.getRange(1, 1).setFormula(query);
   SpreadsheetApp.flush();
   const rows = Math.max(temp.getLastRow() - 1, 0);
   if (rows === 0) { ss.deleteSheet(temp); return []; }
-  const data = temp.getRange(2, 1, rows, 12).getValues();
+  const data = temp.getRange(2, 1, rows, 13).getValues();
   ss.deleteSheet(temp);
   return data.map(row => ({
     studentId: row[0],

@@ -72,7 +72,7 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   const result = context.initTeacher('kyoushi');
   expect(result.status).toBe('new');
   expect(result.teacherCode).toBe('ABC123');
-  expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB');
+  expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB_ABC123');
 });
 
 test('initTeacher tasks sheet header includes draft column', () => {
@@ -200,7 +200,7 @@ test('initTeacher submissions sheet header matches README order', () => {
   context.generateTeacherCode = jest.fn(() => 'ABC123');
   context.initTeacher('kyoushi');
   const header = inserted['Submissions'].appendRow.mock.calls[0][0];
-  const expected = ['生徒ID','課題ID','問題文','開始日時','提出日時','成果物URL','問題概要','回答概要','付与XP','累積XP','レベル','トロフィー'];
+  const expected = ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status'];
   expect(header).toEqual(expected);
 });
 

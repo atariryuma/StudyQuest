@@ -99,7 +99,7 @@ function initTeacher(passcode) {
   props.setProperty(newCode, folderInstance.getId());
   initializeFolders(newCode, [], folderInstance);
 
-  const ss = SpreadsheetApp.create('StudyQuest_DB');
+  const ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
   DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
   // 目次シート作成
@@ -116,33 +116,38 @@ function initTeacher(passcode) {
     {
       name: SHEET_TASKS,
       color: "ff9900",
-      header: ['ID', 'ClassID', '問題データ(JSON)', '自己評価許可', '作成日時', 'ペルソナ', '状態', 'draft'],
-      description: "作成された課題の一覧です。"
+      header: ['TaskID', 'ClassID', 'Payload(JSON)', 'AllowSelfEval', 'CreatedAt', 'Persona', 'Status', 'draft'],
+      description: "作成された課題の一覧です。",
+      columnsJa: ['課題ID','クラスID','課題内容(JSON)','自己評価許可','作成日時','ペルソナ','状態','下書きフラグ']
     },
     {
       name: SHEET_STUDENTS,
       color: "4285f4",
-      header: ['生徒ID', '学年', '組', '番号', '初回ログイン日時', '最終ログイン日時', '累計ログイン回数', '累積XP', '現在レベル', '最終獲得トロフィーID'],
-      description: "ログインした生徒の情報が記録されます。"
+      header: ['StudentID', 'Grade', 'Class', 'Number', 'FirstLogin', 'LastLogin', 'LoginCount', 'TotalXP', 'Level', 'LastTrophyID'],
+      description: "ログインした生徒の情報が記録されます。",
+      columnsJa: ['生徒ID','学年','組','番号','初回ログイン','最終ログイン','ログイン回数','累積XP','レベル','最終トロフィーID']
     },
     {
       name: SHEET_SUBMISSIONS,
       color: "008080",
-      header: ['生徒ID', '課題ID', '問題文', '開始日時', '提出日時', '成果物URL',
-               '問題概要', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー'],
-      description: "全生徒の回答の概要（ボード表示用）です。"
+      header: ['StudentID', 'TaskID', 'Question', 'StartedAt', 'SubmittedAt', 'ProductURL',
+               'QuestionSummary', 'AnswerSummary', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Status'],
+      description: "全生徒の回答の概要（ボード表示用）です。",
+      columnsJa: ['生徒ID','課題ID','問題文','開始日時','提出日時','成果物URL','問題概要','回答概要','付与XP','累積XP','レベル','トロフィー','ステータス']
     },
     {
       name: SHEET_AI_FEEDBACK,
       color: "ff4444",
-      header: ['LogID', 'SubmissionID', 'フィード内容', '生成日時'],
-      description: "Gemini API からのフィードバックログです。"
+      header: ['LogID', 'SubmissionID', 'Content', 'CreatedAt'],
+      description: "Gemini API からのフィードバックログです。",
+      columnsJa: ['ログID','提出ID','フィード内容','生成日時']
     },
     {
       name: SHEET_SETTINGS,
       color: "aaaaaa",
       header: ['type', 'value1', 'value2'],
-      description: "各種設定 (APIキー・クラス等) を保存します。"
+      description: "各種設定 (APIキー・クラス等) を保存します。",
+      columnsJa: ['種別','値1','値2']
     }
   ];
   tocSheet.appendRow(['']);
@@ -155,6 +160,10 @@ function initTeacher(passcode) {
     sheet.setTabColor(info.color);
     const linkFormula = `=HYPERLINK("${spreadsheetUrl}#gid=${sheet.getSheetId()}","${info.name}")`;
     tocSheet.appendRow([linkFormula, info.description]);
+    if (Array.isArray(info.columnsJa)) {
+      const detail = info.header.map((h,i)=> `${h}=${info.columnsJa[i] || ''}`).join(', ');
+      tocSheet.appendRow(['', detail]);
+    }
   });
   tocSheet.appendRow(['']);
   tocSheet.appendRow(['生徒の個別回答ログ']);

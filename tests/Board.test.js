@@ -34,12 +34,12 @@ test('getStatistics counts unique student IDs', () => {
 
 test('listBoard reads new submission columns', () => {
   const subsData = [
-    ['s1','t1','Q1',new Date('2024-01-01'),new Date('2024-01-02'),'','qs1','as1',5,10,1,'T1'],
-    ['s2','t2','Q2',new Date('2024-01-03'),new Date('2024-01-04'),'','qs2','as2',3,13,2,'']
+    ['s1','t1','Q1',new Date('2024-01-01'),new Date('2024-01-02'),'','qs1','as1',5,10,1,'T1',1],
+    ['s2','t2','Q2',new Date('2024-01-03'),new Date('2024-01-04'),'','qs2','as2',3,13,2,'',0]
   ];
   const sheetStub = {
     getLastRow: jest.fn(() => subsData.length + 1),
-    getLastColumn: jest.fn(() => 12),
+    getLastColumn: jest.fn(() => 13),
     getRange: jest.fn(() => ({ getValues: () => subsData }))
   };
   const ssStub = { getSheetByName: jest.fn(name => name === 'Submissions' ? sheetStub : null) };
@@ -49,7 +49,7 @@ test('listBoard reads new submission columns', () => {
   };
   loadBoard(context);
   const rows = context.listBoard('ABC');
-  expect(sheetStub.getRange).toHaveBeenCalledWith(2, 1, subsData.length, 12);
+  expect(sheetStub.getRange).toHaveBeenCalledWith(2, 1, subsData.length, 13);
   expect(rows[0]).toEqual({
     studentId: 's2',
     answer: 'as2',
