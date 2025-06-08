@@ -128,7 +128,8 @@ function initTeacher(passcode) {
     {
       name: SHEET_SUBMISSIONS,
       color: "008080",
-      header: ['日時', '生徒ID', '課題ID', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー', 'AI呼び出し回数', '回答回数'],
+      header: ['生徒ID', '課題ID', '問題文', '開始日時', '提出日時', '成果物URL',
+               '問題概要', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー'],
       description: "全生徒の回答の概要（ボード表示用）です。"
     },
     {
