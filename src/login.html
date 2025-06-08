@@ -123,6 +123,15 @@
       width: 100%;
       text-align: center;
     }
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 50;
+    }
+    #firstMessage {
+      z-index: 60;
+    }
   </style>
 </head>
 <body class="text-gray-200 bg-gradient-to-br from-purple-800 to-indigo-700">
@@ -178,7 +187,7 @@
       <p class="mb-2">🎉 初回ログインありがとうございます！</p>
       <p class="mb-2">これから Google Drive 上に</p>
       <p class="mb-2"><strong>「StudyQuest_<span id="newCodeSpan"></span>」</strong>フォルダを作成します。</p>
-      <p class="mb-4">児童の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
+      <p class="mb-4">生徒の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
       <p class="text-xs text-gray-300 mb-4">※既に同名フォルダがある場合は上書きされますのでご注意を。</p>
       <button id="closeFirstMsg" class="game-btn bg-indigo-600 text-white p-3 rounded-2xl font-bold border-indigo-800 hover:bg-indigo-500 active:border-indigo-700 w-full shadow-2xl">了解しました</button>
     </div>
@@ -336,9 +345,8 @@
     function handleSubmit(e) {
       e.preventDefault();
       const isTeacher = document.getElementById('teacherMode').checked;
-      const loading = document.getElementById('loading');
       const btn = document.getElementById('loginBtn');
-      loading.classList.remove('hidden');
+      showLoadingOverlay();
       btn.disabled = true;
 
       // ボタンバウンド
@@ -351,7 +359,7 @@
         const passcode = document.getElementById('passcode').value.trim();
         if (passcode !== 'kyoushi') {
           alert('パスコードが違います。');
-          loading.classList.add('hidden');
+          hideLoadingOverlay();
           btn.disabled = false;
           return;
         }
@@ -380,19 +388,19 @@
             else {
               // error
               alert(message || 'エラーが発生しました。');
-              loading.classList.add('hidden');
+              hideLoadingOverlay();
               btn.disabled = false;
             }
           })
           .withFailureHandler(err => {
             alert('教師ログインでエラー: ' + err.message);
-            loading.classList.add('hidden');
+            hideLoadingOverlay();
             btn.disabled = false;
           })
           .initTeacher(passcode);
 
       } else {
-        // ── 児童モード ──
+        // ── 生徒モード ──
         const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
         const grade = document.getElementById('grade').value.trim();
         const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
@@ -400,13 +408,13 @@
 
         if (!teacherCode) {
           alert('教師コードを入力してください。');
-          loading.classList.add('hidden');
+          hideLoadingOverlay();
           btn.disabled = false;
           return;
         }
         if (!grade || !classroom || !number) {
           alert('学年・組・番号を正しく入力してください。');
-          loading.classList.add('hidden');
+          hideLoadingOverlay();
           btn.disabled = false;
           return;
         }
@@ -452,6 +460,22 @@
           }
         });
       }
+
+      /**
+       * Show the loading overlay.
+       */
+      function showLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.remove('hidden');
+      }
+
+      /**
+       * Hide the loading overlay.
+       */
+      function hideLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.add('hidden');
+      }
     }
   </script>
 
@@ -466,5 +490,6 @@
 
   <!-- バージョン表示 -->
   <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
+  <div id="loadingOverlay" class="hidden flex items-center justify-center text-white text-xl font-bold select-none">ロード中…</div>
 </body>
 </html>
