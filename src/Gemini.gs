@@ -1,11 +1,10 @@
 /**
  * Gemini APIを呼び出し、指定されたプロンプトに対する応答を返します。
- * @param {string} teacherCode - （将来的な拡張用）教師コード
  * @param {string} prompt - ユーザーが入力したプロンプト
  * @param {string} persona - '小学生向け', '中学生向け', '教師向け' のいずれか
  * @return {string} Geminiからの応答テキスト、またはエラーメッセージ
  */
-function callGeminiAPI_GAS(teacherCode, prompt, persona) {
+function callGeminiAPI_GAS(prompt, persona) {
   const personaMap = {
     '小学生向け': 'あなたは小学校高学年以上向けの優しい先生です。',
     '中学生向け': 'あなたは中学生向けの適切な言葉遣いをする先生です。',
@@ -74,12 +73,12 @@ function logToSpreadsheet(logData) {
 }
 
 /**
- * generateFollowupFromAnswer(teacherCode, answerText, persona):
+ * generateFollowupFromAnswer(answerText, persona):
  * 指定された回答を基に理解を深める質問例を生成
  */
-function generateFollowupFromAnswer(teacherCode, answerText, persona) {
+function generateFollowupFromAnswer(answerText, persona) {
   answerText = String(answerText || '').trim();
   if (!answerText) return '';
   const prompt = `次の生徒の回答を基に理解を深めるための質問を2つ箇条書きで提示してください。\n回答:「${answerText}」`;
-  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona);
 }

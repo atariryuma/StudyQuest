@@ -418,7 +418,7 @@
           .withFailureHandler(err => {
             container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
           })
-          .callGeminiAPI_GAS(teacherCode, prompt, persona);
+          .callGeminiAPI_GAS(prompt, persona);
       });
 
       document.getElementById('generateFollowupBtn').addEventListener('click', () => {
@@ -443,7 +443,7 @@
           .withFailureHandler(err => {
             container.textContent = '生成に失敗しました: ' + err.message;
           })
-          .callGeminiAPI_GAS(teacherCode, prompt, persona);
+          .callGeminiAPI_GAS(prompt, persona);
       });
 
       document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
