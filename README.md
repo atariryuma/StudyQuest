@@ -187,6 +187,10 @@ StudyQuest_<TeacherCode>/
 
 4. Drive API、Sheets APIの有効化（必要に応じて Apps Script エディタから追加）
 
+5. 教師として初回ログインした際に、README で定義されたシート構造の
+   **StudyQuest_DB** スプレッドシートが自動生成されます。
+   生成後は Apps Script の `initTeacher()` を呼び出して確認してください。
+
 ---
 
 ## テスト実行
