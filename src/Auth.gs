@@ -3,10 +3,18 @@
  */
 
 // Expected OAuth client ID used to verify ID tokens
-const OAUTH_CLIENT_ID =
-  (typeof PropertiesService !== 'undefined' &&
-   PropertiesService.getScriptProperties().getProperty('OAUTH_CLIENT_ID')) ||
-  'YOUR_CLIENT_ID';
+function getOAuthClientId() {
+  if (typeof PropertiesService !== 'undefined') {
+    const id = PropertiesService.getScriptProperties().getProperty('OAUTH_CLIENT_ID');
+    if (id) return id;
+  }
+  if (typeof process !== 'undefined' && process.env && process.env.OAUTH_CLIENT_ID) {
+    return process.env.OAUTH_CLIENT_ID;
+  }
+  return '';
+}
+
+const OAUTH_CLIENT_ID = getOAuthClientId();
 
 /**
  * Verify ID token issued by Google Identity Services and return basic user info.
@@ -155,5 +163,11 @@ function registerStudentToClass(idToken, info) {
 
 // Export for Jest tests
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { verifyGoogleToken, handleTeacherAuth, getStudentInfo, registerStudentToClass };
+  module.exports = {
+    verifyGoogleToken,
+    handleTeacherAuth,
+    getStudentInfo,
+    registerStudentToClass,
+    getOAuthClientId
+  };
 }
