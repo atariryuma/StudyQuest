@@ -882,7 +882,11 @@
             </div>
           `;
           card.addEventListener('click', e => {
-            if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
+            if (
+              !e.target.closest('.deleteBtn') &&
+              !e.target.closest('.copyBtn') &&
+              !e.target.closest('.closeBtn')
+            ) {
               location.href = `?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${x.id}`;
             }
           });
