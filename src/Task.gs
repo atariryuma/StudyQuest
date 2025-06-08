@@ -9,6 +9,7 @@ if (typeof removeCacheValue_ !== 'function') {
 }
 
 function createTask(teacherCode, payloadAsJson, selfEval, persona) {
+  console.time('createTask');
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error("課題作成失敗: 教師のスプレッドシートが見つかりません。");
@@ -42,6 +43,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
+  console.timeEnd('createTask');
 }
 
 /**

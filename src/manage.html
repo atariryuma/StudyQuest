@@ -962,6 +962,7 @@
           return;
         }
 
+        let html = '';
         rows.forEach(x => {
           let data, detailHtml;
           try {
@@ -975,32 +976,32 @@
             detailHtml = `<p class="text-sm mb-1 whitespace-pre-wrap pr-10">${escapeHtml(x.q)}</p>`;
           }
 
-          const card = document.createElement('div');
-          card.className = 'bg-gray-700 p-4 rounded-2xl shadow-2xl transition-transform hover:scale-102 relative cursor-pointer';
-          card.innerHTML = `
-            ${detailHtml}
-            <div class="flex justify-between items-center mt-2 pr-8">
-              <p class="text-sm text-gray-400">${x.date}</p>
-            </div>
-            <div class="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col items-center gap-2 text-xs">
-              <button class="copyBtn p-1" data-id="${x.id}" title="この課題を複製">
-                <i data-icon="Copy" class="w-6 h-6 text-indigo-300"></i>
-              </button>
-              <button class="deleteBtn p-1" data-id="${x.id}" title="この課題を削除">
-                <i data-icon="Trash2" class="w-6 h-6 text-red-400"></i>
-              </button>
-            </div>
-          `;
-          card.addEventListener('mouseenter', () => prefetchBoardData(teacherCode, x.id));
+          html += `
+            <div class="task-card bg-gray-700 p-4 rounded-2xl shadow-2xl transition-transform hover:scale-102 relative cursor-pointer" data-id="${x.id}">
+              ${detailHtml}
+              <div class="flex justify-between items-center mt-2 pr-8">
+                <p class="text-sm text-gray-400">${x.date}</p>
+              </div>
+              <div class="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col items-center gap-2 text-xs">
+                <button class="copyBtn p-1" data-id="${x.id}" title="この課題を複製">
+                  <i data-icon="Copy" class="w-6 h-6 text-indigo-300"></i>
+                </button>
+                <button class="deleteBtn p-1" data-id="${x.id}" title="この課題を削除">
+                  <i data-icon="Trash2" class="w-6 h-6 text-red-400"></i>
+                </button>
+              </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+        container.querySelectorAll('.task-card').forEach(card => {
+          const id = card.dataset.id;
+          card.addEventListener('mouseenter', () => prefetchBoardData(teacherCode, id));
           card.addEventListener('click', e => {
-            if (
-              !e.target.closest('.deleteBtn') &&
-              !e.target.closest('.copyBtn')
-            ) {
-              location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${x.id}`;
+            if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
+              location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${id}`;
             }
           });
-          container.appendChild(card);
         });
 
         if (rows[0]) prefetchBoardData(teacherCode, rows[0].id);
