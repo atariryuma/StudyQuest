@@ -381,7 +381,12 @@
 
     area.innerHTML = inputHtml;
     const textarea = area.querySelector('textarea');
-    if (textarea) textarea.focus();
+    if (textarea) {
+        if (stepAnswers[questStep]) {
+            textarea.value = stepAnswers[questStep];
+        }
+        textarea.focus();
+    }
   }
 
   async function handleSend() {
@@ -424,7 +429,9 @@
     }
 
     showThinking(false);
-    renderInputForStep(q, 1);
+    if (questStep !== QuestStep.FINAL_ANSWER) {
+        renderInputForStep(q, 1);
+    }
     updateProgressBar();
     updateSendButton();
   }
