@@ -301,6 +301,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
   const submitTime = submitAt ? new Date(submitAt) : new Date();
   studentSheet.appendRow([submitTime, taskId, questionText, answer,
                           earnedXp, totalXp, level, trophies || '', attemptCount]);
+  removeCacheValue_('history_' + teacherCode + '_' + studentId);
 
   // 全体ログにも追記
   const globalAnswerSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
