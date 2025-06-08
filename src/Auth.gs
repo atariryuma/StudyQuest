@@ -79,7 +79,11 @@ function registerStudentToClass(idToken, info) {
     registration = JSON.parse(blob);
   }
   registration.registrations = registration.registrations || [];
-  registration.registrations.push({ teacherCode: info.teacherCode, studentId: info.studentId });
+  const exists = registration.registrations.some(r =>
+    r.teacherCode === info.teacherCode && r.studentId === info.studentId);
+  if (!exists) {
+    registration.registrations.push({ teacherCode: info.teacherCode, studentId: info.studentId });
+  }
 
   const blob = Utilities.newBlob(JSON.stringify(registration), 'application/json', 'registration.json');
   if (fileId) {
