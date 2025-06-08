@@ -184,6 +184,7 @@
                             <h3 class="font-bold text-pink-400 mb-2">AIペルソナ設定</h3>
                             <div class="space-y-2 text-sm">
                                 <input id="personaInput" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="例: 優しく導く先生" />
+                                <input id="geminiApiKeyInput" type="text" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="Gemini API Key" />
                                 <span id="apiStatus" class="text-green-400 text-xs hidden"></span>
                             </div>
                         </div>
@@ -356,6 +357,8 @@
       document.getElementById('subject').addEventListener('input', saveDraft);
       document.getElementById('question').addEventListener('input', saveDraft);
       document.getElementById('personaInput').addEventListener('change', saveGeminiSettings);
+      const apiInput = document.getElementById('geminiApiKeyInput');
+      if (apiInput) apiInput.addEventListener('change', saveGeminiSettings);
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
       document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
       document.getElementById('deleteDraftBtn').addEventListener('click', () => {
@@ -619,11 +622,13 @@
       // Gemini 設定を取得して表示
       function loadGeminiSettings() {
         google.script.run
-          .withSuccessHandler(persona => {
-            document.getElementById('personaInput').value = persona || '';
+          .withSuccessHandler(res => {
+            document.getElementById('personaInput').value = res.persona || '';
+            const apiInput = document.getElementById('geminiApiKeyInput');
+            if (apiInput) apiInput.value = res.apiKey || '';
             document.getElementById('apiStatus').classList.add('hidden');
           })
-          .getGeminiPersona(teacherCode);
+          .getGeminiSettings(teacherCode);
       }
 
       function loadClassOptions() {
@@ -655,9 +660,17 @@
       // Gemini 設定を保存
       function saveGeminiSettings() {
         const persona = document.getElementById('personaInput').value;
+        const apiKey = document.getElementById('geminiApiKeyInput').value;
         google.script.run
-          .withSuccessHandler(loadGeminiSettings)
-          .setGeminiPersona(teacherCode, persona);
+          .withSuccessHandler(() => {
+            document.getElementById('apiStatus').textContent = '保存しました';
+            document.getElementById('apiStatus').classList.remove('hidden');
+          })
+          .withFailureHandler(err => {
+            document.getElementById('apiStatus').textContent = '保存に失敗: ' + err.message;
+            document.getElementById('apiStatus').classList.remove('hidden');
+          })
+          .setGeminiSettings(teacherCode, apiKey, persona);
       }
 
       function loadSubjectHistory() {
