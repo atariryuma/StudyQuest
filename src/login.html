@@ -26,6 +26,7 @@
     #debugPanel { position: fixed; bottom: 1rem; right: 1rem; width: 320px; max-height: 200px; background: rgba(31, 41, 55, 0.9); border: 1px solid #4b5563; border-radius: 0.5rem; overflow-y: auto; padding: 0.75rem; font-size: 0.75rem; line-height: 1.2; color: #d1d5db; z-index: 100; }
     #debugPanelHeader { font-weight: bold; margin-bottom: 0.5rem; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
     #debugClose { cursor: pointer; color: #f87171; }
+    #devToggleArea { position: fixed; bottom: 0; left: 0; width: 24px; height: 24px; cursor: pointer; }
   </style>
 </head>
 <body class="text-gray-200">
@@ -108,6 +109,7 @@
   </div>
   <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"></div>
   <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center text-white text-xl font-bold select-none">ロード中…</div>
+  <div id="devToggleArea" class="fixed bottom-0 left-0 w-6 h-6"></div>
 
 
   <script>
@@ -198,6 +200,7 @@
       setupFieldFocus();
       const devLoginBtn = document.getElementById('devLoginBtn');
       devLoginSection = document.getElementById('devLoginSection');
+      const devToggleArea = document.getElementById('devToggleArea');
       if (devLoginBtn) {
         devLoginBtn.addEventListener('click', () => {
           google.script.run
@@ -207,6 +210,14 @@
               window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
             })
             .initTeacher('dev_teacher');
+        });
+      }
+      if (devToggleArea) {
+        devToggleArea.addEventListener('click', () => {
+          if (document.getElementById('teacherMode').checked) {
+            devLoginSection.classList.remove('hidden');
+            devLoginRevealed = true;
+          }
         });
       }
       document.addEventListener('keydown', e => {
@@ -368,6 +379,7 @@
         }
       });
       google.accounts.id.prompt();
+      hideLoadingOverlay();
     }
     
     function setupFieldFocus() {
