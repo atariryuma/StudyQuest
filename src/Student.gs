@@ -164,7 +164,20 @@ function initStudent(teacherCode, grade, classroom, number) {
         if (String(r[7] || '') === '1') return;
         const taskId = r[0];
         const createdAt = r[3];
-        subsSheet.appendRow([createdAt, studentId, taskId, '', 0, 0, 0, '', 0, 0]);
+        subsSheet.appendRow([
+          studentId,
+          taskId,
+          '',              // 問題文
+          createdAt,        // 開始日時（課題作成日時）
+          '',               // 提出日時
+          '',               // 成果物URL
+          '',               // 問題概要
+          '',               // 回答概要
+          0,                // 付与XP
+          0,                // 累積XP
+          0,                // レベル
+          ''                // トロフィー
+        ]);
       });
     }
   }
