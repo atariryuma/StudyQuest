@@ -1,5 +1,5 @@
 const { getSqVersion } = require('../src/Code.gs');
 
 test('getSqVersion returns correct version', () => {
-  expect(getSqVersion()).toBe('v1.0.100');
+  expect(getSqVersion()).toBe('v1.0.101');
 });
