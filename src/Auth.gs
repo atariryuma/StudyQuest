@@ -8,11 +8,24 @@
  * @return {{email:string,name:string,sub:string}}
  */
 function verifyGoogleToken(idToken) {
-  if (!idToken) throw new Error('Invalid ID token');
+  console.time('verifyGoogleToken');
+  if (!idToken) {
+    console.timeEnd('verifyGoogleToken');
+    throw new Error('Invalid ID token');
+  }
+  const cacheKey = 'gidTok_' + idToken;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) {
+    console.timeEnd('verifyGoogleToken');
+    return cached;
+  }
   const url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken);
   const res = UrlFetchApp.fetch(url);
   const data = JSON.parse(res.getContentText());
-  return { email: data.email, name: data.name || '', sub: data.sub };
+  const info = { email: data.email, name: data.name || '', sub: data.sub };
+  putCacheValue_(cacheKey, info, 300);
+  console.timeEnd('verifyGoogleToken');
+  return info;
 }
 
 /**
@@ -21,26 +34,39 @@ function verifyGoogleToken(idToken) {
  * @param {string} passcode
  */
 function handleTeacherAuth(idToken, passcode) {
+  console.time('handleTeacherAuth');
   const user = verifyGoogleToken(idToken);
-  const files = Drive.Files.list({
-    q: "name='registration.json' and 'appDataFolder' in parents and trashed=false",
-    spaces: 'appDataFolder'
-  }).items || [];
+  const cacheKey = 'reg_' + user.sub;
+  let registration = getCacheValue_(cacheKey);
+  if (!registration) {
+    const files = Drive.Files.list({
+      q: "name='registration.json' and 'appDataFolder' in parents and trashed=false",
+      spaces: 'appDataFolder'
+    }).items || [];
+    if (files.length > 0) {
+      const blob = DriveApp.getFileById(files[0].id).getBlob().getDataAsString();
+      registration = JSON.parse(blob);
+      putCacheValue_(cacheKey, registration, 300);
+    }
+  }
 
-  if (files.length > 0) {
-    const blob = DriveApp.getFileById(files[0].id).getBlob().getDataAsString();
-    return JSON.parse(blob);
+  if (registration) {
+    console.timeEnd('handleTeacherAuth');
+    return registration;
   }
 
   if (passcode !== 'kyoushi') {
+    console.timeEnd('handleTeacherAuth');
     return { status: 'error', message: 'パスコードが違います。' };
   }
 
   const result = initTeacher(passcode);
   const folderId = PropertiesService.getScriptProperties().getProperty(result.teacherCode);
-  const registration = { role: 'teacher', teacherCode: result.teacherCode, folderId: folderId };
+  registration = { role: 'teacher', teacherCode: result.teacherCode, folderId: folderId };
   const blob = Utilities.newBlob(JSON.stringify(registration), 'application/json', 'registration.json');
   Drive.Files.insert({ title: 'registration.json', parents: [{ id: 'appDataFolder' }] }, blob);
+  putCacheValue_(cacheKey, registration, 300);
+  console.timeEnd('handleTeacherAuth');
   return registration;
 }
 
@@ -49,14 +75,25 @@ function handleTeacherAuth(idToken, passcode) {
  * @param {string} idToken
  */
 function getStudentInfo(idToken) {
-  verifyGoogleToken(idToken); // ensure token is valid
-  const files = Drive.Files.list({
-    q: "name='registration.json' and 'appDataFolder' in parents and trashed=false",
-    spaces: 'appDataFolder'
-  }).items || [];
-  if (files.length === 0) return { status: 'new' };
-  const blob = DriveApp.getFileById(files[0].id).getBlob().getDataAsString();
-  return JSON.parse(blob);
+  console.time('getStudentInfo');
+  const user = verifyGoogleToken(idToken); // ensure token is valid
+  const cacheKey = 'reg_' + user.sub;
+  let info = getCacheValue_(cacheKey);
+  if (!info) {
+    const files = Drive.Files.list({
+      q: "name='registration.json' and 'appDataFolder' in parents and trashed=false",
+      spaces: 'appDataFolder'
+    }).items || [];
+    if (files.length === 0) {
+      info = { status: 'new' };
+    } else {
+      const blob = DriveApp.getFileById(files[0].id).getBlob().getDataAsString();
+      info = JSON.parse(blob);
+    }
+    putCacheValue_(cacheKey, info, 60);
+  }
+  console.timeEnd('getStudentInfo');
+  return info;
 }
 
 /**
@@ -65,7 +102,9 @@ function getStudentInfo(idToken) {
  * @param {{teacherCode:string,grade:string,classroom:string,number:string,studentId:string}} info
  */
 function registerStudentToClass(idToken, info) {
-  verifyGoogleToken(idToken);
+  console.time('registerStudentToClass');
+  const user = verifyGoogleToken(idToken);
+  const cacheKey = 'reg_' + user.sub;
   const files = Drive.Files.list({
     q: "name='registration.json' and 'appDataFolder' in parents and trashed=false",
     spaces: 'appDataFolder'
@@ -77,6 +116,9 @@ function registerStudentToClass(idToken, info) {
     fileId = files[0].id;
     const blob = DriveApp.getFileById(fileId).getBlob().getDataAsString();
     registration = JSON.parse(blob);
+  } else {
+    const cached = getCacheValue_(cacheKey);
+    if (cached) registration = cached;
   }
   registration.registrations = registration.registrations || [];
   const exists = registration.registrations.some(r =>
@@ -91,8 +133,10 @@ function registerStudentToClass(idToken, info) {
   } else {
     Drive.Files.insert({ title: 'registration.json', parents: [{ id: 'appDataFolder' }] }, blob);
   }
+  putCacheValue_(cacheKey, registration, 300);
 
   initStudent(info.teacherCode, info.grade, info.classroom, info.number);
+  console.timeEnd('registerStudentToClass');
   return { status: 'ok' };
 }
 
