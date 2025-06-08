@@ -17,17 +17,15 @@ Google Workspace（Drive／Spreadsheet／Apps Script）を活用し、以下の�
 
 ```txt
 StudyQuest_<TeacherCode>/
-├── StudyQuest_DB_<TeacherCode># すべてのデータを集約した Google Spreadsheet
-│   ├── タブ: 目次
-│   ├── タブ: Tasks
-│   ├── タブ: Students
-│   ├── タブ: Submissions
-│   ├── タブ: AIフィードバックログ
-│   ├── タブ: Settings
-│   └── タブ: 生徒_<StudentID>（個別回答ログ）
-└── Apps Script プロジェクト一式
-    ├── Code.gs, Task.gs, Student.gs, …  
-    └── HTML テンプレート: login.html, manage.html, board.html, quest.html
+├── StudyQuest_DB_<TeacherCode># Central Google Spreadsheet
+│   ├── Tab: TOC
+│   ├── Tab: Tasks
+│   ├── Tab: Students
+│   ├── Tab: Submissions
+│   ├── Tab: AI_Log
+│   ├── Tab: Settings
+│   └── Tab: student_<StudentID>
+└── Apps Script project files
 ```
 
 * **StudyQuest\_DB**
@@ -42,6 +40,9 @@ StudyQuest_<TeacherCode>/
 
 ## スプレッドシート構造
 
+各シートの列名はすべて英語表記ですが、目次シートには日本語で各項目の説明を記載し、
+日本のユーザーが迷わないようにしています。
+
 ### 1. 目次（説明用タブ）
 
 | セクション     | 説明                           |
@@ -53,112 +54,84 @@ StudyQuest_<TeacherCode>/
 
 ### 2. 主要タブ一覧
 
-## 2. 主要タブ一覧
+#### 2.1 Tasks (master)
 
-### 2.1 Tasks（課題マスタ）
+| Col | Name | Type | Description |
+| - | ------------ | ---------- | ------------------------------ |
+| A | TaskID | string | 一意の課題 ID |
+| B | ClassID | string | 対象クラスの ID |
+| C | Payload(JSON) | JSON | `{ subject, question, type, choices?, followup? }` |
+| D | AllowSelfEval | TRUE/FALSE | 自己評価を許可するか |
+| E | CreatedAt | datetime | 公開日時 |
+| F | Persona | string | Gemini API に渡す人格指定 |
+| G | Status | string | `open` or `closed` |
+| H | draft | number | 1 なら下書き扱い |
+#### 2.2 Students（生徒マスタ）
 
-| 列 | 項目名             | 型            | 説明                                                                                      |
-|---|-----------------|--------------|-----------------------------------------------------------------------------------------|
-| A | 課題 ID          | 文字列          | 一意の課題 ID                                                                             |
-| B | ClassID         | 文字列          | 対象クラスの ID                                                                            |
-| C | 問題データ (JSON)  | JSON         | `{ subject, question, type, choices?, followup? }` を保持                                   |
-| D | 自己評価許可         | TRUE／FALSE    | 生徒の自己評価を許可するか                                                                 |
-| E | 作成日時            | 日付時刻        | 課題を公開（または下書き作成）した日時                                                     |
-| F | ペルソナ            | 文字列          | AI フィードやヒント生成時に用いる「声のトーン」や「立場」を定義（例: `"優しく導く先生"`）         |
-| G | 状態               | 文字列          | 課題の公開状態。`open`／`closed`                                                       |
-| H | draft           | TRUE／FALSE    | 編集中フラグ。`TRUE` の場合は UI 上では教師にのみ表示し、生徒画面には公開しない                     |
+| Col | Name | Type | Description |
+| - | ----------- | ---- | --------------------- |
+| A | StudentID | string | `"6-1-04"` 形式の一意 ID |
+| B | Grade | number | 1 〜 6 |
+| C | Class | string | `"1組"` など |
+| D | Number | number | 出席番号 |
+| E | FirstLogin | datetime | 最初のログイン |
+| F | LastLogin | datetime | 最後のログイン |
+| G | LoginCount | number | ログイン総回数 |
+| H | TotalXP | number | 獲得した XP 合計 |
+| I | Level | number | 現在のレベル |
+| J | LastTrophyID | string | 最後に得たトロフィー（複数はカンマ区切り） |
 
-> **開発メモ**  
-> - `draft` は課題公開前の下書きに利用。  
-> - `ペルソナ` は Gemini API 等でプロンプトを組み立てる際に必須。空文字の場合はデフォルトトーンを使用。  
-> - `作成日時` は公開タイミングにも使えるが、将来的には `公開日時` カラムを別途設ける検討も可。  
+#### 2.3 Submissions（学習ログ）
 
----
+| Col | Name | Type | Description |
+| - | -------------- | ---- | --------------------- |
+| A | StudentID | string | Students!A への外部キー |
+| B | TaskID | string | Tasks!A への外部キー |
+| C | Question | text | 生徒に提示した質問文 |
+| D | StartedAt | datetime | 学習開始時刻 |
+| E | SubmittedAt | datetime | 回答送信時刻 |
+| F | ProductURL | string | 回答成果物へのリンク |
+| G | QuestionSummary | string | 質問文の要約（カンマ区切り） |
+| H | AnswerSummary | string | 生徒の回答要約（カンマ区切り） |
+| I | EarnedXP | number | この提出で付与した XP |
+| J | TotalXP | number | 提出後の累積 XP |
+| K | Level | number | 提出後のレベル |
+| L | Trophy | string | 獲得トロフィー ID（複数はカンマ区切り） |
+| M | Status | number | クエストが未完了か、完了済みか。 |
 
-### 2.2 Students（生徒マスタ）
+#### 2.4 AIフィードバックログ
 
-| 列 | 項目名               | 型       | 説明                                 |
-|---|-------------------|---------|------------------------------------|
-| A | 生徒ID              | 文字列     | `"6-1-04"` 形式の一意 ID                |
-| B | 学年                | 数値      | 1 〜 6                              |
-| C | 組                 | 文字列     | `"1組"` など                          |
-| D | 番号                | 数値      | 出席番号                              |
-| E | 初回ログイン日時         | 日付時刻   | 最初のログイン                       |
-| F | 最終ログイン日時         | 日付時刻   | 最後のログイン                       |
-| G | 累計ログイン回数         | 数値      | ログイン総回数                       |
-| H | 累積XP              | 数値      | 獲得した XP 合計                      |
-| I | 現在レベル             | 数値      | 現在のレベル                         |
-| J | 最終獲得トロフィーID      | 文字列     | 最後に得たトロフィー（複数はカンマ区切り）        |
+| Col | Name | Type | Description |
+| - | ------------- | ---- | ------------------------- |
+| A | LogID | number | 一意のログ ID |
+| B | SubmissionID | string | Submissions!A への外部キー |
+| C | Content | text | Gemini API から取得したヒントやコメント |
+| D | CreatedAt | datetime | API 呼び出し日時 |
 
-> **開発メモ**  
-> - `生徒ID` はクライアント側で `grade-class-number` 形式で組み立て。  
-> - 通信量削減のため、ページ読み込み時に最低限のプロパティのみ取得し、詳細は必要に応じてフェッチ。  
+#### 2.5 Settings（各種設定）
 
----
-
-### 2.3 Submissions（学習ログ）
-
-| 列 | 項目名         | 型        | 説明                                 |
-|---|-------------|----------|------------------------------------|
-| A | 生徒ID        | 文字列      | Students!A への外部キー                |
-| B | 課題ID        | 文字列      | Tasks!A への外部キー                  |
-| C | 問題文         | テキスト     | 生徒に提示した質問文                    |
-| D | 開始日時        | 日付時刻     | 学習開始時刻                          |
-| E | 提出日時        | 日付時刻     | 回答送信時刻                          |
-| F | 成果物URL       | 文字列      | 回答成果物へのリンク                   |
-| G | 問題概要        | 文字列      | 質問文の要約（カンマ区切り）              |
-| H | 回答概要        | 文字列      | 生徒の回答要約（カンマ区切り）            |
-| I | 付与XP        | 数値       | この提出で付与した XP                  |
-| J | 累積XP        | 数値       | 提出後の累積 XP                       |
-| K | レベル         | 数値       | 提出後のレベル                        |
-| L | トロフィー       | 文字列      | 獲得トロフィー ID（複数はカンマ区切り）       |
-| M | ステータス       | 文字列      | `un` (未完了) / `done` (完了済み)        |
-
----
-
-### 2.4 AIフィードバックログ
-
-| 列 | 項目名             | 型        | 説明                                    |
-|---|-----------------|----------|---------------------------------------|
-| A | LogID           | 自動採番    | 一意のログ ID                             |
-| B | SubmissionID    | 文字列      | Submissions!A への外部キー               |
-| C | フィード内容        | テキスト     | Gemini API から取得したヒントやコメント           |
-| D | 生成日時          | 日付時刻     | API 呼び出し日時                          |
-
----
-
-### 2.5 Settings（各種設定）
-
-| 列 | 項目名   | 型     | 説明                              |
-|---|-------|-------|---------------------------------|
-| A | type  | 文字列   | 設定の種類（例: `classList`, `theme`） |
-| B | value1| 文字列   | 設定値1                            |
-| C | value2| 文字列   | 設定値2（必要時）                     |
-| D | note  | 文字列   | 補足説明（任意）                     |
-
----
+| 列 | 項目名    | 型   | 説明                    |
+| - | ------ | --- | --------------------- |
+| A | type   | 文字列 | 設定の種類（例: `classList`） |
+| B | value1 | 文字列 | 設定値1                  |
+| C | value2 | 文字列 | 設定値2（必要時）             |
 
 ### 3. 生徒_<StudentID>（個別回答ログ）
 
 * **シート名**: `生徒_<StudentID>`
 * **列定義**:
 
-| 列 | 項目名    | 型        | 説明                            |
-|---|--------|----------|-------------------------------|
-| A | 日時     | 日付時刻   | 回答日時                          |
-| B | 課題ID   | 文字列     | Tasks!A への外部キー           |
-| C | 課題内容   | テキスト    | 質問文                           |
-| D | 回答本文   | テキスト    | 生徒が入力した回答                   |
-| E | 付与XP   | 数値      | この回答で付与された XP             |
-| F | 累積XP   | 数値      | 回答後の累積 XP                  |
-| G | レベル    | 数値      | 回答後のレベル                   |
-| H | トロフィー  | 文字列     | 獲得トロフィー ID                  |
-| I | 回答回数   | 数値      | 同一課題への回答回数                 |
-
-> **開発メモ**  
-> - 各生徒シートはログイン時に存在チェック → 無ければ `Submissions` から自動生成。  
-> - 個別ログは UI の「マイ回答」画面でのみ参照し、一覧描画は画面側でフェッチ。  
-
+| Col | Name | Type | Description |
+| - | --------- | ---- | -------------- |
+| A | Timestamp | datetime | 回答日時 |
+| B | TaskID | string | Tasks!A への外部キー |
+| C | Question | text | 質問文 |
+| D | Answer | text | 生徒が入力した回答 |
+| E | EarnedXP | number | この回答で付与された XP |
+| F | TotalXP | number | 回答後の累積 XP |
+| G | Level | number | 回答後のレベル |
+| H | Trophy | string | 獲得トロフィー ID |
+| I | Attempts | number | 同一課題への回答回数 |
 
 ## 開発ガイドライン
 

@@ -151,6 +151,13 @@ function closeTask(teacherCode, taskId) {
   if (idx >= 0) {
     sheet.getRange(idx + 2, 7).setValue('closed');
   }
+  const subs = ss.getSheetByName(SHEET_SUBMISSIONS);
+  if (subs && subs.getLastRow() > 1) {
+    const subIds = subs.getRange(2, 2, subs.getLastRow() - 1, 1).getValues().flat();
+    subIds.forEach((v, i) => {
+      if (v === taskId) subs.getRange(i + 2, 13).setValue(1);
+    });
+  }
 }
 
 /**
@@ -262,7 +269,8 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
       earnedXp,
       totalXp,
       level,
-      trophies || ''
+      trophies || '',
+      1
     ]);
   } else {
     console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
