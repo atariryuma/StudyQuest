@@ -7,14 +7,6 @@ function loadTeacher(context) {
   vm.runInNewContext(code, context);
 }
 
-test('initTeacher rejects wrong passcode', () => {
-  const context = {
-    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) }
-  };
-  loadTeacher(context);
-  const result = context.initTeacher('wrong');
-  expect(result.status).toBe('error');
-});
 
 test('initTeacher returns existing code if already stored', () => {
   const props = { ABC123: 'fid' };
@@ -34,6 +26,6 @@ test('initTeacher returns existing code if already stored', () => {
   loadTeacher(context);
   context.detectTeacherFolderOnDrive_ = jest.fn(() => null);
   context.findLatestFolderByName_ = jest.fn(() => ({ getDateCreated: () => new Date() }));
-  const result = context.initTeacher('kyoushi');
+  const result = context.initTeacher();
   expect(result).toEqual({ status: 'ok', teacherCode: 'ABC123' });
 });

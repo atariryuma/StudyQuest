@@ -88,13 +88,10 @@ function detectTeacherFolderOnDrive_() {
 }
 
 /**
- * initTeacher(passcode):
+ * initTeacher():
  * 教師用初回ログイン or 2回目以降の判定 → スプレッドシートを生成 or 取得
  */
-function initTeacher(passcode) {
-  if (passcode !== 'kyoushi') {
-    return { status: 'error', message: 'パスコードが違います。' };
-  }
+function initTeacher() {
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
 
