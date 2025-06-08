@@ -95,10 +95,18 @@ function initTeacher(passcode) {
   if (passcode !== 'kyoushi') {
     return { status: 'error', message: 'パスコードが違います。' };
   }
+  const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
+
+  const stored = props.getProperty('teacherCode_' + email);
+  if (stored) {
+    return { status: 'ok', teacherCode: stored };
+  }
+
   const info = detectTeacherFolderOnDrive_();
   if (info) {
     props.setProperty(info.code, info.id);
+    props.setProperty('teacherCode_' + email, info.code);
     return { status: 'ok', teacherCode: info.code };
   }
   const existingCodes = props.getKeys().filter(key => key.match(/^[A-Z0-9]{6}$/));
@@ -115,6 +123,7 @@ function initTeacher(passcode) {
     }
   });
   if (foundCode) {
+    props.setProperty('teacherCode_' + email, foundCode);
     return { status: 'ok', teacherCode: foundCode };
   }
   // 新規作成
@@ -122,6 +131,7 @@ function initTeacher(passcode) {
   const folderName = FOLDER_NAME_PREFIX + newCode;
   const folderInstance = DriveApp.createFolder(folderName);
   props.setProperty(newCode, folderInstance.getId());
+  props.setProperty('teacherCode_' + email, newCode);
   initializeFolders(newCode, [], folderInstance);
 
   const ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);

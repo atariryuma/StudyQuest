@@ -13,7 +13,7 @@ const SHEET_AI_FEEDBACK = 'AI_Log';
 const SHEET_SETTINGS  = 'Settings';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const SQ_VERSION           = 'v1.0.136';
+const SQ_VERSION           = 'v1.0.137';
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */
@@ -47,6 +47,14 @@ function include(filename) {
  */
 function getSqVersion() {
   return SQ_VERSION;
+}
+
+/**
+ * 現在ログイン中のユーザー情報を返す
+ */
+function getCurrentUser() {
+  const email = Session.getEffectiveUser().getEmail();
+  return { email: email };
 }
 
 // Export for testing in Node.js environment

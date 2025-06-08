@@ -61,6 +61,7 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
       base64Decode: str => Buffer.from(str, 'base64'),
       newBlob: data => ({ getDataAsString: () => data.toString() })
     },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) },
     SHEET_SETTINGS: 'Settings',
     getSpreadsheetByTeacherCode: () => ssStub
   };
@@ -126,6 +127,7 @@ test('initTeacher tasks sheet header includes draft column', () => {
       base64Decode: str => Buffer.from(str, 'base64'),
       newBlob: data => ({ getDataAsString: () => data.toString() })
     },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) },
     SHEET_SETTINGS: 'Settings',
     getSpreadsheetByTeacherCode: () => ssStub
   };
@@ -190,6 +192,7 @@ test('initTeacher submissions sheet header matches README order', () => {
       base64Decode: str => Buffer.from(str, 'base64'),
       newBlob: data => ({ getDataAsString: () => data.toString() })
     },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) },
     SHEET_SETTINGS: 'Settings',
     getSpreadsheetByTeacherCode: () => ssStub
   };
@@ -228,6 +231,7 @@ test('saveTeacherSettings persists values correctly and global key handling', ()
       base64Decode: str => Buffer.from(str, 'base64'),
       newBlob: data => ({ getDataAsString: () => data.toString() })
     },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) },
     SHEET_SETTINGS: 'Settings',
     getSpreadsheetByTeacherCode: () => ssStub
   };
