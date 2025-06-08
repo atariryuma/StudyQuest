@@ -266,12 +266,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
-      document.getElementById('debugClose').addEventListener('click', () => {
-        debugPanel.classList.add('hidden');
-      });
-      document.getElementById('versionInfo').addEventListener('click', () => {
-        debugPanel.classList.remove('hidden');
-      });
+      debugPanel.classList.remove('hidden');
 
       debug('🔄 ページ読み込み完了');
       gsap.from('#loginBox', { scale: 0, duration: 0.6, ease: 'back' });
@@ -468,7 +463,7 @@
   </script>
 
   <!-- デバッグパネル（左下） -->
-  <div id="debugPanel" class="hidden">
+  <div id="debugPanel">
     <div id="debugPanelHeader">
       <span>デバッグログ</span>
       <span id="debugClose">✕</span>

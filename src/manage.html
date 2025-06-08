@@ -69,6 +69,35 @@
             --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
             box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
         }
+        /* デバッグパネル */
+        #debugPanel {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            width: 320px;
+            max-height: 200px;
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+            overflow-y: auto;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            line-height: 1.2;
+            color: #d1d5db;
+            z-index: 50;
+        }
+        #debugPanelHeader {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #9ca3af;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #debugClose {
+            cursor: pointer;
+            color: #f87171;
+        }
     </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
@@ -322,12 +351,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
-      document.getElementById('debugClose').addEventListener('click', () => {
-        debugPanel.classList.add('hidden');
-      });
-      document.getElementById('versionInfo').addEventListener('click', () => {
-        debugPanel.classList.remove('hidden');
-      });
+      debugPanel.classList.remove('hidden');
 
       debug('🔄 ページ読み込み完了');
       debug(`▶ teacherCode="${teacherCode}"`);
@@ -516,6 +540,7 @@
       const taskForm = document.getElementById('taskForm');
       taskForm.addEventListener('submit', e => {
         e.preventDefault();
+        debug('taskForm submit');
 
         const clsCheckboxes = Array.from(document.querySelectorAll('input[name="taskClassCheckbox"]:checked'));
         const classIds = clsCheckboxes.map(cb => cb.value);
@@ -566,6 +591,7 @@
         const total = classIds.length;
         const onSuccess = () => {
           completed++;
+          debug('createTask success ' + completed + '/' + total);
           if (completed === total) {
             loadTasks();
             updateWidgets();
@@ -582,10 +608,12 @@
         classIds.forEach(cid => {
           const payload = makePayload(cid);
           if (!payload) return;
+          debug('createTask for class ' + cid);
           google.script.run
             .withSuccessHandler(onSuccess)
             .withFailureHandler(err => {
               alert('課題作成中にエラーが発生しました: ' + err.message);
+              debug('createTask failed: ' + err.message);
             })
             .createTask(teacherCode, payload, self, persona);
         });
@@ -671,15 +699,21 @@
 
       // Gemini 設定を取得して表示
       function loadGeminiSettings() {
+        debug('loadGeminiSettings');
         google.script.run
           .withSuccessHandler(res => {
             document.getElementById('personaInput').value = res.persona || '';
             document.getElementById('apiStatus').classList.add('hidden');
+            debug('loadGeminiSettings success');
+          })
+          .withFailureHandler(err => {
+            debug('loadGeminiSettings failed: ' + err.message);
           })
           .getGeminiSettings(teacherCode);
       }
 
       function loadClassOptions() {
+        debug('loadClassOptions');
         google.script.run
           .withSuccessHandler(map => {
             registeredClasses = Object.keys(map).map(id => map[id].split('-'));
@@ -701,21 +735,27 @@
           }
           renderClassCards(map);
         })
-          .withFailureHandler(err => alert('取得に失敗: ' + err.message))
+          .withFailureHandler(err => {
+            debug('loadClassOptions failed: ' + err.message);
+            alert('取得に失敗: ' + err.message);
+          })
           .getClassIdMap(teacherCode);
       }
 
       // Gemini 設定を保存
       function saveGeminiSettings() {
         const persona = document.getElementById('personaInput').value;
+        debug('saveGeminiSettings');
         google.script.run
           .withSuccessHandler(() => {
             document.getElementById('apiStatus').textContent = '保存しました';
             document.getElementById('apiStatus').classList.remove('hidden');
+            debug('saveGeminiSettings success');
           })
           .withFailureHandler(err => {
             document.getElementById('apiStatus').textContent = '保存に失敗: ' + err.message;
             document.getElementById('apiStatus').classList.remove('hidden');
+            debug('saveGeminiSettings failed: ' + err.message);
           })
           .setGeminiSettings(teacherCode, undefined, persona);
       }
@@ -867,14 +907,16 @@
 
       /**
        * 画面下部の「課題一覧」を取得して表示する
-       */
+      */
       function loadTasks() {
+        debug('loadTasks');
         google.script.run
           .withSuccessHandler(renderTasks)
           .withFailureHandler(err => {
             console.error('listTasks エラー:', err);
             document.getElementById('tasksContainer').innerHTML =
               '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
+            debug('loadTasks failed: ' + err.message);
           })
           .listTasks(teacherCode);
       }
@@ -1074,7 +1116,7 @@
   </script>
 
   <!-- デバッグパネル（左下） -->
-  <div id="debugPanel" class="hidden">
+  <div id="debugPanel">
     <div id="debugPanelHeader">
       <span>デバッグログ</span>
       <span id="debugClose">✕</span>

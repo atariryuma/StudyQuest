@@ -178,12 +178,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
-      document.getElementById('debugClose').addEventListener('click', () => {
-        debugPanel.classList.add('hidden');
-      });
-      document.getElementById('versionInfo').addEventListener('click', () => {
-        debugPanel.classList.remove('hidden');
-      });
+      debugPanel.classList.remove('hidden');
 
       const params = new URLSearchParams(location.search);
       const teacherCode = params.get('teacher');
@@ -364,7 +359,7 @@
   </script>
 
   <!-- デバッグパネル（左下） -->
-  <div id="debugPanel" class="hidden">
+  <div id="debugPanel">
     <div id="debugPanelHeader">
       <span>デバッグログ</span>
       <span id="debugClose">✕</span>
