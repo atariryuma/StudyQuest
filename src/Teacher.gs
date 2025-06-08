@@ -1,6 +1,12 @@
 /**
  * generateTeacherCode(): 6桁英数字のユニークな教師コードを生成
  */
+if (typeof getCacheValue_ !== 'function') {
+  function getCacheValue_() { return null; }
+  function putCacheValue_() {}
+  function removeCacheValue_() {}
+}
+
 function generateTeacherCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
@@ -227,9 +233,14 @@ function saveTeacherSettings_(teacherCode, obj) {
   if (Array.isArray(obj.classes)) {
     obj.classes.forEach(c => sheet.appendRow(['class', c[0], c[1]]));
   }
+  removeCacheValue_('settings_' + teacherCode);
 }
 
 function loadTeacherSettings_(teacherCode) {
+  const cacheKey = 'settings_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   const data = { persona: '', classes: [] };
   if (ss) {
@@ -243,6 +254,7 @@ function loadTeacherSettings_(teacherCode) {
       }
     }
   }
+  putCacheValue_(cacheKey, data, 21600);
   return data;
 }
 
@@ -306,6 +318,7 @@ function initializeFolders(teacherCode, classList, root) {
   const current = loadTeacherSettings_(teacherCode);
   current.classes = classList;
   saveTeacherSettings_(teacherCode, current);
+  removeCacheValue_('classmap_' + teacherCode);
   return map;
 }
 
@@ -325,10 +338,15 @@ function setClassIdMap(teacherCode, idsString) {
     });
   }
   const map = initializeFolders(teacherCode, list);
+  removeCacheValue_('classmap_' + teacherCode);
   return map;
 }
 
 function getClassIdMap(teacherCode) {
+  const cacheKey = 'classmap_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+
   const data = loadTeacherSettings_(teacherCode);
   const map = {};
   (data.classes || []).forEach((c, idx) => {
@@ -336,6 +354,7 @@ function getClassIdMap(teacherCode) {
       map[idx + 1] = `${c[0]}-${c[1]}`;
     }
   });
+  putCacheValue_(cacheKey, map, 3600);
   return map;
 }
 

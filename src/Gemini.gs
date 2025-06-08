@@ -4,6 +4,10 @@
  * @param {string} persona - 任意のペルソナ文（先頭に付与される）
  * @return {string} Geminiからの応答テキスト、またはエラーメッセージ
  */
+if (typeof logError_ !== 'function') {
+  function logError_() {}
+}
+
 function callGeminiAPI_GAS(prompt, persona) {
   const base = String(persona || '').trim();
   const finalPrompt = base ? base + '\n' + prompt : prompt;
@@ -31,8 +35,17 @@ function callGeminiAPI_GAS(prompt, persona) {
     muteHttpExceptions: true
   };
 
-  const res = UrlFetchApp.fetch(url, options);
-  const obj = JSON.parse(res.getContentText());
+  let obj;
+  try {
+    const res = UrlFetchApp.fetch(url, options);
+    obj = JSON.parse(res.getContentText());
+  } catch (e) {
+    if (e.message && e.message.indexOf('Service invoked too many times') !== -1) {
+      return '現在、サーバーが混み合っています。しばらくしてから再度お試しください。';
+    }
+    logError_('callGeminiAPI_GAS', e);
+    return 'AIからの応答がありませんでした。';
+  }
 
   // レスポンスの解析部分は変更なし
   if (obj.candidates && obj.candidates[0] && obj.candidates[0].content) {
