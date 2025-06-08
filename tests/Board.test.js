@@ -49,6 +49,7 @@ test('listBoard reads new submission columns', () => {
   };
   loadBoard(context);
   const rows = context.listBoard('ABC');
+  expect(sheetStub.getRange).toHaveBeenCalledWith(2, 1, subsData.length, 12);
   expect(rows[0]).toEqual({
     studentId: 's2',
     answer: 'as2',
@@ -58,4 +59,30 @@ test('listBoard reads new submission columns', () => {
     trophies: ''
   });
   expect(rows[1].studentId).toBe('s1');
+});
+
+test('listTaskBoard uses QUERY to limit results', () => {
+  const tempData = [
+    ['s3','t1','Q',new Date(),'','', '', 'ans', 1, 1, 1, '']
+  ];
+  const tempSheet = {
+    getRange: jest.fn(() => ({ setFormula: jest.fn(), getValues: () => tempData })),
+    getLastRow: jest.fn(() => tempData.length + 1)
+  };
+  const ssStub = {
+    getSheetByName: jest.fn(() => ({})),
+    insertSheet: jest.fn(() => tempSheet),
+    deleteSheet: jest.fn()
+  };
+  const context = {
+    SHEET_SUBMISSIONS: 'Submissions',
+    SpreadsheetApp: { flush: jest.fn() },
+    getSpreadsheetByTeacherCode: () => ssStub
+  };
+  loadBoard(context);
+  const rows = context.listTaskBoard('ABC', 't1');
+  expect(ssStub.insertSheet).toHaveBeenCalled();
+  expect(context.SpreadsheetApp.flush).toHaveBeenCalled();
+  expect(ssStub.deleteSheet).toHaveBeenCalledWith(tempSheet);
+  expect(rows[0].studentId).toBe('s3');
 });

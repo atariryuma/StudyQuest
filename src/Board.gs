@@ -1,3 +1,5 @@
+const BOARD_FETCH_LIMIT = 30;
+
 function listBoard(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
@@ -8,10 +10,10 @@ function listBoard(teacherCode) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
   const lastCol = Math.min(sheet.getLastColumn(), 12);
-  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
-  const sliceStart = Math.max(0, data.length - 30);
-  const slice = data.slice(sliceStart).reverse();
-  return slice.map(row => ({
+  const numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
+  const startRow = lastRow - numRows + 1;
+  const data = sheet.getRange(startRow, 1, numRows, lastCol).getValues().reverse();
+  return data.map(row => ({
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
@@ -30,12 +32,16 @@ function listTaskBoard(teacherCode, taskId) {
   if (!ss) return [];
   const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (!sheet) return [];
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
-  const lastCol = Math.min(sheet.getLastColumn(), 12);
-  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
-  const filtered = data.filter(r => r[1] === taskId).reverse();
-  return filtered.map(row => ({
+
+  const temp = ss.insertSheet();
+  const query = `=QUERY(${SHEET_SUBMISSIONS}!A:L,"where B='${taskId}' order by E desc limit ${BOARD_FETCH_LIMIT}",0)`;
+  temp.getRange(1, 1).setFormula(query);
+  SpreadsheetApp.flush();
+  const rows = Math.max(temp.getLastRow() - 1, 0);
+  if (rows === 0) { ss.deleteSheet(temp); return []; }
+  const data = temp.getRange(2, 1, rows, 12).getValues();
+  ss.deleteSheet(temp);
+  return data.map(row => ({
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
