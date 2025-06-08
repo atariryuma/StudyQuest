@@ -53,13 +53,13 @@ test('generateProblemPrompt builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((t, p, persona) => {
-    calls.push({ t, p, persona });
+  context.callGeminiAPI_GAS = jest.fn((p, persona) => {
+    calls.push({ p, persona });
     return 'ok';
   });
   const res = context.generateProblemPrompt('T1', 'Math', 'fractions', 'P');
   expect(res).toBe('ok');
-  expect(calls[0].t).toBe('T1');
+  // teacherCode is ignored by callGeminiAPI_GAS
   expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('Math');
   expect(calls[0].p).toContain('fractions');
@@ -69,13 +69,13 @@ test('generateChoicePrompt builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((t, p, persona) => {
-    calls.push({ t, p, persona });
+  context.callGeminiAPI_GAS = jest.fn((p, persona) => {
+    calls.push({ p, persona });
     return 'ok';
   });
   const res = context.generateChoicePrompt('T2', 'What?', '単語', 3, 'P');
   expect(res).toBe('ok');
-  expect(calls[0].t).toBe('T2');
+  // teacherCode is ignored by callGeminiAPI_GAS
   expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('What?');
   expect(calls[0].p).toContain('単語');
@@ -86,13 +86,13 @@ test('generateDeepeningPrompt builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((t, p, persona) => {
-    calls.push({ t, p, persona });
+  context.callGeminiAPI_GAS = jest.fn((p, persona) => {
+    calls.push({ p, persona });
     return 'ok';
   });
   const res = context.generateDeepeningPrompt('T3', 'Explain gravity', 'P');
   expect(res).toBe('ok');
-  expect(calls[0].t).toBe('T3');
+  // teacherCode is ignored by callGeminiAPI_GAS
   expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('Explain gravity');
 });
