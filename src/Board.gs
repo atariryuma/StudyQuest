@@ -34,14 +34,26 @@ function listTaskBoard(teacherCode, taskId) {
   if (!sheet) return [];
 
   const temp = ss.insertSheet();
-  const query = `=QUERY(${SHEET_SUBMISSIONS}!A:M,"where B='${taskId}' order by E desc limit ${BOARD_FETCH_LIMIT}",0)`;
+  const query = `=QUERY(${SHEET_SUBMISSIONS}!A:M,"where B='${taskId}' order by E desc",0)`;
   temp.getRange(1, 1).setFormula(query);
   SpreadsheetApp.flush();
   const rows = Math.max(temp.getLastRow() - 1, 0);
   if (rows === 0) { ss.deleteSheet(temp); return []; }
   const data = temp.getRange(2, 1, rows, 13).getValues();
   ss.deleteSheet(temp);
-  return data.map(row => ({
+
+  const uniq = {};
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    if (!uniq[r[0]]) {
+      uniq[r[0]] = true;
+      result.push(r);
+      if (result.length >= BOARD_FETCH_LIMIT) break;
+    }
+  }
+
+  return result.map(row => ({
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
