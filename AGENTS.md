@@ -95,3 +95,80 @@
 ---
 
 お忙しいところ恐縮ですが、本件、何卒よろしくお願いいたします。
+
+
+
+
+
+
+
+【推奨】「開発モード」を導入する戦略
+最も簡単で効果的なのは、開発中だけ使える特別なログインフローを用意することです。これを「開発モード」と呼びます。
+
+1. Apps Script (.gs) 側での準備
+initTeacher や initStudent のような認証を行う関数に、「開発モード」用の抜け道を作ります。特定のパスコード（例: dev）が送られてきたら、認証をスキップしてダミーの成功レスポンスを返すようにします。
+
+Teacher.gs の修正例
+
+// src/Teacher.gs
+
+function initTeacher(passcode) {
+  // ▼▼▼ 開発モード用のコードを追加 ▼▼▼
+  if (passcode === 'dev_teacher') {
+    // 開発用のダミーデータを返す
+    return { 
+      status: 'ok', 
+      teacherCode: 'DEV001' // 開発用の固定教師コード
+    };
+  }
+  // ▲▲▲ 開発モード用のコードを追加 ▲▲▲
+
+  // --- 以下、本番用の通常の処理 ---
+  if (passcode !== 'kyoushi') {
+    return { status: 'error', message: 'パスコードが違います。' };
+  }
+  // ...
+}
+
+2. HTML側での準備
+ログイン画面に「開発モードでログイン」というボタンを追加します。このボタンが押されたら、先ほど設定した特別なパスコード（dev_teacher）を使ってログイン処理を呼び出します。
+
+login.html の修正例
+
+<!-- login.html のどこか（フォームの下など）に追加 -->
+<div class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg">
+  <h3 class="text-yellow-400 font-bold mb-2">【開発者向け】</h3>
+  <p class="text-xs text-gray-400 mb-2">
+    開発中は、以下のボタンで認証をスキップできます。
+  </p>
+  <button id="devLoginBtn" type="button" class="w-full bg-yellow-600 text-white p-2 rounded-lg font-bold border-b-4 border-yellow-800 hover:bg-yellow-500">
+    開発モードでログイン (教師)
+  </button>
+</div>
+
+login.html の <script> の修正例
+
+// login.html の script タグ内
+
+document.addEventListener('DOMContentLoaded', () => {
+  // ... 既存の処理 ...
+
+  // ▼▼▼ 開発モード用ボタンの処理を追加 ▼▼▼
+  const devLoginBtn = document.getElementById('devLoginBtn');
+  if (devLoginBtn) {
+    devLoginBtn.addEventListener('click', () => {
+      // 特別なパスコードで initTeacher を呼び出す
+      google.script.run
+        .withSuccessHandler(result => {
+          // 本来のログイン成功時と同じ処理
+          const { teacherCode } = result;
+          alert('開発モードでログインしました。');
+          window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+        })
+        .initTeacher('dev_teacher'); // 開発用のパスコード
+    });
+  }
+  // ▲▲▲ 開発モード用ボタンの処理を追加 ▲▲▲
+});
+
+
