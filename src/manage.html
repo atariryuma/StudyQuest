@@ -765,22 +765,21 @@
           .setGeminiSettings(teacherCode, undefined, persona);
       }
 
-      function loadSubjectHistory() {
-        const list = document.getElementById('subjectHistory');
-        if (!list) return;
-        list.innerHTML = '';
-        let hist = [];
-        try {
-          hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
-        } catch (_) {
-          hist = [];
+        function loadSubjectHistory() {
+          const list = document.getElementById('subjectHistory');
+          if (!list) return;
+          let hist = [];
+          try {
+            hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+          } catch (_) {
+            hist = [];
+          }
+          let html = '';
+          hist.forEach(s => {
+            html += `<option value="${escapeHtml(s)}"></option>`;
+          });
+          list.innerHTML = html;
         }
-        hist.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s;
-          list.appendChild(opt);
-        });
-      }
 
       function addSubjectHistory(subj) {
         try {
@@ -829,27 +828,27 @@
         creditEl.innerHTML = `生成クレジット: ${diamonds}`;
       }
 
-      function updateGenerationHistory() {
-        const wrapper = document.getElementById('generationHistoryWrapper');
-        const container = document.getElementById('generationHistory');
-        if (!wrapper || !container) return;
-        if (generationHistory.length === 0) {
-          wrapper.classList.add('hidden');
-          return;
+        function updateGenerationHistory() {
+          const wrapper = document.getElementById('generationHistoryWrapper');
+          const container = document.getElementById('generationHistory');
+          if (!wrapper || !container) return;
+          if (generationHistory.length === 0) {
+            wrapper.classList.add('hidden');
+            return;
+          }
+          wrapper.classList.remove('hidden');
+          let html = '';
+          for (let i = generationHistory.length - 1; i >= 0; i--) {
+            const historySet = generationHistory[i];
+            const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+            html += `
+              <div class="border-t border-gray-700 pt-2">
+                <p class="text-xs font-bold text-gray-500">履歴 ${i + 1}</p>
+                <ul class="list-disc list-inside text-xs">${listItems}</ul>
+              </div>`;
+          }
+          container.innerHTML = html;
         }
-        wrapper.classList.remove('hidden');
-        container.innerHTML = '';
-        generationHistory.forEach((historySet, index) => {
-          const historyEntry = document.createElement('div');
-          historyEntry.className = 'border-t border-gray-700 pt-2';
-          const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-          historyEntry.innerHTML = `
-            <p class="text-xs font-bold text-gray-500">履歴 ${index + 1}</p>
-            <ul class="list-disc list-inside text-xs">${listItems}</ul>
-          `;
-          container.prepend(historyEntry);
-        });
-      }
 
 
       // 9) フォームリセットヘルパー
@@ -873,33 +872,31 @@
       }
 
       // 選択肢入力欄を動的生成
-      function renderOptionInputs(choices = []) {
-        const container = document.getElementById('optionInputs');
-        const controls = document.getElementById('optionControls');
-        if (!container) return;
-        container.innerHTML = '';
-        if (controls) controls.innerHTML = '';
-        if (choices.length === 0) choices = [''];
+        function renderOptionInputs(choices = []) {
+          const container = document.getElementById('optionInputs');
+          const controls = document.getElementById('optionControls');
+          if (!container) return;
+          if (choices.length === 0) choices = [''];
 
-        choices.forEach((choice, index) => {
-          const div = document.createElement('div');
-          div.className = 'flex items-center gap-2';
-          div.innerHTML = `
-            <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
-            <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
-          `;
-          container.appendChild(div);
-        });
+          let html = '';
+          choices.forEach((choice, index) => {
+            html += `
+              <div class="flex items-center gap-2">
+                <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
+                <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+              </div>`;
+          });
+          container.innerHTML = html;
 
-        if (controls) {
-          controls.innerHTML = `
-            <button type="button" id="addOptionBtn" class="text-green-400 hover:text-green-300">+ 選択肢を追加</button>
-            <button type="button" id="removeOptionBtn" class="text-red-400 hover:text-red-300">- 最後を削除</button>
-          `;
+          if (controls) {
+            controls.innerHTML = `
+              <button type="button" id="addOptionBtn" class="text-green-400 hover:text-green-300">+ 選択肢を追加</button>
+              <button type="button" id="removeOptionBtn" class="text-red-400 hover:text-red-300">- 最後を削除</button>
+            `;
+          }
+
+          renderIcons(document);
         }
-
-        renderIcons(document);
-      }
 
       // 既存課題をフォームに読み込む
       function loadTaskIntoForm(task) {
