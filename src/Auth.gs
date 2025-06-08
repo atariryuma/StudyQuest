@@ -2,6 +2,12 @@
  * Authentication helper functions using Google Identity Services.
  */
 
+// Expected OAuth client ID used to verify ID tokens
+const OAUTH_CLIENT_ID =
+  (typeof PropertiesService !== 'undefined' &&
+   PropertiesService.getScriptProperties().getProperty('OAUTH_CLIENT_ID')) ||
+  'YOUR_CLIENT_ID';
+
 /**
  * Verify ID token issued by Google Identity Services and return basic user info.
  * @param {string} idToken
@@ -22,6 +28,10 @@ function verifyGoogleToken(idToken) {
   const url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken);
   const res = UrlFetchApp.fetch(url);
   const data = JSON.parse(res.getContentText());
+  if (data.aud !== OAUTH_CLIENT_ID) {
+    console.timeEnd('verifyGoogleToken');
+    throw new Error('OAuth client ID mismatch');
+  }
   const info = { email: data.email, name: data.name || '', sub: data.sub };
   putCacheValue_(cacheKey, info, 300);
   console.timeEnd('verifyGoogleToken');

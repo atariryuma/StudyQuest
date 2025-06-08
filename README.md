@@ -21,10 +21,12 @@
 
 ログインページ(`login.html`)では **Google Identity Services** を利用してIDトークンを取得します。得られたトークンは `google.script.run` を介してサーバーに送られ、次の処理を実行します。
 
-1. **verifyGoogleToken(idToken)** — `https://oauth2.googleapis.com/tokeninfo` でトークンを検証し、結果を5分間キャッシュします。【F:src/Auth.gs†L10-L27】
+1. **verifyGoogleToken(idToken)** — `https://oauth2.googleapis.com/tokeninfo` でトークンを検証し、結果を5分間キャッシュします。`aud` フィールドが `OAUTH_CLIENT_ID` と一致しない場合はエラーになります。【F:src/Auth.gs†L11-L38】
 2. **handleTeacherAuth(idToken, passcode)** — 教師モード時に `registration.json` を確認し、存在しなければ `initTeacher()` でフォルダとスプレッドシートを作成します。登録情報は5分間キャッシュされます。【F:src/Auth.gs†L31-L74】
 3. **getStudentInfo(idToken)** — 生徒モードで `registration.json` を取得し、無ければ `status: 'new'` を返します。【F:src/Auth.gs†L71-L91】
 4. **registerStudentToClass(idToken, info)** — 生徒登録情報を `registration.json` に追加し、`initStudent()` を呼び出します。結果は5分間キャッシュされます。【F:src/Auth.gs†L94-L134】
+
+`OAUTH_CLIENT_ID` はスクリプトプロパティに登録するか、`src/Auth.gs` の定数を書き換えて設定してください。
 
 フォームでは教師/生徒を切り替えられます。教師はチェックを入れてGoogle認証するだけで `manage.html` へ進みます。生徒は `quest.html` に遷移します。IDトークン取得処理は次の通りです。【F:src/login.html†L460-L493】
 
