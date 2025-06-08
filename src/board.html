@@ -73,8 +73,8 @@
       text-overflow: ellipsis;
       height: 96px; 
     }
-     #debugPanel {
-      position: fixed; bottom: 1rem; left: 1rem; width: 320px;
+    #debugPanel {
+      position: fixed; bottom: 3rem; right: 1rem; width: 320px;
       max-height: 200px; background: rgba(31, 41, 55, 0.9);
       border: 1px solid #4b5563; border-radius: 0.5rem;
       overflow-y: auto; padding: 0.75rem; font-size: 0.75rem;
@@ -85,6 +85,7 @@
       display: flex; justify-content: space-between; align-items: center;
     }
     #debugClose { cursor: pointer; color: #f87171; }
+    #versionInfo { cursor: pointer; }
   </style>
 </head>
 <body class="p-4 md:p-6">
@@ -214,9 +215,10 @@
     document.addEventListener('DOMContentLoaded', () => {
         debugContentElem = document.getElementById('debugContent');
         const debugPanel = document.getElementById('debugPanel');
-        debugPanel.classList.remove('hidden');
         document.getElementById('debugClose').addEventListener('click', () => debugPanel.classList.add('hidden'));
-        document.getElementById('versionInfo').textContent = version;
+        const versionEl = document.getElementById('versionInfo');
+        versionEl.textContent = version;
+        versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
 
         const params = new URLSearchParams(location.search);
         let teacherCode = params.get('teacher') || teacherParam;
