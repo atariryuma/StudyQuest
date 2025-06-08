@@ -1,166 +1,156 @@
-# StudyQuest
+# StudyQuest: ゲーミフィケーション学習支援アプリ
+
+## 1. コンセプト 🎯
+
+**StudyQuest**は、小中学校の課題管理にゲーミフィケーション要素を取り入れ、生徒の学習意欲を自然に引き出すWebアプリケーションです。教師はGoogleスプレッドシートをデータベースとして、課題の作成や進捗管理を直感的に行えます。生徒はクエスト（課題）をクリアすることで経験値（XP）やトロフィーを獲得し、自身の成長を可視化できます。
+
+* **教師の体験**: 課題作成、生徒の進捗・回答のリアルタイム確認、AIによるフィードバック支援。
+* **生徒の体験**: クエスト形式の課題挑戦、XP・レベル・トロフィーによる成長実感。
 
 ---
 
-## 概要
+## 2. アーキテクチャ概要 🛠️
 
-**StudyQuest** は、小中学校向けのゲーミフィケーション型課題管理・学習支援 Webアプリです。
-Google Workspace（Drive／Spreadsheet／Apps Script）を活用し、以下の仕組みでリアルタイムなデータ管理と学習体験を提供します。
+本アプリは、**Google Apps Script (GAS) Web App** と **単一のGoogleスプレッドシート** を組み合わせたサーバーレスアーキテクチャを採用します。
 
-* **教師側**: 課題作成・配信、進捗可視化、AI フィードバック管理
-* **生徒側**: XP／レベル／トロフィーによる動機づけ、クエスト形式の学習フロー
-* **AI支援**: Gemini API と連携し、教師のクエスト作成支援。適宜ヒントや深掘り質問を生成
-
----
-
-## フォルダ構成
-
-```txt
-StudyQuest_<TeacherCode>/
-├── StudyQuest_DB_<TeacherCode># Central Google Spreadsheet
-│   ├── Tab: TOC
-│   ├── Tab: Tasks
-│   ├── Tab: Students
-│   ├── Tab: Submissions
-│   ├── Tab: AI_Log
-│   ├── Tab: Settings
-│   └── Tab: student_<StudentID>
-└── Apps Script project files
-```
-
-* **StudyQuest\_DB**
-
-  * 単一スプレッドシートに全データを集約。
-* **Apps Script プロジェクト**
-
-  * ウェブアプリケーションとしてデプロイされるサーバーサイドのスクリプト。
-  * ユーザーの個別 Drive フォルダには配置されず、Web アプリのコンテナ（Google Apps Script のプロジェクト）として管理。
-  
----
-
-## スプレッドシート構造
-
-各シートの列名はすべて英語表記ですが、目次シートには日本語で各項目の説明を記載し、
-日本のユーザーが迷わないようにしています。
-
-### 1. 目次（説明用タブ）
-
-| セクション     | 説明                           |
-| --------- | ---------------------------- |
-| 主要シート一覧   | 各タブの役割・概要                    |
-| 生徒の個別回答ログ | 生徒\_<StudentID> シートの命名規則と列定義 |
+* **バックエンド (GAS)**: 全てのビジネスロジック、データ操作、Gemini APIとの連携を担当。
+* **データベース (Spreadsheet)**: 教師ごとに専用のスプレッドシート（DB）を生成し、全てのデータをシート（テーブル）で管理。
+* **フロントエンド (HTML/CSS/JS)**: GASから配信されるUI。`google.script.run` を介してバックエンドと非同期通信。
 
 ---
 
-### 2. 主要タブ一覧
+## 3. データモデル (スプレッドシート設計) 📚
 
-#### 2.1 Tasks (master)
+教師ごとの`StudyQuest_DB_<TeacherCode>`スプレッドシートが単一のデータベースとして機能します。
 
+**⚠️【重要】設計方針の変更**
+当初の`生徒_<StudentID>`シート案は、生徒数が増えると**パフォーマンスが著しく低下し、メンテナンス性も悪化**します。そのため、この個別シートは**作成せず**、全ての回答ログは`Submissions`シートに集約する方針とします。生徒個別のログは、`Submissions`シートを`StudentID`でフィルタリングして表示します。
+
+### 3.1. テーブル（シート）一覧
+
+| シート名 | 役割 |
+| :--- | :--- |
+| `Tasks` | 課題マスタ |
+| `Students` | 生徒マスタ |
+| `Submissions` | **全生徒の全回答ログ**（中心となるテーブル） |
+| `Trophies` | トロフィーマスタ（実績） |
+| `AI_Log` | AIによるフィードバックの全ログ |
+| `Settings` | アプリの各種設定値 |
+| `TOC` | 各シートと列の日本語説明（開発者向け） |
+
+### 3.2. テーブル定義
+
+#### Tasks (課題マスタ)
 | Col | Name | Type | Description |
-| - | ------------ | ---------- | ------------------------------ |
-| A | TaskID | string | 一意の課題 ID |
-| B | ClassID | string | 対象クラスの ID |
-| C | Payload(JSON) | JSON | `{ subject, question, type, choices?, followup? }` |
-| D | AllowSelfEval | TRUE/FALSE | 自己評価を許可するか |
-| E | CreatedAt | datetime | 公開日時 |
-| F | Persona | string | Gemini API に渡す人格指定 |
-| G | Status | string | `open` or `closed` |
-| H | draft | number | 1 なら下書き扱い |
-#### 2.2 Students（生徒マスタ）
+|---|---|---|---|
+| A | TaskID | string | 一意の課題ID (例: `task_1717826400000`) |
+| B | Title | string | 課題のタイトル (例: 「光合成の仕組み」) |
+| C | **XpBase** | number | **この課題クリアで得られる基本XP** |
+| D | Payload | JSON | `{ subject, question, type, choices?, followup? }` 形式の課題詳細 |
+| E | Status | string | `draft` (下書き), `open` (公開中), `closed` (終了) |
+| F | CreatedAt | datetime | 作成日時 |
 
+#### Students (生徒マスタ)
 | Col | Name | Type | Description |
-| - | ----------- | ---- | --------------------- |
-| A | StudentID | string | `"6-1-04"` 形式の一意 ID |
-| B | Grade | number | 1 〜 6 |
-| C | Class | string | `"1組"` など |
-| D | Number | number | 出席番号 |
-| E | FirstLogin | datetime | 最初のログイン |
-| F | LastLogin | datetime | 最後のログイン |
-| G | LoginCount | number | ログイン総回数 |
-| H | TotalXP | number | 獲得した XP 合計 |
-| I | Level | number | 現在のレベル |
-| J | LastTrophyID | string | 最後に得たトロフィー（複数はカンマ区切り） |
+|---|---|---|---|
+| A | StudentID | string | `"6-1-04"` (学年-組-番号) 形式の一意ID |
+| B | HandleName | string | 生徒のニックネーム |
+| C | TotalXP | number | **累計獲得XP** |
+| D | Level | number | **現在のレベル** |
+| E | TrophyList | string | 獲得したトロフィーIDのカンマ区切りリスト |
+| F | LastLogin | datetime | 最終ログイン日時 |
 
-#### 2.3 Submissions（学習ログ）
-
+#### Submissions (回答ログ)
 | Col | Name | Type | Description |
-| - | -------------- | ---- | --------------------- |
-| A | StudentID | string | Students!A への外部キー |
-| B | TaskID | string | Tasks!A への外部キー |
-| C | Question | text | 生徒に提示した質問文 |
-| D | StartedAt | datetime | 学習開始時刻 |
-| E | SubmittedAt | datetime | 回答送信時刻 |
-| F | ProductURL | string | 回答成果物へのリンク |
-| G | QuestionSummary | string | 質問文の要約（カンマ区切り） |
-| H | AnswerSummary | string | 生徒の回答要約（カンマ区切り） |
-| I | EarnedXP | number | この提出で付与した XP |
-| J | TotalXP | number | 提出後の累積 XP |
-| K | Level | number | 提出後のレベル |
-| L | Trophy | string | 獲得トロフィー ID（複数はカンマ区切り） |
-| M | Status | number | クエストが未完了か、完了済みか。 |
+|---|---|---|---|
+| A | SubmissionID | string | 一意の提出ID (例: `sub_1717826400000`) |
+| B | StudentID | string | → `Students!A` |
+| C | TaskID | string | → `Tasks!A` |
+| D | Answer | text | 生徒の回答内容や成果物URL |
+| E | **EarnedXP** | number | **この提出で獲得した合計XP** (基本値+ボーナス) |
+| F | **TrophyID** | string | この提出で**新たに獲得した**トロフィーのID |
+| G | SubmittedAt | datetime | 提出日時 |
 
-#### 2.4 AI_Log (AIフィードバックログ)
-
+#### Trophies (トロフィーマスタ) - 📝**新規追加**
 | Col | Name | Type | Description |
-| - | ------------- | ---- | ------------------------- |
-| A | LogID | number | 一意のログ ID |
-| B | SubmissionID | string | Submissions!A への外部キー |
-| C | Content | text | Gemini API から取得したヒントやコメント |
-| D | CreatedAt | datetime | API 呼び出し日時 |
-
-#### 2.5 Settings（各種設定）
-
-| 列 | 項目名    | 型   | 説明                    |
-| - | ------ | --- | --------------------- |
-| A | type   | 文字列 | 設定の種類（例: `classList`） |
-| B | value1 | 文字列 | 設定値1                  |
-| C | value2 | 文字列 | 設定値2（必要時）             |
-
-### 3. 生徒_<StudentID>（個別回答ログ）
-
-* **シート名**: `生徒_<StudentID>`
-* **列定義**:
-
-| Col | Name | Type | Description |
-| - | --------- | ---- | -------------- |
-| A | Timestamp | datetime | 回答日時 |
-| B | TaskID | string | Tasks!A への外部キー |
-| C | Question | text | 質問文 |
-| D | Answer | text | 生徒が入力した回答 |
-| E | EarnedXP | number | この回答で付与された XP |
-| F | TotalXP | number | 回答後の累積 XP |
-| G | Level | number | 回答後のレベル |
-| H | Trophy | string | 獲得トロフィー ID |
-| I | Attempts | number | 同一課題への回答回数 |
-
-## 開発ガイドライン
-
-1. **データ操作**
-
-   * 全ての読み書きは `SpreadsheetApp` 経由で一貫して行うこと。
-   * クエリ関数（`QUERY`）やフィルターは可能な限りシート側で処理し、Apps Script は CRUD ロジックに集中。
-
-2. **スクリプト構造**
-
-   * 各機能（課題、提出、AI 呼び出し、生徒管理）はモジュール／ファイル単位で分割（例: `Task.gs`, `Student.gs`）。
-   * 共通ユーティリティは `Utils.gs` にまとめる。
-
-3. **HTML テンプレート**
-
-   * 共通パーツ（ヘッダー／フッター／アイコン読み込み）は `include()` で管理。
-   * UI フレームワークは TailwindCSS、アニメーションは GSAP、アイコンは Lucide を使用。
-
-4. **Gemini API キー管理**
-
-   * スクリプトプロパティに 保存。
-   * 設定関数: `setGlobalGeminiApiKey`, `getGlobalGeminiApiKey` を利用。
-
-5. **CI／CD**
-
-   * GitHub Actions で `main` ブランチへの push をトリガーに `clasp push` → `clasp deploy` を自動実行。
-   * 必要シークレット: `CLASPRC_JSON`, `DEPLOYMENT_ID`
+|---|---|---|---|
+| A | TrophyID | string | 一意のトロフィーID (例: `first_quest_clear`) |
+| B | Name | string | トロフィー名 (例: 「はじめてのクエスト」) |
+| C | Description | string | 獲得条件の説明 |
+| D | IconURL | string | 表示するアイコンのURLやID |
+| E | **Condition** | JSON | **獲得条件を定義するJSON** (例: `{"type":"submission_count", "value":1}` ) |
 
 ---
+
+## 4. 主要ロジック（計画） 🧠
+
+### 4.1. 経験値 (XP) とレベルアップの管理
+
+生徒のモチベーションの核となるXP付与ロジックです。回答が提出された際に、以下の順で判定・計算を行います。
+
+1.  **基本XPの取得**:
+    * 提出された課題の`Tasks.XpBase`を基本値とします。
+
+2.  **ボーナスXPの判定**:
+    * **初回クリアボーナス**: `Submissions`シートに同じ生徒の同じ`TaskID`のログが存在しない場合、ボーナスXP (例: `+10XP`) を加算。
+    * **スピードクリアボーナス**: 課題公開 (`Tasks.CreatedAt`) から一定時間以内 (例: 24時間以内) の提出であれば、ボーナスXP (例: `+5XP`) を加算。
+    * 今後、自己評価や他者評価によるボーナスもここに追加予定。
+
+3.  **最終獲得XPの計算**:
+    * `最終獲得XP = 基本XP + 各種ボーナスXP`
+
+4.  **データ更新**:
+    * 計算した最終獲得XPを `Submissions.EarnedXP` に記録。
+    * `Students.TotalXP` に最終獲得XPを加算。
+    * 新しい`TotalXP`を元にレベルを再計算 (`Level = floor(TotalXP / 100)`) し、`Students.Level` を更新。
+
+### 4.2. トロフィーの管理 (📝**未実装仕様**)
+
+特定の条件を満たした際に一度だけ贈られる実績です。XP同様、回答提出時に獲得判定処理を呼び出します。
+
+1.  **判定トリガー**:
+    * XP計算とデータ更新が完了した直後に実行。
+
+2.  **判定ロジック**:
+    * まず、生徒がまだ獲得していないトロフィーのリストを取得 (`Trophies`マスタと`Students.TrophyList`を比較)。
+    * そのリストをループし、各トロフィーの`Trophies.Condition` (条件JSON) を満たしているかチェック。
+        * 例: `{ "type": "level", "value": 10 }` → 生徒のレベルが10に達したか？
+        * 例: `{ "type": "total_xp", "value": 1000 }` → 累計XPが1000を超えたか？
+    * 条件を満たしたトロフィーがあれば、獲得処理へ。
+
+3.  **データ更新**:
+    * 獲得したトロフィーのIDを `Submissions.TrophyID` に記録（どの提出で獲得したかのログ）。
+    * `Students.TrophyList` に獲得したトロフィーIDを追記（カンマ区切り）。
+
+---
+
+## 5. 開発ガイドライン ✨
+
+1.  **データアクセス**:
+    * **【最重要】** スプレッドシートへの読み書きは、**必ず `getValues()` と `setValues()` で一括処理**してください。ループ内での `getValue()` / `setValue()` はパフォーマンスを著しく低下させるため**禁止**とします。
+    * `QUERY`関数やフィルタ機能を**GASから呼び出すのは非推奨**です。データは一旦すべて配列として取得し、JavaScriptの `filter()` や `map()` で加工する方が高速です。
+
+2.  **状態管理**:
+    * 頻繁にアクセスするが変更の少ないデータ（例: `Settings`シートの内容、`Tasks`マスタ）は、**`CacheService` を積極的に利用**し、スプレッドシートへのアクセス回数を削減してください。
+
+3.  **スクリプト構造**:
+    * 機能ごとのモジュール分割 (`Task.gs`, `Student.gs`, `Submission.gs` 等) は良い方針です。継続してください。
+
+4.  **APIキー管理**:
+    * `PropertiesService` を利用する方針で問題ありません。
+
+5.  **フロントエンド**:
+    * UIの表示切り替えや単純な入力チェックなど、サーバーとの通信が不要な処理は、**クライアントサイドのJavaScriptで完結**させ、`google.script.run` の呼び出しを最小限に抑えてください。
+
+---
+
+## 6. セットアップとデプロイ 🚀
+
+(このセクションは元のままで問題ありません)
+
+---
+
+この設計書を正として開発を進めてください。このドキュメントは「生きたドキュメント」です。実装中に新たな発見や改善案があれば、随時更新し、チームで共有しましょう。最高の学習体験を届けられるよう、協力をお願いします！
 
 ## セットアップ手順
 
