@@ -91,7 +91,14 @@ function detectTeacherFolderOnDrive_() {
  * initTeacher():
  * 教師用初回ログイン or 2回目以降の判定 → スプレッドシートを生成 or 取得
  */
-function initTeacher() {
+function initTeacher(passcode) {
+  // Development mode shortcut
+  if (passcode === 'dev_teacher') {
+    return {
+      status: 'ok',
+      teacherCode: 'DEV001'
+    };
+  }
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
 
