@@ -7,7 +7,9 @@ const SHEET_TOC        = '📜 目次';
 const SHEET_TASKS      = 'Tasks';
 const SHEET_SUBMISSIONS = 'Submissions';
 const SHEET_STUDENTS   = 'Students';
-const SHEET_AI_FEEDBACK = 'AIフィードバックログ';
+// 以前は日本語名 "AIフィードバックログ" を使用していましたが、
+// README の表記に合わせて英語名に変更
+const SHEET_AI_FEEDBACK = 'AI_Log';
 const SHEET_SETTINGS  = 'Settings';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';

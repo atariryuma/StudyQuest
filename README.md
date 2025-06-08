@@ -99,7 +99,7 @@ StudyQuest_<TeacherCode>/
 | L | Trophy | string | 獲得トロフィー ID（複数はカンマ区切り） |
 | M | Status | number | クエストが未完了か、完了済みか。 |
 
-#### 2.4 AIフィードバックログ
+#### 2.4 AI_Log (AIフィードバックログ)
 
 | Col | Name | Type | Description |
 | - | ------------- | ---- | ------------------------- |
