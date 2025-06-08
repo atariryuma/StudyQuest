@@ -29,13 +29,18 @@ test('closeTask sets status and awards bonus XP', () => {
     ['s2',1,'A',2,new Date(),new Date(),1,0,1,'']
   ];
   const studentsSheet = {
-    getDataRange: jest.fn(() => ({ getValues: () => studentsData })),
-    getRange: jest.fn((row,col,rows,cols) => ({
-      setValue: val => { studentsData[row-1][col-1] = val; },
+    getLastRow: jest.fn(() => studentsData.length),
+    getRange: jest.fn((row, col, rows, cols) => ({
+      getValues: () => studentsData.slice(row - 1, row - 1 + rows)
+                                  .map(r => r.slice(col - 1, col - 1 + cols)),
       setValues: vals => {
-        studentsData[row-1][col-1] = vals[0][0];
-        if (cols > 1) studentsData[row-1][col] = vals[0][1];
-      }
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            studentsData[row - 1 + i][col - 1 + j] = vals[i][j];
+          }
+        }
+      },
+      setValue: val => { studentsData[row - 1][col - 1] = val; }
     }))
   };
   const tasksSheet = { getRange: jest.fn(() => ({ getValues: () => [['task1']], setValue: jest.fn() })), getLastRow: jest.fn(() => 2) };
