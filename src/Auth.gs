@@ -31,9 +31,8 @@ function verifyGoogleToken(idToken) {
 /**
  * Handle teacher authentication and registration.json management.
  * @param {string} idToken
- * @param {string} passcode
  */
-function handleTeacherAuth(idToken, passcode) {
+function handleTeacherAuth(idToken) {
   console.time('handleTeacherAuth');
   const user = verifyGoogleToken(idToken);
   const cacheKey = 'reg_' + user.sub;
@@ -55,12 +54,7 @@ function handleTeacherAuth(idToken, passcode) {
     return registration;
   }
 
-  if (passcode !== 'kyoushi') {
-    console.timeEnd('handleTeacherAuth');
-    return { status: 'error', message: 'パスコードが違います。' };
-  }
-
-  const result = initTeacher(passcode);
+  const result = initTeacher();
   const folderId = PropertiesService.getScriptProperties().getProperty(result.teacherCode);
   registration = { role: 'teacher', teacherCode: result.teacherCode, folderId: folderId };
   const blob = Utilities.newBlob(JSON.stringify(registration), 'application/json', 'registration.json');

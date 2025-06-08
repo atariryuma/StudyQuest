@@ -170,12 +170,6 @@
             <input id="number" type="number" placeholder="番号" class="w-full p-3 rounded-lg text-white" required>
           </div>
         </div>
-        <div id="passcodeWrap" class="hidden space-y-3">
-          <div class="relative">
-            <i data-lucide="key-round" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-            <input id="passcode" type="password" placeholder="教師パスコード" class="w-full p-3 pl-10 rounded-lg text-white">
-          </div>
-        </div>
         <button id="loginBtn" type="submit" class="w-full game-btn bg-pink-600 text-white p-3 rounded-lg font-bold border-pink-800 hover:bg-pink-500 active:border-pink-700 flex items-center justify-center gap-2 mt-6">
           <i data-lucide="log-in" class="w-5 h-5 align-middle"></i>
           <span class="leading-none align-middle">Googleでサインイン</span>
@@ -337,24 +331,19 @@
 
     function toggleTeacherMode() {
       const isTeacher = document.getElementById('teacherMode').checked;
-      const passWrap = document.getElementById('passcodeWrap');
       const codeWrap = document.getElementById('teacherCodeWrap');
       const studentFields = document.getElementById('studentFields');
 
       if (isTeacher) {
-        passWrap.classList.remove('hidden');
         codeWrap.classList.add('hidden');
         studentFields.classList.add('hidden');
-        document.getElementById('passcode').required = true;
         document.getElementById('teacherCode').required = false;
         document.getElementById('grade').required = false;
         document.getElementById('classroom').required = false;
         document.getElementById('number').required = false;
       } else {
-        passWrap.classList.add('hidden');
         codeWrap.classList.remove('hidden');
         studentFields.classList.remove('hidden');
-        document.getElementById('passcode').required = false;
         document.getElementById('teacherCode').required = true;
         document.getElementById('grade').required = true;
         document.getElementById('classroom').required = true;
@@ -407,7 +396,6 @@
       const proceed = () => {
         const idToken = cachedToken;
         if (isTeacher) {
-          const passcode = document.getElementById('passcode').value.trim();
           google.script.run
             .withSuccessHandler(res => {
               const { status, teacherCode, message } = res;
@@ -434,7 +422,7 @@
               hideLoadingOverlay();
               btn.disabled = false;
             })
-            .handleTeacherAuth(idToken, passcode);
+            .handleTeacherAuth(idToken);
         } else {
           const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
           const grade = document.getElementById('grade').value.trim();

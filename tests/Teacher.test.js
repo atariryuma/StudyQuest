@@ -70,7 +70,7 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  const result = context.initTeacher('kyoushi');
+  const result = context.initTeacher();
   expect(result.status).toBe('new');
   expect(result.teacherCode).toBe('ABC123');
   expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB_ABC123');
@@ -136,7 +136,7 @@ test('initTeacher tasks sheet header includes draft column', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  context.initTeacher('kyoushi');
+  context.initTeacher();
   const header = inserted['Tasks'].appendRow.mock.calls[0][0];
   expect(header[header.length-1]).toBe('draft');
 });
@@ -201,7 +201,7 @@ test('initTeacher submissions sheet header matches README order', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  context.initTeacher('kyoushi');
+  context.initTeacher();
   const header = inserted['Submissions'].appendRow.mock.calls[0][0];
   const expected = ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status'];
   expect(header).toEqual(expected);
