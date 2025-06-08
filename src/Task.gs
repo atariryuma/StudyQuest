@@ -30,6 +30,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
       taskSheet.appendRow([Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), persona || '', '', '']);
     });
     removeCacheValue_('tasks_' + teacherCode);
+    removeCacheValue_('stats_' + teacherCode);
     return;
   }
 
@@ -37,6 +38,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   const classId = parsed && parsed.classId ? parsed.classId : '';
   taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '', '']);
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('stats_' + teacherCode);
 }
 
 /**
@@ -97,6 +99,7 @@ function deleteTask(teacherCode, taskId) {
     sheet.deleteRow(idx + 2);
   }
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('stats_' + teacherCode);
 }
 
 /**
@@ -120,6 +123,7 @@ function duplicateTask(teacherCode, taskId) {
       const persona = data[i][5] || '';
       sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona, '', '']);
       removeCacheValue_('tasks_' + teacherCode);
+      removeCacheValue_('stats_' + teacherCode);
       break;
     }
   }
@@ -168,6 +172,7 @@ function closeTask(teacherCode, taskId) {
     sheet.getRange(idx + 2, 7).setValue('closed');
   }
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('stats_' + teacherCode);
   const subs = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (subs && subs.getLastRow() > 1) {
     const range = subs.getRange(2, 1, subs.getLastRow() - 1, 13);

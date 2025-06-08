@@ -1,8 +1,13 @@
 /**
 * findStudentSheet_(ss, studentId):
- * 学年・組・番号の組み合わせから既存シートを柔軟に探索し、
- * 必要に応じて正規化した名前へリネームして返す
- */
+* 学年・組・番号の組み合わせから既存シートを柔軟に探索し、
+* 必要に応じて正規化した名前へリネームして返す
+*/
+if (typeof getCacheValue_ !== 'function') {
+  function getCacheValue_() { return null; }
+  function putCacheValue_() {}
+  function removeCacheValue_() {}
+}
 function findStudentSheet_(ss, studentId) {
   studentId = String(studentId || '').trim();
   if (!ss || !studentId) return null;
@@ -105,6 +110,7 @@ function initStudent(teacherCode, grade, classroom, number) {
       ''        // 最終獲得トロフィーID
     ]);
     studentRowIndex = studentListSheet.getLastRow() - 1;
+    removeCacheValue_('stats_' + teacherCode);
   } else {
     if (studentListData[studentRowIndex][0] !== studentId) {
       studentListSheet.getRange(studentRowIndex + 1, 1).setValue(studentId);

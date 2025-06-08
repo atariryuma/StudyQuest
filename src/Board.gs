@@ -86,6 +86,9 @@ function listTaskBoard(teacherCode, taskId) {
  * 課題数・生徒数を取得
  */
 function getStatistics(teacherCode) {
+  const cacheKey = 'stats_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     return { taskCount: 0, studentCount: 0 };
@@ -104,5 +107,7 @@ function getStatistics(teacherCode) {
     }
   }
 
-  return { taskCount, studentCount };
+  const result = { taskCount, studentCount };
+  putCacheValue_(cacheKey, result, 60);
+  return result;
 }
