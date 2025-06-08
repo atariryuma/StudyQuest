@@ -14,13 +14,25 @@ test('updateStudentLogin increments count and sets timestamp', () => {
   ];
   const sheetStub = {
     getDataRange: jest.fn(() => ({ getValues: () => sheetData })),
-    getRange: jest.fn((r,c,rows,cols) => ({
-      getValue: () => sheetData[r-1][c-1],
+    getRange: jest.fn((r, c, rows, cols) => ({
+      getValue: () => sheetData[r - 1][c - 1],
+      getValues: () => {
+        const res = [];
+        for (let i = 0; i < (rows || 1); i++) {
+          const row = [];
+          for (let j = 0; j < (cols || 1); j++) {
+            row.push(sheetData[r - 1 + i][c - 1 + j]);
+          }
+          res.push(row);
+        }
+        return res;
+      },
       setValues: values => {
-        sheetData[r-1][c-1] = values[0][0];
-        sheetData[r-1][c] = values[0][1];
+        sheetData[r - 1][c - 1] = values[0][0];
+        if (cols > 1) sheetData[r - 1][c] = values[0][1];
       }
-    }))
+    })),
+    getLastRow: jest.fn(() => sheetData.length)
   };
   const ssStub = { getSheetByName: jest.fn(() => sheetStub) };
   const context = {
