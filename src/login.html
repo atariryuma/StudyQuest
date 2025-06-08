@@ -18,6 +18,8 @@
 
   <!-- GSAP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
     body {
@@ -197,6 +199,7 @@
   <!-- exec URL -->
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
+    const CLIENT_ID = 'YOUR_CLIENT_ID';
   </script>
   <script>
     // ==============================
@@ -354,91 +357,86 @@
 
     function handleSubmit(e) {
       e.preventDefault();
+      clearError();
       const isTeacher = document.getElementById('teacherMode').checked;
       const btn = document.getElementById('loginBtn');
       showLoadingOverlay();
       btn.disabled = true;
 
-      // ボタンバウンド
       gsap.to(btn, { scale: 1.05, duration: 0.1 }).then(() => {
         gsap.to(btn, { scale: 1, duration: 0.1 });
       });
 
-      if (isTeacher) {
-        // ── 教師モード ──
-        const passcode = document.getElementById('passcode').value.trim();
-        if (passcode !== 'kyoushi') {
-          alert('パスコードが違います。');
-          hideLoadingOverlay();
-          btn.disabled = false;
-          return;
-        }
-        google.script.run
-          .withSuccessHandler(result => {
-            const { status, teacherCode, message } = result;
-
-            if (status === 'new') {
-              // 初回ログイン時
-              document.getElementById('newCodeSpan').textContent = teacherCode;
-              document.getElementById('newCodeSpan2').textContent = teacherCode;
-              document.getElementById('firstMessage').style.display = 'flex';
-
-              document.getElementById('closeFirstMsg').onclick = () => {
-                document.getElementById('firstMessage').style.display = 'none';
-                addHistory(teacherCode);
-                window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-              };
-            }
-            else if (status === 'ok') {
-              // 2回目以降
-              alert('おかえりなさい！');
-              addHistory(teacherCode);
-              window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-            }
-            else {
-              // error
-              alert(message || 'エラーが発生しました。');
-              hideLoadingOverlay();
-              btn.disabled = false;
-            }
-          })
-          .withFailureHandler(err => {
-            alert('教師ログインでエラー: ' + err.message);
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: response => {
+          const idToken = response.credential;
+          if (!idToken) {
+            showError('Google認証に失敗しました');
             hideLoadingOverlay();
             btn.disabled = false;
-          })
-          .initTeacher(passcode);
+            return;
+          }
 
-      } else {
-        // ── 生徒モード ──
-        const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
-        const grade = document.getElementById('grade').value.trim();
-        const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
-        const number = document.getElementById('number').value.trim();
+          if (isTeacher) {
+            const passcode = document.getElementById('passcode').value.trim();
+            google.script.run
+              .withSuccessHandler(res => {
+                const { status, teacherCode, message } = res;
+                if (status === 'new') {
+                  document.getElementById('newCodeSpan').textContent = teacherCode;
+                  document.getElementById('newCodeSpan2').textContent = teacherCode;
+                  document.getElementById('firstMessage').style.display = 'flex';
+                  document.getElementById('closeFirstMsg').onclick = () => {
+                    document.getElementById('firstMessage').style.display = 'none';
+                    addHistory(teacherCode);
+                    window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+                  };
+                } else if (status === 'ok') {
+                  addHistory(teacherCode);
+                  window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+                } else {
+                  showError(message || 'エラーが発生しました。');
+                  hideLoadingOverlay();
+                  btn.disabled = false;
+                }
+              })
+              .withFailureHandler(err => {
+                showError('教師ログインでエラー: ' + err.message);
+                hideLoadingOverlay();
+                btn.disabled = false;
+              })
+              .handleTeacherAuth(idToken, passcode);
+          } else {
+            const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
+            const grade = document.getElementById('grade').value.trim();
+            const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
+            const number = document.getElementById('number').value.trim();
 
-        if (!teacherCode) {
-          alert('教師コードを入力してください。');
-          hideLoadingOverlay();
-          btn.disabled = false;
-          return;
+            if (!teacherCode || !grade || !classroom || !number) {
+              showError('入力内容を確認してください。');
+              hideLoadingOverlay();
+              btn.disabled = false;
+              return;
+            }
+
+            const info = { teacherCode, grade, classroom, number, studentId: `${grade}-${classroom}-${number}` };
+            google.script.run
+              .withSuccessHandler(() => {
+                addHistory(teacherCode);
+                const params = new URLSearchParams({ grade, class: classroom, number, teacher: teacherCode }).toString();
+                window.top.location.href = SCRIPT_URL + '?page=quest&' + params;
+              })
+              .withFailureHandler(err => {
+                showError('生徒登録でエラー: ' + err.message);
+                hideLoadingOverlay();
+                btn.disabled = false;
+              })
+              .registerStudentToClass(idToken, info);
+          }
         }
-        if (!grade || !classroom || !number) {
-          alert('学年・組・番号を正しく入力してください。');
-          hideLoadingOverlay();
-          btn.disabled = false;
-          return;
-        }
-
-        const studentParams = new URLSearchParams({
-          grade: grade,
-          class: classroom,
-          number: number,
-          teacher: teacherCode
-        }).toString();
-
-        addHistory(teacherCode);
-        window.top.location.href = SCRIPT_URL + '?page=quest&' + studentParams;
-      }
+      });
+      google.accounts.id.prompt();
 
       // フォーカス移動設定
       function setupFieldFocus() {
@@ -485,6 +483,22 @@
       function hideLoadingOverlay() {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) overlay.classList.add('hidden');
+      }
+
+      function showError(msg) {
+        const el = document.getElementById('errorMessage');
+        if (el) {
+          el.textContent = msg;
+          el.classList.remove('hidden');
+        }
+      }
+
+      function clearError() {
+        const el = document.getElementById('errorMessage');
+        if (el) {
+          el.textContent = '';
+          el.classList.add('hidden');
+        }
       }
     }
   </script>
