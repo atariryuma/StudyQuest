@@ -187,10 +187,15 @@ function getRecommendedTask(teacherCode, studentId) {
 }
 
 /**
- * submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp, level, trophies, aiCalls, attemptCount):
+ * submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
+ *              level, trophies, aiCalls, attemptCount,
+ *              startAt, submitAt, productUrl, qSummary, aSummary):
  * 生徒シートへの回答記録＆全体ログへの追記
  */
-function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp, level, trophies, aiCalls, attemptCount) {
+function submitAnswer(teacherCode, studentId, taskId, answer,
+                      earnedXp, totalXp, level, trophies,
+                      aiCalls, attemptCount,
+                      startAt, submitAt, productUrl, qSummary, aSummary) {
   studentId = String(studentId || '').trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
@@ -218,16 +223,36 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
       }
     }
   }
-  studentSheet.appendRow([new Date(), taskId, questionText, answer, earnedXp, totalXp, level, trophies || '', attemptCount]);
+  const startTime  = startAt ? new Date(startAt) : new Date();
+  const submitTime = submitAt ? new Date(submitAt) : new Date();
+  studentSheet.appendRow([submitTime, taskId, questionText, answer,
+                          earnedXp, totalXp, level, trophies || '', attemptCount]);
 
   // 全体ログにも追記
   const globalAnswerSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (globalAnswerSheet) {
-    let answerSummary = answer;
-    if (typeof answer === 'string' && answer.length > 50) {
-      answerSummary = answer.substring(0, 50) + '...';
+    let questionSummary = qSummary || questionText;
+    if (typeof questionSummary === 'string' && questionSummary.length > 50) {
+      questionSummary = questionSummary.substring(0, 50) + '...';
     }
-    globalAnswerSheet.appendRow([new Date(), studentId, taskId, answerSummary, earnedXp, totalXp, level, trophies || '', aiCalls, attemptCount]);
+    let answerSummary = aSummary || answer;
+    if (typeof answerSummary === 'string' && answerSummary.length > 50) {
+      answerSummary = answerSummary.substring(0, 50) + '...';
+    }
+    globalAnswerSheet.appendRow([
+      studentId,
+      taskId,
+      questionText,
+      startTime,
+      submitTime,
+      productUrl || '',
+      questionSummary,
+      answerSummary,
+      earnedXp,
+      totalXp,
+      level,
+      trophies || ''
+    ]);
   } else {
     console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
   }
