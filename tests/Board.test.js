@@ -61,28 +61,28 @@ test('listBoard reads new submission columns', () => {
   expect(rows[1].studentId).toBe('s1');
 });
 
-test('listTaskBoard uses QUERY to limit results', () => {
-  const tempData = [
-    ['s3','t1','Q',new Date(),'','', '', 'ans', 1, 1, 1, '']
+test('listTaskBoard filters and sorts submissions', () => {
+  const subsData = [
+    ['s1','t1','Q1',new Date('2024-01-01'),new Date('2024-01-02'),'','', 'ans1', 1, 5, 1, 'T1',0],
+    ['s2','t1','Q2',new Date('2024-01-03'),new Date('2024-01-04'),'','', 'ans2', 2, 6, 1, 'T2',0],
+    ['s1','t1','Q3',new Date('2024-01-05'),new Date('2024-01-06'),'','', 'latest', 3, 7, 2, 'T3',0],
+    ['s3','t2','Qx',new Date('2024-01-07'),new Date('2024-01-08'),'','', 'other', 1, 1, 1, '',0]
   ];
-  const tempSheet = {
-    getRange: jest.fn(() => ({ setFormula: jest.fn(), getValues: () => tempData })),
-    getLastRow: jest.fn(() => tempData.length + 1)
+  const sheetStub = {
+    getLastRow: jest.fn(() => subsData.length + 1),
+    getLastColumn: jest.fn(() => 13),
+    getRange: jest.fn(() => ({ getValues: () => subsData }))
   };
-  const ssStub = {
-    getSheetByName: jest.fn(() => ({})),
-    insertSheet: jest.fn(() => tempSheet),
-    deleteSheet: jest.fn()
-  };
+  const ssStub = { getSheetByName: jest.fn(() => sheetStub) };
   const context = {
     SHEET_SUBMISSIONS: 'Submissions',
-    SpreadsheetApp: { flush: jest.fn() },
     getSpreadsheetByTeacherCode: () => ssStub
   };
   loadBoard(context);
   const rows = context.listTaskBoard('ABC', 't1');
-  expect(ssStub.insertSheet).toHaveBeenCalled();
-  expect(context.SpreadsheetApp.flush).toHaveBeenCalled();
-  expect(ssStub.deleteSheet).toHaveBeenCalledWith(tempSheet);
-  expect(rows[0].studentId).toBe('s3');
+  expect(sheetStub.getRange).toHaveBeenCalledWith(2, 1, subsData.length, 13);
+  expect(rows.length).toBe(2);
+  expect(rows[0].studentId).toBe('s1');
+  expect(rows[0].answer).toBe('latest');
+  expect(rows[1].studentId).toBe('s2');
 });

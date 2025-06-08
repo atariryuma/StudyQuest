@@ -1,6 +1,16 @@
 const BOARD_FETCH_LIMIT = 30;
 
+// Fallbacks when running in a non-GAS environment (e.g. tests)
+if (typeof getCacheValue_ !== 'function') {
+  function getCacheValue_() { return null; }
+  function putCacheValue_() {}
+}
+
 function listBoard(teacherCode) {
+  const cacheKey = 'board_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
   const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
@@ -13,7 +23,7 @@ function listBoard(teacherCode) {
   const numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
   const startRow = lastRow - numRows + 1;
   const data = sheet.getRange(startRow, 1, numRows, lastCol).getValues().reverse();
-  return data.map(row => ({
+  const result = data.map(row => ({
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
@@ -21,6 +31,8 @@ function listBoard(teacherCode) {
     level: row[10],
     trophies: row[11]
   }));
+  putCacheValue_(cacheKey, result, 30);
+  return result;
 }
 
 /**
@@ -28,32 +40,35 @@ function listBoard(teacherCode) {
  * 指定課題の回答ログを新しい順に返す
  */
 function listTaskBoard(teacherCode, taskId) {
+  const cacheKey = 'taskBoard_' + teacherCode + '_' + taskId;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
   const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (!sheet) return [];
 
-  const temp = ss.insertSheet();
-  const query = `=QUERY(${SHEET_SUBMISSIONS}!A:M,"where B='${taskId}' order by E desc",0)`;
-  temp.getRange(1, 1).setFormula(query);
-  SpreadsheetApp.flush();
-  const rows = Math.max(temp.getLastRow() - 1, 0);
-  if (rows === 0) { ss.deleteSheet(temp); return []; }
-  const data = temp.getRange(2, 1, rows, 13).getValues();
-  ss.deleteSheet(temp);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const lastCol = Math.min(sheet.getLastColumn(), 13);
+  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
-  const uniq = {};
-  const result = [];
-  for (let i = 0; i < data.length; i++) {
-    const r = data[i];
-    if (!uniq[r[0]]) {
-      uniq[r[0]] = true;
-      result.push(r);
-      if (result.length >= BOARD_FETCH_LIMIT) break;
+  const filtered = data.filter(r => String(r[1]) === String(taskId));
+  filtered.sort((a, b) => new Date(b[4]) - new Date(a[4]));
+
+  const uniq = new Set();
+  const rows = [];
+  for (let i = 0; i < filtered.length; i++) {
+    const r = filtered[i];
+    if (!uniq.has(r[0])) {
+      uniq.add(r[0]);
+      rows.push(r);
+      if (rows.length >= BOARD_FETCH_LIMIT) break;
     }
   }
 
-  return result.map(row => ({
+  const result = rows.map(row => ({
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
@@ -61,6 +76,9 @@ function listTaskBoard(teacherCode, taskId) {
     level: row[10],
     trophies: row[11]
   }));
+
+  putCacheValue_(cacheKey, result, 30);
+  return result;
 }
 
 /**
