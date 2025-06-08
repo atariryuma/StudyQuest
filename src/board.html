@@ -115,6 +115,11 @@
 
   <script>
   <?!= include('shared/escapeHtml'); ?>
+  const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
+  const teacherParam = '<?!= teacher ?>';
+  const gradeParam = '<?!= grade ?>';
+  const classParam = '<?!= classroom ?>';
+  const numberParam = '<?!= number ?>';
 
     const canvas = document.getElementById('particleCanvas');
     const ctx = canvas.getContext('2d');
@@ -181,8 +186,8 @@
       debugPanel.classList.remove('hidden');
 
       const params = new URLSearchParams(location.search);
-      const teacherCode = params.get('teacher');
-      const taskId = params.get('task');
+      let teacherCode = params.get('teacher') || teacherParam;
+      let taskId = params.get('task');
       let persona = '';
 
       debug('🔄 ページ読み込み完了');
@@ -196,16 +201,16 @@
       const backLink = document.getElementById('backLink');
       const manageBtn = document.getElementById('manageBtn');
       const closeBtn = document.getElementById('closeTaskBtn');
-      const grade = params.get('grade');
-      const classroom = params.get('class');
-      const number = params.get('number');
+      const grade = params.get('grade') || gradeParam;
+      const classroom = params.get('class') || classParam;
+      const number = params.get('number') || numberParam;
       const followupSection = document.getElementById('aiFollowupSection');
 
       const isStudent = grade && classroom && number;
 
       if (isStudent) {
         if (followupSection) followupSection.classList.add('hidden');
-        backLink.href = `?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
+        backLink.href = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(teacherCode)}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(classroom)}&number=${encodeURIComponent(number)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>クエスト画面に戻る</span>';
         manageBtn.style.display = 'none';
       } else {
@@ -213,9 +218,9 @@
           followupSection.classList.remove('hidden');
           google.script.run.withSuccessHandler(p => { persona = p || ''; }).getGeminiPersona(teacherCode);
         }
-        backLink.href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+        backLink.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
         backLink.innerHTML = '<i data-lucide="arrow-left" class="w-4 h-4"></i><span>管理パネルに戻る</span>';
-        manageBtn.href = `?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
+        manageBtn.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(teacherCode)}`;
         manageBtn.style.display = '';
       }
 
@@ -235,10 +240,35 @@
           }
           document.getElementById('questionText').textContent = txt;
           lucide.createIcons();
+          loadBoard();
         }).listTasks(teacherCode);
       } else {
-        document.getElementById('questionText').textContent = 'みんなの回答ボード';
-        lucide.createIcons();
+        google.script.run.withSuccessHandler(id => {
+          taskId = id || null;
+          if (taskId) {
+            if (closeBtn) closeBtn.classList.remove('hidden');
+            document.getElementById('headingLabel').textContent = '課題別ボード';
+            google.script.run.withSuccessHandler(tasks => {
+              const t = tasks.find(x => x.id === taskId);
+              let txt = '';
+              if (t) {
+                try {
+                  const q = JSON.parse(t.q);
+                  txt = `【${q.subject || ''}】 ${q.question}`;
+                } catch (_) {
+                  txt = t.q;
+                }
+              }
+              document.getElementById('questionText').textContent = txt;
+              lucide.createIcons();
+              loadBoard();
+            }).listTasks(teacherCode);
+          } else {
+            document.getElementById('questionText').textContent = 'みんなの回答ボード';
+            lucide.createIcons();
+            loadBoard();
+          }
+        }).getLatestActiveTaskId(teacherCode);
       }
 
       function loadBoard() {
@@ -353,7 +383,11 @@
         });
       }
 
-      loadBoard();
+      if (!taskId) {
+        // loadBoard will be called after resolving active task
+      } else {
+        loadBoard();
+      }
       setInterval(loadBoard, 15000);
     });
   </script>
