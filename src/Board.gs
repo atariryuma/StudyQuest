@@ -7,19 +7,19 @@ function listBoard(teacherCode) {
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  // 10列目まで取得
-  const data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  const lastCol = Math.min(sheet.getLastColumn(), 14);
+  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   const sliceStart = Math.max(0, data.length - 30);
   const slice = data.slice(sliceStart).reverse();
   return slice.map(row => ({
-    studentId: row[1],
-    answer: row[3],
-    earnedXp: row[4],
-    totalXp: row[5],
-    level: row[6],
-    trophies: row[7],
-    aiCalls: row[8],
-    attempts: row[9]
+    studentId: row[0],
+    answer: row[7],
+    earnedXp: row[8],
+    totalXp: row[9],
+    level: row[10],
+    trophies: row[11],
+    aiCalls: row[12] || 0,
+    attempts: row[13] || 0
   }));
 }
 
@@ -34,17 +34,18 @@ function listTaskBoard(teacherCode, taskId) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
-  const filtered = data.filter(r => r[2] === taskId).reverse();
+  const lastCol = Math.min(sheet.getLastColumn(), 14);
+  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  const filtered = data.filter(r => r[1] === taskId).reverse();
   return filtered.map(row => ({
-    studentId: row[1],
-    answer: row[3],
-    earnedXp: row[4],
-    totalXp: row[5],
-    level: row[6],
-    trophies: row[7],
-    aiCalls: row[8],
-    attempts: row[9]
+    studentId: row[0],
+    answer: row[7],
+    earnedXp: row[8],
+    totalXp: row[9],
+    level: row[10],
+    trophies: row[11],
+    aiCalls: row[12] || 0,
+    attempts: row[13] || 0
   }));
 }
 
