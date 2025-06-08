@@ -972,7 +972,7 @@
               !e.target.closest('.copyBtn') &&
               !e.target.closest('.closeBtn')
             ) {
-              location.href = `?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${x.id}`;
+              location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${x.id}`;
             }
           });
           container.appendChild(card);
