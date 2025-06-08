@@ -30,6 +30,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
       taskSheet.appendRow([Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), persona || '', '', '']);
     });
     removeCacheValue_('tasks_' + teacherCode);
+    removeCacheValue_('taskmap_' + teacherCode);
     removeCacheValue_('stats_' + teacherCode);
     return;
   }
@@ -38,6 +39,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   const classId = parsed && parsed.classId ? parsed.classId : '';
   taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '', '']);
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
 }
 
@@ -72,6 +74,43 @@ function listTasks(teacherCode) {
   return result;
 }
 
+function getTaskMap_(teacherCode) {
+  const cacheKey = 'taskmap_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return {};
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return {};
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return {};
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  const map = {};
+  rows.forEach(row => {
+    if (String(row[7] || '') === '1') return; // skip draft rows
+    let qText = '';
+    try {
+      const parsed = JSON.parse(row[2]);
+      qText = parsed.question || row[2];
+    } catch (e) {
+      qText = row[2];
+    }
+    map[row[0]] = {
+      classId: row[1],
+      q: row[2],
+      selfEval: row[3],
+      date: row[4],
+      persona: row[5] || '',
+      closed: String(row[6] || '').toLowerCase() === 'closed',
+      questionText: qText
+    };
+  });
+  putCacheValue_(cacheKey, map, 300);
+  return map;
+}
+
 function listTasksForClass(teacherCode, grade, classroom) {
   grade = String(grade || '').trim();
   classroom = String(classroom || '').trim();
@@ -99,6 +138,7 @@ function deleteTask(teacherCode, taskId) {
     sheet.deleteRow(idx + 2);
   }
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
 }
 
@@ -123,6 +163,7 @@ function duplicateTask(teacherCode, taskId) {
       const persona = data[i][5] || '';
       sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona, '', '']);
       removeCacheValue_('tasks_' + teacherCode);
+      removeCacheValue_('taskmap_' + teacherCode);
       removeCacheValue_('stats_' + teacherCode);
       break;
     }
@@ -134,27 +175,18 @@ function duplicateTask(teacherCode, taskId) {
  * 指定した課題オブジェクトを返す
  */
 function getTask(teacherCode, taskId) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return null;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
-  if (!sheet) return null;
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return null;
-  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
-  for (let i = 0; i < data.length; i++) {
-    if (data[i][0] === taskId && String(data[i][7] || '') !== '1') {
-      return {
-        id: data[i][0],
-        classId: data[i][1],
-        q: data[i][2],
-        selfEval: data[i][3],
-        date: Utilities.formatDate(new Date(data[i][4]), 'JST', 'yyyy/MM/dd HH:mm'),
-        persona: data[i][5] || '',
-        closed: String(data[i][6] || '').toLowerCase() === 'closed'
-      };
-    }
-  }
-  return null;
+  const map = getTaskMap_(teacherCode);
+  const data = map[taskId];
+  if (!data) return null;
+  return {
+    id: taskId,
+    classId: data.classId,
+    q: data.q,
+    selfEval: data.selfEval,
+    date: Utilities.formatDate(new Date(data.date), 'JST', 'yyyy/MM/dd HH:mm'),
+    persona: data.persona,
+    closed: data.closed
+  };
 }
 
 /**
@@ -172,6 +204,7 @@ function closeTask(teacherCode, taskId) {
     sheet.getRange(idx + 2, 7).setValue('closed');
   }
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
   const subs = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (subs && subs.getLastRow() > 1) {
@@ -281,22 +314,9 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
   }
 
   // 常に新規行追加
-  let questionText = '';
-  const taskSheet = ss.getSheetByName(SHEET_TASKS);
-  if (taskSheet) {
-    const allTasks = taskSheet.getDataRange().getValues();
-    for (let j = 1; j < allTasks.length; j++) {
-      if (allTasks[j][0] === taskId) {
-        try {
-          const parsedQ = JSON.parse(allTasks[j][2]);
-          questionText = parsedQ.question || allTasks[j][2];
-        } catch (e) {
-          questionText = allTasks[j][2];
-        }
-        break;
-      }
-    }
-  }
+  const taskMap = getTaskMap_(teacherCode);
+  const info = taskMap[taskId];
+  const questionText = info ? info.questionText : '';
   const startTime  = startAt ? new Date(startAt) : new Date();
   const submitTime = submitAt ? new Date(submitAt) : new Date();
   studentSheet.appendRow([submitTime, taskId, questionText, answer,
@@ -356,6 +376,7 @@ function saveDraftTask(teacherCode, payloadJson) {
   } catch (e) {}
   sheet.appendRow([id, classId, payloadJson, '', new Date(), '', '', 1]);
   removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('taskmap_' + teacherCode);
   return id;
 }
 
@@ -375,6 +396,7 @@ function deleteDraftTask(teacherCode, taskId) {
     if (data[i][0] === taskId && String(data[i][7] || '') === '1') {
       sheet.deleteRow(i + 2);
       removeCacheValue_('tasks_' + teacherCode);
+      removeCacheValue_('taskmap_' + teacherCode);
       break;
     }
   }
