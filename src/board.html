@@ -199,7 +199,7 @@
     function debug(msg) {
       if (!debugContentElem) return;
       const t = new Date().toLocaleTimeString();
-      debugContentElem.innerHTML += `<p class="break-all">[${t}] ${escapeHtml(msg)}</p>`;
+      debugContentElem.insertAdjacentHTML('beforeend', `<p class="break-all">[${t}] ${escapeHtml(msg)}</p>`);
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
 

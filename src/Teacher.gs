@@ -217,23 +217,33 @@ function initTeacher(passcode) {
  * そのフォルダ内の StudyQuest_DB_<teacherCode> を開く
  */
 function getSpreadsheetByTeacherCode(teacherCode) {
-  if (!teacherCode) return null;
-  if (_ssCache[teacherCode]) return _ssCache[teacherCode];
+  console.time('getSpreadsheetByTeacherCode');
+  if (!teacherCode) { console.timeEnd('getSpreadsheetByTeacherCode'); return null; }
+  if (_ssCache[teacherCode]) { console.timeEnd('getSpreadsheetByTeacherCode'); return _ssCache[teacherCode]; }
+
   const props = PropertiesService.getScriptProperties();
   const idKey = 'ssId_' + teacherCode;
-  const cachedId = props.getProperty(idKey);
+
+  let cachedId = getCacheValue_('ssid_' + teacherCode);
+  if (!cachedId) {
+    cachedId = props.getProperty(idKey);
+    if (cachedId) putCacheValue_('ssid_' + teacherCode, cachedId, 3600);
+  }
+
   if (cachedId) {
     try {
       const ss = SpreadsheetApp.openById(cachedId);
       _ssCache[teacherCode] = ss;
+      console.timeEnd('getSpreadsheetByTeacherCode');
       return ss;
     } catch (e) {
       props.deleteProperty(idKey);
+      removeCacheValue_('ssid_' + teacherCode);
     }
   }
 
   const folderId = props.getProperty(teacherCode);
-  if (!folderId) return null;
+  if (!folderId) { console.timeEnd('getSpreadsheetByTeacherCode'); return null; }
   try {
     const folder = DriveApp.getFolderById(folderId);
     const targetName = 'StudyQuest_DB_' + teacherCode;
@@ -243,11 +253,14 @@ function getSpreadsheetByTeacherCode(teacherCode) {
       props.setProperty(idKey, id);
       const ss = SpreadsheetApp.openById(id);
       _ssCache[teacherCode] = ss;
+      console.timeEnd('getSpreadsheetByTeacherCode');
       return ss;
     }
+    console.timeEnd('getSpreadsheetByTeacherCode');
     return null;
   } catch (e) {
     console.error(`スプレッドシートが開けません: Code=${teacherCode}, Folder=${folderId}。エラー: ${e.message}`);
+    console.timeEnd('getSpreadsheetByTeacherCode');
     return null;
   }
 }
