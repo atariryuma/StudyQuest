@@ -22,22 +22,27 @@ test('deleteLegacyApiKeys removes *_apiKey properties', () => {
   expect(props).toEqual({ geminiApiKey: 'xyz' });
 });
 
-test('addDraftColumn inserts column when missing', () => {
-  let headers = ['id','class','q','self','date','persona','closed'];
+test('upgradeStudentsSheet adds missing columns', () => {
+  let headers = ['生徒ID','学年','組','番号','初回ログイン日時'];
   const sheetStub = {
     getLastColumn: jest.fn(() => headers.length),
-    getRange: jest.fn((r, c, num, cols) => {
-      if (num && cols) return { getValues: () => [headers] };
+    getRange: jest.fn((r,c,num,cols) => {
+      if (num && cols) {
+        return {
+          getValues: () => [headers],
+          setValues: vals => { headers = vals[0]; }
+        };
+      }
       return { setValue: v => { headers[c - 1] = v; } };
     }),
-    insertColumnAfter: jest.fn(pos => { headers.splice(pos, 0, ''); })
+    insertColumnAfter: jest.fn(() => { headers.push(''); })
   };
   const ssStub = { getSheetByName: jest.fn(() => sheetStub) };
   const context = {
-    SHEET_TASKS: 'Tasks',
+    SHEET_STUDENTS: 'Students',
     getSpreadsheetByTeacherCode: () => ssStub
   };
   loadMigration(context);
-  context.addDraftColumn('ABC');
-  expect(headers[7]).toBe('draft');
+  context.upgradeStudentsSheet('ABC');
+  expect(headers.length).toBe(10);
 });

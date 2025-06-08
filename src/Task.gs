@@ -17,7 +17,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
     const obj = JSON.parse(payloadAsJson);
     classId = obj.classId || '';
   } catch (e) {}
-  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '', '']);
+  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date()]);
 }
 
 /**
@@ -31,17 +31,14 @@ function listTasks(teacherCode) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
-  return data.filter(r => String(r[7] || '') !== '1')
-             .reverse()
+  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  return data.reverse()
              .map(row => ({
     id: row[0],
     classId: row[1],
     q: row[2],
     selfEval: row[3],
-    date: Utilities.formatDate(new Date(row[4]), 'JST', 'yyyy/MM/dd HH:mm'),
-    persona: row[5] || '',
-    closed: String(row[6] || '').toLowerCase() === 'closed'
+    date: Utilities.formatDate(new Date(row[4]), 'JST', 'yyyy/MM/dd HH:mm')
   }));
 }
 
@@ -84,15 +81,14 @@ function duplicateTask(teacherCode, taskId) {
   if (!sheet) return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
-  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === taskId) {
       const newId = Utilities.getUuid();
       const classId = data[i][1];
       const payload = data[i][2];
       const selfEval = data[i][3];
-      const persona = data[i][5] || '';
-      sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona, '', '']);
+      sheet.appendRow([newId, classId, payload, selfEval, new Date()]);
       break;
     }
   }
@@ -109,17 +105,15 @@ function getTask(teacherCode, taskId) {
   if (!sheet) return null;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
-  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
   for (let i = 0; i < data.length; i++) {
-    if (data[i][0] === taskId && String(data[i][7] || '') !== '1') {
+    if (data[i][0] === taskId) {
       return {
         id: data[i][0],
         classId: data[i][1],
         q: data[i][2],
         selfEval: data[i][3],
-        date: Utilities.formatDate(new Date(data[i][4]), 'JST', 'yyyy/MM/dd HH:mm'),
-        persona: data[i][5] || '',
-        closed: String(data[i][6] || '').toLowerCase() === 'closed'
+        date: Utilities.formatDate(new Date(data[i][4]), 'JST', 'yyyy/MM/dd HH:mm')
       };
     }
   }
@@ -131,15 +125,8 @@ function getTask(teacherCode, taskId) {
  * 課題を完了状態としてマーク
  */
 function closeTask(teacherCode, taskId) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
-  if (!sheet) return;
-  const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
-  const idx = ids.indexOf(taskId);
-  if (idx >= 0) {
-    sheet.getRange(idx + 2, 7).setValue('closed');
-  }
+  // スキーマ変更により状態列を廃止したため、現在は削除のみ対応
+  deleteTask(teacherCode, taskId);
 }
 
 /**
@@ -177,7 +164,6 @@ function getRecommendedTask(teacherCode, studentId) {
 
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
-    if (t.closed) continue;
     if (classId && String(t.classId) !== String(classId)) continue;
     if (!answeredIds.includes(t.id)) {
       return { id: t.id, q: t.q, selfEval: t.selfEval };
@@ -227,7 +213,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer, earnedXp, totalXp,
     if (typeof answer === 'string' && answer.length > 50) {
       answerSummary = answer.substring(0, 50) + '...';
     }
-    globalAnswerSheet.appendRow([new Date(), studentId, taskId, answerSummary, earnedXp, totalXp, level, trophies || '', aiCalls, attemptCount]);
+    globalAnswerSheet.appendRow([studentId, taskId, questionText, '', new Date(), '', '', answerSummary, earnedXp, totalXp, level, trophies || '']);
   } else {
     console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
   }
@@ -253,7 +239,7 @@ function saveDraftTask(teacherCode, payloadJson) {
     const obj = JSON.parse(payloadJson);
     classId = obj.classId || '';
   } catch (e) {}
-  sheet.appendRow([id, classId, payloadJson, '', new Date(), '', '', 1]);
+  sheet.appendRow([id, classId, payloadJson, '', new Date()]);
   return id;
 }
 
@@ -266,13 +252,5 @@ function deleteDraftTask(teacherCode, taskId) {
   if (!ss) return;
   const sheet = ss.getSheetByName(SHEET_TASKS);
   if (!sheet) return;
-  const last = sheet.getLastRow();
-  if (last < 2) return;
-  const data = sheet.getRange(2, 1, last - 1, 8).getValues();
-  for (let i = 0; i < data.length; i++) {
-    if (data[i][0] === taskId && String(data[i][7] || '') === '1') {
-      sheet.deleteRow(i + 2);
-      break;
-    }
-  }
+  deleteTask(teacherCode, taskId);
 }

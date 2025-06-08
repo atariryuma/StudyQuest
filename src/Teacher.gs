@@ -116,25 +116,25 @@ function initTeacher(passcode) {
     {
       name: SHEET_TASKS,
       color: "ff9900",
-      header: ['ID', 'ClassID', '問題データ(JSON)', '自己評価許可', '作成日時', 'ペルソナ', '状態', 'draft'],
+      header: ['ID', 'ClassID', '問題データ(JSON)', '自己評価許可', '作成日時'],
       description: "作成された課題の一覧です。"
     },
     {
       name: SHEET_STUDENTS,
       color: "4285f4",
-      header: ['生徒ID', '学年', '組', '番号', '初回ログイン日時'],
+      header: ['生徒ID', '学年', '組', '番号', '初回ログイン日時', '最終ログイン日時', '累計ログイン回数', '累積XP', '現在レベル', '最終獲得トロフィーID'],
       description: "ログインした生徒の情報が記録されます。"
     },
     {
       name: SHEET_SUBMISSIONS,
       color: "008080",
-      header: ['日時', '生徒ID', '課題ID', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー', 'AI呼び出し回数', '回答回数'],
+      header: ['生徒ID', '課題ID', '問題文', '開始日時', '提出日時', '成果物URL', '問題概要', '回答概要', '付与XP', '累積XP', 'レベル', 'トロフィー'],
       description: "全生徒の回答の概要（ボード表示用）です。"
     },
     {
       name: SHEET_AI_FEEDBACK,
       color: "ff4444",
-      header: ['日時', '生徒ID', '課題ID', '回答回数', 'AI呼び出し回数', '回答本文', 'フィードバック内容'],
+      header: ['LogID', 'SubmissionID', 'フィード内容', '生成日時'],
       description: "Gemini API からのフィードバックログです。"
     },
     {

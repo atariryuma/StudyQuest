@@ -13,18 +13,23 @@ function deleteLegacyApiKeys() {
 }
 
 /**
- * addDraftColumn(teacherCode):
- * 課題シートに draft 列が無ければ追加
+ * upgradeStudentsSheet(teacherCode):
+ * 旧バージョンの Students シートに追加列を付与
  */
-function addDraftColumn(teacherCode) {
+function upgradeStudentsSheet(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return false;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(SHEET_STUDENTS);
   if (!sheet) return false;
+  const required = ['生徒ID','学年','組','番号','初回ログイン日時','最終ログイン日時','累計ログイン回数','累積XP','現在レベル','最終獲得トロフィーID'];
   const lastCol = sheet.getLastColumn();
-  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  if (headers.includes('draft')) return true;
-  sheet.insertColumnAfter(Math.max(7, lastCol));
-  sheet.getRange(1, Math.max(8, lastCol + 1)).setValue('draft');
+  let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  if (headers.length < required.length) {
+    for (let i = headers.length; i < required.length; i++) {
+      sheet.insertColumnAfter(i);
+    }
+    headers = sheet.getRange(1, 1, 1, required.length).getValues()[0];
+  }
+  sheet.getRange(1, 1, 1, required.length).setValues([required]);
   return true;
 }

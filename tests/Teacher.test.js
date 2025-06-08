@@ -75,7 +75,7 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB');
 });
 
-test('initTeacher tasks sheet header includes draft column', () => {
+test('initTeacher creates sheets with documented headers', () => {
   const props = {};
   const dummyRange = {
     setFontWeight: jest.fn().mockReturnThis(),
@@ -135,8 +135,14 @@ test('initTeacher tasks sheet header includes draft column', () => {
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
   context.initTeacher('kyoushi');
-  const header = inserted['Tasks'].appendRow.mock.calls[0][0];
-  expect(header[header.length-1]).toBe('draft');
+  const taskHeader = inserted['Tasks'].appendRow.mock.calls[0][0];
+  const studentHeader = inserted['Students'].appendRow.mock.calls[0][0];
+  const subsHeader = inserted['Submissions'].appendRow.mock.calls[0][0];
+  const aiHeader = inserted['AI'].appendRow.mock.calls[0][0];
+  expect(taskHeader).toEqual(['ID','ClassID','問題データ(JSON)','自己評価許可','作成日時']);
+  expect(studentHeader.length).toBe(10);
+  expect(subsHeader.length).toBe(12);
+  expect(aiHeader).toEqual(['LogID','SubmissionID','フィード内容','生成日時']);
 });
 
 test('saveTeacherSettings persists values correctly and global key handling', () => {
