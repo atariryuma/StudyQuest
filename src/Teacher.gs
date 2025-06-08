@@ -134,7 +134,7 @@ function initTeacher(passcode) {
     {
       name: SHEET_AI_FEEDBACK,
       color: "ff4444",
-      header: ['日時', '生徒ID', '課題ID', '回答回数', 'AI呼び出し回数', '回答本文', 'フィードバック内容'],
+      header: ['LogID', 'SubmissionID', 'フィード内容', '生成日時'],
       description: "Gemini API からのフィードバックログです。"
     },
     {

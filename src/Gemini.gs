@@ -61,14 +61,12 @@ function logToSpreadsheet(logData) {
   if (!ss) return;
   const sheet = ss.getSheetByName(SHEET_AI_FEEDBACK);
   if (!sheet) return;
+  const logId = sheet.getLastRow();
   sheet.appendRow([
-    new Date(),
-    logData.studentId,
-    logData.taskId,
-    logData.attempt,
-    logData.aiCalls,
-    logData.answer || '',
-    logData.feedback || ''
+    logId,
+    logData.submissionId || '',
+    logData.feedback || '',
+    new Date()
   ]);
 }
 

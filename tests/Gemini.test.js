@@ -96,3 +96,22 @@ test('generateDeepeningPrompt builds prompt and calls API', () => {
   expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('Explain gravity');
 });
+
+test('logToSpreadsheet writes row with incremented LogID', () => {
+  const rows = [];
+  const sheetStub = {
+    getLastRow: jest.fn(() => rows.length + 1),
+    appendRow: jest.fn(row => rows.push(row))
+  };
+  const ssStub = { getSheetByName: jest.fn(() => sheetStub) };
+  const context = {
+    SHEET_AI_FEEDBACK: 'AI',
+    getSpreadsheetByTeacherCode: () => ssStub
+  };
+  loadGemini(context);
+  context.logToSpreadsheet({ teacherCode: 'T', submissionId: 'S1', feedback: 'F' });
+  expect(rows[0][0]).toBe(1);
+  expect(rows[0][1]).toBe('S1');
+  expect(rows[0][2]).toBe('F');
+  expect(typeof rows[0][3].getTime).toBe('function');
+});
