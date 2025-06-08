@@ -149,7 +149,7 @@
           <div id="chatLog" class="flex-1 p-4 space-y-6 overflow-y-auto"></div>
           <!-- AI思考中インジケーター -->
           <div id="thinkingIndicator" class="msg-gemini flex items-end gap-3 p-4 pt-0 hidden">
-                <img src="" alt="Navigator Avatar" class="avatar ai-avatar">
+                <img src="" alt="Navigator Avatar" class="avatar ai-avatar" loading="lazy">
                 <div class="p-3 rounded-lg bg-gray-700">
                     <div class="thinking-dots">
                         <span class="text-2xl">.</span><span class="text-2xl">.</span><span class="text-2xl">.</span>
@@ -319,8 +319,8 @@
     
     const unEl = document.getElementById('unanswered');
     const anEl = document.getElementById('answered');
-    unEl.innerHTML = '';
-    anEl.innerHTML = '';
+    let htmlUn = '';
+    let htmlAn = '';
 
     const createQuestItem = (task, isAnswered) => {
         const q = JSON.parse(task.q);
@@ -328,13 +328,10 @@
             '国語': 'book-open', '社会': 'map', '算数': 'calculator', '理科': 'flask-conical', '生活': 'home', '音楽': 'music', '図工': 'paintbrush-2', '体育': 'swords', '道徳': 'heart', '総合': 'globe', '英語': 'captions'
         };
         const icon = subjectIcons[q.subject] || 'help-circle';
-        
-        const item = document.createElement('div');
-        item.className = isAnswered 
+        const className = isAnswered
             ? 'bg-gray-800/50 p-3 rounded-lg opacity-60'
             : 'bg-gray-800/50 p-3 rounded-lg cursor-pointer hover:bg-cyan-900/50 border border-transparent hover:border-cyan-400 transition-all';
-        
-        item.innerHTML = `
+        const html = `
             <div class="flex justify-between items-start">
                 <span class="font-bold ${isAnswered ? 'text-gray-300 line-through' : 'text-white'}">${escapeHtml(q.question)}</span>
                 <i data-lucide="${icon}" class="w-5 h-5 text-gray-400 flex-shrink-0 ml-2"></i>
@@ -344,14 +341,26 @@
                 <span class="font-bold ${isAnswered ? 'text-gray-500' : 'text-yellow-400'}">${isAnswered ? 'クリア済み' : `+${xpPerQuest} XP`}</span>
             </div>
         `;
-        if (!isAnswered) {
-            item.addEventListener('click', () => openTask(task, history));
+        if (isAnswered) {
+            htmlAn += `<div class="${className}">${html}</div>`;
+        } else {
+            htmlUn += `<div class="quest-item ${className}" data-id="${task.id}">${html}</div>`;
         }
-        return item;
     };
-    
-    unanswered.forEach(t => unEl.appendChild(createQuestItem(t, false)));
-    answered.forEach(t => anEl.appendChild(createQuestItem(t, true)));
+
+    unanswered.forEach(t => createQuestItem(t, false));
+    answered.forEach(t => createQuestItem(t, true));
+
+    unEl.innerHTML = htmlUn;
+    anEl.innerHTML = htmlAn;
+
+    unEl.querySelectorAll('.quest-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const id = el.dataset.id;
+            const task = tasks.find(t => t.id === id);
+            if (task) openTask(task, history);
+        });
+    });
 
     renderIcons();
 

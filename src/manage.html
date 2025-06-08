@@ -1101,15 +1101,14 @@
       function renderClassCards(map) {
         const cont = document.getElementById('currentClassCard');
         if (!cont) return;
-        cont.innerHTML = '';
+        let html = '';
         Object.keys(map).forEach(id => {
-          const card = document.createElement('div');
-          card.className = 'class-card';
-          card.textContent = map[id];
-          card.dataset.id = id;
-          if (id === String(selectedClassId)) {
-            card.classList.add('selected');
-          }
+          const selected = id === String(selectedClassId) ? ' selected' : '';
+          html += `<div class="class-card${selected}" data-id="${id}">${map[id]}</div>`;
+        });
+        cont.innerHTML = html;
+        cont.querySelectorAll('.class-card').forEach(card => {
+          const id = card.dataset.id;
           card.addEventListener('click', () => {
             document.querySelectorAll('#currentClassCard .class-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
@@ -1120,7 +1119,6 @@
               gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
             }
           });
-          cont.appendChild(card);
         });
       }
 

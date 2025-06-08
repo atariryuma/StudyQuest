@@ -338,11 +338,9 @@
 
         rows.sort((a, b) => b.level - a.level);
 
+        let html = '';
         rows.forEach((r, i) => {
-            const card = document.createElement('div');
             const cardStyle = getCardStyle(r.level);
-            card.className = `glass-panel rounded-xl p-4 flex flex-col shadow-lg border-2 transition-all opacity-0 cursor-pointer ${cardStyle}`;
-            
             let footerHtml;
             if (cols >= 5) {
                  footerHtml = `
@@ -364,14 +362,17 @@
                     </div>`;
             }
 
-            card.innerHTML = `
+            html += `<div class="answer-card glass-panel rounded-xl p-4 flex flex-col shadow-lg border-2 transition-all opacity-0 cursor-pointer ${cardStyle}" data-idx="${i}">
                 <div class="flex-grow mb-3">
                     <p class="answer-preview whitespace-pre-wrap break-words text-base leading-relaxed text-gray-200">${escapeHtml(r.answer)}</p>
                 </div>
-                ${footerHtml}`;
-            
-            card.addEventListener('click', () => showModal(r));
-            container.appendChild(card);
+                ${footerHtml}
+            </div>`;
+        });
+        container.innerHTML = html;
+        const cards = container.querySelectorAll('.answer-card');
+        cards.forEach((card, i) => {
+            card.addEventListener('click', () => showModal(rows[i]));
             gsap.fromTo(card, { opacity: 0, y: 50, scale: 0.95 }, { delay: i * 0.08, opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' });
         });
         if (window.lucide) { window.lucide.createIcons(); }
