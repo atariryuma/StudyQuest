@@ -8,9 +8,27 @@ if (typeof getCacheValue_ !== 'function') {
   function putCacheValue_() {}
   function removeCacheValue_() {}
 }
+
+function bulkAppend_(sheet, rows) {
+  if (!sheet || !rows || rows.length === 0) return;
+  if (typeof sheet.getRange === 'function' && typeof sheet.getLastRow === 'function') {
+    const start = sheet.getLastRow() + 1;
+    sheet.getRange(start, 1, rows.length, rows[0].length).setValues(rows);
+  } else if (typeof sheet.appendRow === 'function') {
+    rows.forEach(r => sheet.appendRow(r));
+  }
+}
 function findStudentSheet_(ss, studentId) {
   studentId = String(studentId || '').trim();
   if (!ss || !studentId) return null;
+
+  const prefix = (ss && typeof ss.getId === 'function') ? ss.getId() : '';
+  const cacheKey = 'studentSheet_' + prefix + '_' + studentId;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) {
+    const sh = ss.getSheetByName(cached);
+    if (sh) return sh;
+  }
 
   const normalize = (id) => {
     return String(id || '')
@@ -59,6 +77,7 @@ function findStudentSheet_(ss, studentId) {
       }
       candidate.setName(newName);
     }
+    putCacheValue_(cacheKey, candidate.getName(), 3600);
   }
   return candidate;
 }
@@ -115,7 +134,7 @@ function initStudent(teacherCode, grade, classroom, number) {
     if (studentListData[studentRowIndex][0] !== studentId) {
       studentListSheet.getRange(studentRowIndex + 1, 1).setValue(studentId);
     }
-    recordStudentLogin_(studentListSheet, studentRowIndex + 1);
+    recordStudentLogin_(studentListSheet, studentRowIndex + 1, studentListData[studentRowIndex][6]);
   }
 
   const studentSheetName = STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
@@ -157,6 +176,8 @@ function initStudent(teacherCode, grade, classroom, number) {
     studentSheet = ss.insertSheet(studentSheetName);
     studentSheet.appendRow(['Timestamp', 'TaskID', 'Question', 'Answer', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Attempts']);
     studentSheet.setTabColor("f4b400");
+    const pre = (ss && typeof ss.getId === 'function') ? ss.getId() : '';
+    putCacheValue_('studentSheet_' + pre + '_' + studentId, studentSheetName, 3600);
 
   // 既存タスクを Submissions シートにも空行として登録
   const subsSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
@@ -165,6 +186,7 @@ function initStudent(teacherCode, grade, classroom, number) {
     const last = tasksSheet.getLastRow();
     if (last >= 2) {
       const rows = tasksSheet.getRange(2, 1, last - 1, 8).getValues();
+      const appendRows = [];
       rows.forEach(r => {
         if (String(r[6] || '').toLowerCase() === 'closed') return;
         if (String(r[7] || '') === '1') return;
@@ -178,7 +200,7 @@ function initStudent(teacherCode, grade, classroom, number) {
         } catch (e) {
           questionText = payload;
         }
-        subsSheet.appendRow([
+        appendRows.push([
           studentId,
           taskId,
           questionText,
@@ -189,6 +211,7 @@ function initStudent(teacherCode, grade, classroom, number) {
           0
         ]);
       });
+      bulkAppend_(subsSheet, appendRows);
     }
   }
 
@@ -215,6 +238,7 @@ function initStudent(teacherCode, grade, classroom, number) {
           if (map[id] === `${grade}-${classroom}`) classId = id;
         });
         const taskData = taskSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+        const appendRows2 = [];
         taskData.forEach(row => {
           if (String(row[6] || '').toLowerCase() === 'closed') return;
           if (String(row[7] || '') === '1') return;
@@ -229,8 +253,9 @@ function initStudent(teacherCode, grade, classroom, number) {
           } catch (e) {
             questionText = payloadAsJson;
           }
-          studentSheet.appendRow([createdAt, taskId, questionText, '', 0, 0, 0, '', 0]);
+          appendRows2.push([createdAt, taskId, questionText, '', 0, 0, 0, '', 0]);
         });
+        bulkAppend_(studentSheet, appendRows2);
       }
     }
   }
@@ -242,10 +267,10 @@ function initStudent(teacherCode, grade, classroom, number) {
  * recordStudentLogin_(sheet, row):
  * 指定行の最終ログイン日時と累計ログイン回数を更新します
  */
-function recordStudentLogin_(sheet, row) {
+function recordStudentLogin_(sheet, row, current) {
   if (!sheet || row <= 1) return;
   const now   = new Date();
-  const count = Number(sheet.getRange(row, 7).getValue() || 0) + 1; // G列
+  const count = Number(current || 0) + 1;
   sheet.getRange(row, 6, 1, 2).setValues([[now, count]]); // F列, G列
 }
 
@@ -262,7 +287,7 @@ function updateStudentLogin(teacherCode, studentId) {
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === studentId) {
-      recordStudentLogin_(sheet, i + 1);
+      recordStudentLogin_(sheet, i + 1, data[i][6]);
       return true;
     }
   }
