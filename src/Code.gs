@@ -11,7 +11,7 @@ const SHEET_AI_FEEDBACK = 'AIフィードバックログ';
 const SHEET_SETTINGS  = 'Settings';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const SQ_VERSION           = 'v1.0.101';
+const SQ_VERSION           = 'v1.0.102';
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */
