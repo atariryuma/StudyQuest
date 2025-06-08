@@ -123,10 +123,10 @@
         </div>
 
         <!-- Confirmation Screen -->
-        <div id="confirmationScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
+        <div id="confirmationScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-4 hidden">
           <i data-lucide="help-circle" class="w-16 h-16 text-yellow-400 mb-4"></i>
           <h3 class="text-xl font-bold mb-4">課題を提出します。よろしいですか？</h3>
-          <div class="flex gap-4">
+          <div class="flex gap-4 justify-center">
             <button id="confirmSubmitBtn" class="game-btn w-40 bg-green-600 text-white px-6 py-2 rounded-lg font-bold border-green-800 hover:bg-green-500 flex items-center justify-center gap-2">
               <i data-lucide="check"></i><span>クエスト完了</span>
             </button>
@@ -137,11 +137,20 @@
         </div>
 
         <!-- Result Screen -->
-        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex-col items-center justify-center text-center p-4 hidden">
+        <div id="resultScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-4 hidden">
           <i data-lucide="award" class="w-24 h-24 text-amber-400"></i>
           <h3 class="text-2xl font-bold mt-4">クエストクリア！</h3>
           <p class="text-lg mt-2">このクエストで <span id="earnedXp" class="text-yellow-300 font-bold text-xl"></span> をかくとくした！</p>
-          <button id="nextQuestBtn" class="game-btn bg-pink-600 text-white px-6 py-2 mt-4 rounded-lg font-bold border-pink-800 hover:bg-pink-500">つぎのクエストへ</button>
+          <div class="flex gap-4 justify-center mt-6">
+            <a id="viewAnswersBtnResult" class="game-btn bg-pink-600 text-white px-6 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex items-center gap-2" href="#" target="_blank">
+              <i data-lucide="users"></i>
+              <span>みんなの回答を見る</span>
+            </a>
+            <button id="backToListBtn" class="game-btn bg-gray-600 text-white px-6 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex items-center gap-2">
+              <i data-lucide="arrow-left"></i>
+              <span>戻る</span>
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -197,6 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('confirmSubmitBtn').addEventListener('click', finalizeSubmission);
   document.getElementById('cancelSubmitBtn').addEventListener('click', cancelSubmission);
+  document.getElementById('backToListBtn').addEventListener('click', () => {
+    document.getElementById('resultScreen').classList.add('hidden');
+  });
   startWelcomeSequence();
   updateProgressBar();
   updateSendButton();

@@ -116,9 +116,7 @@ StudyQuest_<TeacherCode>/
 | B | value1 | 文字列 | 設定値1                  |
 | C | value2 | 文字列 | 設定値2（必要時）             |
 
----
-
-### 3. 生徒\_<StudentID>（個別回答ログ）
+### 3. 生徒_<StudentID>（個別回答ログ）
 
 * **シート名**: `生徒_<StudentID>`
 * **列定義**:
@@ -134,8 +132,6 @@ StudyQuest_<TeacherCode>/
 | G | Level | number | 回答後のレベル |
 | H | Trophy | string | 獲得トロフィー ID |
 | I | Attempts | number | 同一課題への回答回数 |
-
----
 
 ## 開発ガイドライン
 
