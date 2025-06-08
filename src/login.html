@@ -206,7 +206,7 @@
     function debug(msg) {
       if (!debugContentElem) return;
       const t = new Date().toLocaleTimeString();
-      debugContentElem.innerHTML += `<p>[${t}] ${msg}</p>`;
+      debugContentElem.insertAdjacentHTML('beforeend', `<p>[${t}] ${msg}</p>`);
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
     const canvas = document.getElementById('particleCanvas');
