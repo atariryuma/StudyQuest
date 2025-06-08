@@ -7,6 +7,7 @@ if (typeof getCacheValue_ !== 'function') {
 }
 
 function listBoard(teacherCode) {
+  console.time('listBoard');
   const cacheKey = 'board_' + teacherCode;
   const cached = getCacheValue_(cacheKey);
   if (cached) return cached;
@@ -32,6 +33,7 @@ function listBoard(teacherCode) {
     trophies: row[11]
   }));
   putCacheValue_(cacheKey, result, 30);
+  console.timeEnd('listBoard');
   return result;
 }
 
@@ -40,6 +42,7 @@ function listBoard(teacherCode) {
  * 指定課題の回答ログを新しい順に返す
  */
 function listTaskBoard(teacherCode, taskId) {
+  console.time('listTaskBoard');
   const cacheKey = 'taskBoard_' + teacherCode + '_' + taskId;
   const cached = getCacheValue_(cacheKey);
   if (cached) return cached;
@@ -78,6 +81,7 @@ function listTaskBoard(teacherCode, taskId) {
   }));
 
   putCacheValue_(cacheKey, result, 30);
+  console.timeEnd('listTaskBoard');
   return result;
 }
 
@@ -86,6 +90,7 @@ function listTaskBoard(teacherCode, taskId) {
  * 課題数・生徒数を取得
  */
 function getStatistics(teacherCode) {
+  console.time('getStatistics');
   const cacheKey = 'stats_' + teacherCode;
   const cached = getCacheValue_(cacheKey);
   if (cached) return cached;
@@ -109,5 +114,6 @@ function getStatistics(teacherCode) {
 
   const result = { taskCount, studentCount };
   putCacheValue_(cacheKey, result, 60);
+  console.timeEnd('getStatistics');
   return result;
 }
