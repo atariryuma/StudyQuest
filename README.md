@@ -17,7 +17,7 @@ Google Workspace（Drive／Spreadsheet／Apps Script）を活用し、以下の�
 
 ```txt
 StudyQuest_<TeacherCode>/
-├── StudyQuest_DB             # すべてのデータを集約した Google Spreadsheet
+├── StudyQuest_DB_<TeacherCode># すべてのデータを集約した Google Spreadsheet
 │   ├── タブ: 目次
 │   ├── タブ: Tasks
 │   ├── タブ: Students
@@ -37,6 +37,7 @@ StudyQuest_<TeacherCode>/
 
   * ウェブアプリケーションとしてデプロイされるサーバーサイドのスクリプト。
   * ユーザーの個別 Drive フォルダには配置されず、Web アプリのコンテナ（Google Apps Script のプロジェクト）として管理。
+  * Drive API、Sheets API有効化。
 
 ---
 
