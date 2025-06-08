@@ -7,6 +7,8 @@ if (typeof getCacheValue_ !== 'function') {
   function removeCacheValue_() {}
 }
 
+const _ssCache = {};
+
 function generateTeacherCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
@@ -106,6 +108,7 @@ function initTeacher(passcode) {
   initializeFolders(newCode, [], folderInstance);
 
   const ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
+  props.setProperty('ssId_' + newCode, ss.getId());
   DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
   // 目次シート作成
@@ -198,7 +201,20 @@ function initTeacher(passcode) {
  */
 function getSpreadsheetByTeacherCode(teacherCode) {
   if (!teacherCode) return null;
+  if (_ssCache[teacherCode]) return _ssCache[teacherCode];
   const props = PropertiesService.getScriptProperties();
+  const idKey = 'ssId_' + teacherCode;
+  const cachedId = props.getProperty(idKey);
+  if (cachedId) {
+    try {
+      const ss = SpreadsheetApp.openById(cachedId);
+      _ssCache[teacherCode] = ss;
+      return ss;
+    } catch (e) {
+      props.deleteProperty(idKey);
+    }
+  }
+
   const folderId = props.getProperty(teacherCode);
   if (!folderId) return null;
   try {
@@ -206,7 +222,11 @@ function getSpreadsheetByTeacherCode(teacherCode) {
     const targetName = 'StudyQuest_DB_' + teacherCode;
     const files = folder.getFilesByName(targetName);
     if (files.hasNext()) {
-      return SpreadsheetApp.openById(files.next().getId());
+      const id = files.next().getId();
+      props.setProperty(idKey, id);
+      const ss = SpreadsheetApp.openById(id);
+      _ssCache[teacherCode] = ss;
+      return ss;
     }
     return null;
   } catch (e) {

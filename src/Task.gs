@@ -194,8 +194,8 @@ function giveBonusXp_(ss, studentId, amount) {
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === studentId) {
       const total = Number(data[i][7] || 0) + amount;
-      sheet.getRange(i + 1, 8).setValue(total);
-      sheet.getRange(i + 1, 9).setValue(calcLevelFromXp_(total));
+      sheet.getRange(i + 1, 8, 1, 2)
+           .setValues([[total, calcLevelFromXp_(total)]]);
       break;
     }
   }
