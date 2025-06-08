@@ -284,8 +284,8 @@ async function openTask(task, history) {
   document.getElementById('resultScreen').classList.add('hidden');
   document.getElementById('confirmationScreen').classList.add('hidden');
 
-  // 課題タイトルを変更
-  const postDate = new Date(task.postDate).toLocaleDateString(); // 投稿日をフォーマット
+  // 課題タイトルを変更 (listTasks では date プロパティ)
+  const postDate = new Date(task.date).toLocaleDateString();
   document.getElementById('questTitle').textContent = `${postDate} ${q.subject}`;
 
   log.innerHTML = '';
