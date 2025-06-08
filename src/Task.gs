@@ -49,6 +49,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
  * 課題一覧を最新→過去の順で返す
  */
 function listTasks(teacherCode) {
+  console.time('listTasks');
   const cacheKey = 'tasks_' + teacherCode;
   const cached = getCacheValue_(cacheKey);
   if (cached) return cached;
@@ -72,6 +73,7 @@ function listTasks(teacherCode) {
     closed: String(row[6] || '').toLowerCase() === 'closed'
   }));
   putCacheValue_(cacheKey, result, 300);
+  console.timeEnd('listTasks');
   return result;
 }
 
