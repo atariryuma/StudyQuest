@@ -18,6 +18,28 @@ function bulkAppend_(sheet, rows) {
     rows.forEach(r => sheet.appendRow(r));
   }
 }
+function getStudentRowMap_(teacherCode, sheet) {
+  const cacheKey = 'studentRowMap_' + teacherCode;
+  const cached = getCacheValue_(cacheKey);
+  if (cached) return cached;
+  if (!sheet) {
+    const ss = getSpreadsheetByTeacherCode(teacherCode);
+    if (!ss) return {};
+    sheet = ss.getSheetByName(SHEET_STUDENTS);
+    if (!sheet) return {};
+  }
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return {};
+  const values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  const map = {};
+  for (let i = 0; i < values.length; i++) {
+    const id = String(values[i][0] || '').trim();
+    if (id) map[id] = i + 2;
+  }
+  putCacheValue_(cacheKey, map, 300);
+  return map;
+}
+
 function findStudentSheet_(ss, studentId) {
   studentId = String(studentId || '').trim();
   if (!ss || !studentId) return null;
@@ -105,15 +127,8 @@ function initStudent(teacherCode, grade, classroom, number) {
   const studentId = `${grade}-${classroom}-${number}`; // e.g. "6-1-1"
   
   // 生徒一覧に未登録なら追加 / 旧ID のままなら更新
-  const studentListData = studentListSheet.getDataRange().getValues();
-  let studentRowIndex = -1;
-  for (let i = 1; i < studentListData.length; i++) {
-    const idVal = String(studentListData[i][0] || '').trim();
-    if (idVal === studentId) {
-      studentRowIndex = i;
-      break;
-    }
-  }
+  const rowMap = getStudentRowMap_(teacherCode, studentListSheet);
+  let studentRowIndex = rowMap[studentId] || -1;
   const now = new Date();
   if (studentRowIndex === -1) {
     studentListSheet.appendRow([
@@ -128,13 +143,15 @@ function initStudent(teacherCode, grade, classroom, number) {
       1,        // 現在レベル
       ''        // 最終獲得トロフィーID
     ]);
-    studentRowIndex = studentListSheet.getLastRow() - 1;
+    studentRowIndex = studentListSheet.getLastRow();
     removeCacheValue_('stats_' + teacherCode);
+    removeCacheValue_('studentRowMap_' + teacherCode);
   } else {
-    if (studentListData[studentRowIndex][0] !== studentId) {
-      studentListSheet.getRange(studentRowIndex + 1, 1).setValue(studentId);
+    if (String(studentListSheet.getRange(studentRowIndex, 1).getValue()) !== studentId) {
+      studentListSheet.getRange(studentRowIndex, 1).setValue(studentId);
     }
-    recordStudentLogin_(studentListSheet, studentRowIndex + 1, studentListData[studentRowIndex][6]);
+    const current = studentListSheet.getRange(studentRowIndex, 7).getValue();
+    recordStudentLogin_(studentListSheet, studentRowIndex, current);
   }
 
   const studentSheetName = STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
@@ -284,14 +301,12 @@ function updateStudentLogin(teacherCode, studentId) {
   if (!ss) return false;
   const sheet = ss.getSheetByName(SHEET_STUDENTS);
   if (!sheet) return false;
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === studentId) {
-      recordStudentLogin_(sheet, i + 1, data[i][6]);
-      return true;
-    }
-  }
-  return false;
+  const rowMap = getStudentRowMap_(teacherCode, sheet);
+  const row = rowMap[studentId];
+  if (!row) return false;
+  const current = sheet.getRange(row, 7).getValue();
+  recordStudentLogin_(sheet, row, current);
+  return true;
 }
 
 function getStudentHistory(teacherCode, studentId) {
