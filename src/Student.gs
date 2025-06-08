@@ -79,7 +79,7 @@ function initStudent(teacherCode, grade, classroom, number) {
   }
 
   const studentId = `${grade}-${classroom}-${number}`; // e.g. "6-1-1"
-
+  
   // 生徒一覧に未登録なら追加 / 旧ID のままなら更新
   const studentListData = studentListSheet.getDataRange().getValues();
   let studentRowIndex = -1;
@@ -90,10 +90,26 @@ function initStudent(teacherCode, grade, classroom, number) {
       break;
     }
   }
+  const now = new Date();
   if (studentRowIndex === -1) {
-    studentListSheet.appendRow([studentId, grade, classroom, number, new Date()]);
-  } else if (studentListData[studentRowIndex][0] !== studentId) {
-    studentListSheet.getRange(studentRowIndex + 1, 1).setValue(studentId);
+    studentListSheet.appendRow([
+      studentId,
+      grade,
+      classroom,
+      number,
+      now,      // 初回ログイン日時
+      now,      // 最終ログイン日時
+      1,        // 累計ログイン回数
+      0,        // 累積XP
+      1,        // 現在レベル
+      ''        // 最終獲得トロフィーID
+    ]);
+    studentRowIndex = studentListSheet.getLastRow() - 1;
+  } else {
+    if (studentListData[studentRowIndex][0] !== studentId) {
+      studentListSheet.getRange(studentRowIndex + 1, 1).setValue(studentId);
+    }
+    recordStudentLogin_(studentListSheet, studentRowIndex + 1);
   }
 
   const studentSheetName = STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
@@ -197,6 +213,37 @@ function initStudent(teacherCode, grade, classroom, number) {
   }
 
   return { status: 'ok' };
+}
+
+/**
+ * recordStudentLogin_(sheet, row):
+ * 指定行の最終ログイン日時と累計ログイン回数を更新します
+ */
+function recordStudentLogin_(sheet, row) {
+  if (!sheet || row <= 1) return;
+  const now   = new Date();
+  const count = Number(sheet.getRange(row, 7).getValue() || 0) + 1; // G列
+  sheet.getRange(row, 6, 1, 2).setValues([[now, count]]); // F列, G列
+}
+
+/**
+ * updateStudentLogin(teacherCode, studentId):
+ * 生徒一覧のログイン回数を増やし、最終ログイン日時を更新
+ */
+function updateStudentLogin(teacherCode, studentId) {
+  studentId = String(studentId || '').trim();
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return false;
+  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  if (!sheet) return false;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === studentId) {
+      recordStudentLogin_(sheet, i + 1);
+      return true;
+    }
+  }
+  return false;
 }
 
 function getStudentHistory(teacherCode, studentId) {
