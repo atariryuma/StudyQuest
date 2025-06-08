@@ -219,11 +219,6 @@ function loadTasks(callback) {
         renderLists(tasks || [], history);
         hideLoadingOverlay();
         if (typeof callback === 'function') callback();
-        // ここで5秒後にウェルカムメッセージ
-        setTimeout(() => {
-          // まだ課題が開かれていなければウェルカムメッセージ
-          if (!currentTask) startWelcomeSequence();
-        }, 5000);
       })
       .withFailureHandler(e => {
         alert('履歴取得失敗: ' + e.message);
@@ -563,13 +558,14 @@ function typeWriterToElement(element, text, speed = 60) {
 }
 
 async function startWelcomeSequence() {
-  const log = document.getElementById('chatLog');
-  log.innerHTML = '';
-  document.getElementById('welcomeScreen').classList.add('hidden');
-  document.getElementById('questActiveScreen').classList.remove('hidden');
-  await typeWriter('やあ！今日の調子はどう？', 'system');
+  const icon = document.querySelector('#welcomeScreen i');
+  const line1 = document.getElementById('welcomeLine1');
+  const line2 = document.getElementById('welcomeLine2');
+  gsap.to(icon, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out', delay: 0.2 });
+  await delay(500);
+  await typeWriterToElement(line1, 'やあ！今日の調子はどう？');
   await delay(300);
-  await typeWriter('左のクエスト一覧から課題を選んでね！', 'system');
+  await typeWriterToElement(line2, '左のクエスト一覧から課題を選んでね！');
 }
 
 function deleteMessage(div) {
