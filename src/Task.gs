@@ -25,10 +25,11 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   }
 
   if (parsed && Array.isArray(parsed.classIds)) {
-    parsed.classIds.forEach(cid => {
+    const rows = parsed.classIds.map(cid => {
       const rowPayload = JSON.stringify(Object.assign({}, parsed, { classId: cid }));
-      taskSheet.appendRow([Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), persona || '', '', '']);
+      return [Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), persona || '', '', ''];
     });
+    bulkAppend_(taskSheet, rows);
     removeCacheValue_('tasks_' + teacherCode);
     removeCacheValue_('taskmap_' + teacherCode);
     removeCacheValue_('stats_' + teacherCode);
