@@ -413,6 +413,14 @@ function setClassIdMap(teacherCode, idsString) {
   return map;
 }
 
+/**
+ * updateClassIdMap(teacherCode, idsString):
+ * wrapper for setClassIdMap used by manage.html
+ */
+function updateClassIdMap(teacherCode, idsString) {
+  return setClassIdMap(teacherCode, idsString);
+}
+
 function getClassIdMap(teacherCode) {
   const cacheKey = 'classmap_' + teacherCode;
   const cached = getCacheValue_(cacheKey);

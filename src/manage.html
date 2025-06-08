@@ -117,6 +117,10 @@
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                     <span>ログインへ戻る</span>
                 </a>
+                <button id="classSettingBtn" class="game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 text-sm flex items-center gap-2">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>クラス設定</span>
+                </button>
             </div>
         </header>
 
@@ -427,6 +431,10 @@
       }
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
       document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
+      const settingBtn = document.getElementById('classSettingBtn');
+      if (settingBtn) {
+        settingBtn.addEventListener('click', openClassSettingDialog);
+      }
       document.getElementById('deleteDraftBtn').addEventListener('click', () => {
         if (!draftTaskId) {
           resetForm();
@@ -1109,6 +1117,21 @@
           })
           .withFailureHandler(err => alert('更新に失敗: ' + err.message))
           .setClassIdMap(teacherCode, idsString);
+      }
+
+      function openClassSettingDialog() {
+        const current = registeredClasses.map(x => x.join(',')).join(';');
+        const input = prompt('学年,組 を ; で区切って入力 (例: 6,1;6,2)', current);
+        if (input === null) return;
+        const half = toHalf(input.trim());
+        if (half.split(';').filter(s => s).length > 8) {
+          alert('最大8クラスまで指定できます。');
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(() => loadClassOptions())
+          .withFailureHandler(err => alert('更新に失敗: ' + err.message))
+          .updateClassIdMap(teacherCode, half);
       }
 
       function renderClassCards(map) {
