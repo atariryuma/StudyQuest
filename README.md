@@ -37,8 +37,7 @@ StudyQuest_<TeacherCode>/
 
   * ウェブアプリケーションとしてデプロイされるサーバーサイドのスクリプト。
   * ユーザーの個別 Drive フォルダには配置されず、Web アプリのコンテナ（Google Apps Script のプロジェクト）として管理。
-  * Drive API、Sheets API有効化。
-
+  
 ---
 
 ## スプレッドシート構造
@@ -186,7 +185,7 @@ StudyQuest_<TeacherCode>/
    npm install
    ```
 
-4. Drive API の有効化（必要に応じて Apps Script エディタから追加）
+4. Drive API、Sheets APIの有効化（必要に応じて Apps Script エディタから追加）
 
 ---
 
