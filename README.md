@@ -13,10 +13,6 @@ Google Workspace（Drive／Spreadsheet／Apps Script）を活用し、以下の�
 
 ---
 
-以下、フォルダ構成の箇所を「GAS スクリプトはユーザーの Drive 内に配置しない」前提に修正したものです。必要に応じて README 全体にも反映してください。
-
----
-
 ## フォルダ構成
 
 ```txt
