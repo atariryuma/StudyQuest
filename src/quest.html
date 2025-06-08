@@ -52,7 +52,7 @@
     <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
       <div class="flex items-center gap-3">
         <i data-lucide="swords" class="w-8 h-8 text-cyan-400"></i>
-        <h1 class="text-2xl font-bold tracking-wider text-white">クエスト画面</h1>
+        <h1 class="text-2xl font-bold tracking-wider text-white">StudyQuest</h1>
       </div>
       <div class="w-full sm:w-1/2 lg:w-1/3">
         <div class="flex justify-between items-center mb-1 text-sm text-gray-400">
@@ -269,7 +269,11 @@ function renderLists(tasks, history) {
   if (!currentTask && unanswered.length) openTask(unanswered[0], history);
 }
 
+let lastTaskId = null;
 async function openTask(task, history) {
+  if (lastTaskId === task.id) return; // 連続クリック時は何もしない
+  lastTaskId = task.id;
+
   currentTask = task;
   aiCalls = 0;
   questStep = QuestStep.INITIAL_ANSWER;
