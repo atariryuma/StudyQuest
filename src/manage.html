@@ -383,7 +383,7 @@
       document.getElementById('generateChoicesBtn').addEventListener('click', () => {
         if (aiCredits <= 0) return;
 
-        const clsRadio = document.querySelector('input[name="taskClassRadio"]:checked');
+        const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
         const cls = clsRadio ? clsRadio.value : '';
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
@@ -423,7 +423,7 @@
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
         const persona = document.getElementById('personaInput').value;
-        const clsRadio = document.querySelector('input[name="taskClassRadio"]:checked');
+        const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
         const cls = clsRadio ? clsRadio.value : '';
         const draftPayload = JSON.stringify({ classId: cls, subject, question });
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
@@ -473,8 +473,8 @@
       taskForm.addEventListener('submit', e => {
         e.preventDefault();
 
-        const clsRadio = document.querySelector('input[name="taskClassRadio"]:checked');
-        const cls = clsRadio ? clsRadio.value : '';
+        const clsCheckboxes = Array.from(document.querySelectorAll('input[name="taskClassCheckbox"]:checked'));
+        const classIds = clsCheckboxes.map(cb => cb.value);
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
@@ -486,7 +486,7 @@
         }
         const ansType = checkedRadio.value;
 
-        if (!cls) {
+        if (classIds.length === 0) {
           alert('クラスを選択してください。');
           return;
         }
@@ -500,28 +500,29 @@
         }
 
         // ペイロードをタイプ別に組み立て
-        let payload;
-        if (ansType === 'text') {
-          payload = JSON.stringify({ classId: cls, subject, question: q, type: 'text' });
-        } else {
+        const makePayload = cls => {
+          if (ansType === 'text') {
+            return JSON.stringify({ classId: cls, subject, question: q, type: 'text' });
+          }
           const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
                               .map(inp => inp.value.trim());
           if (inputs.some(text => text === '')) {
             alert('すべての選択肢を入力してください。');
-            return;
+            return null;
           }
-          payload = JSON.stringify({
+          return JSON.stringify({
             classId: cls,
             subject,
             question: q,
             type: ansType,
             choices: inputs
           });
-        }
-
-        // createTask を呼び出し、成功したら画面を更新
-        google.script.run
-          .withSuccessHandler(() => {
+        };
+        let completed = 0;
+        const total = classIds.length;
+        const onSuccess = () => {
+          completed++;
+          if (completed === total) {
             loadTasks();
             updateWidgets();
             addSubjectHistory(subject);
@@ -531,11 +532,19 @@
               google.script.run.deleteDraftTask(teacherCode, draftTaskId);
               draftTaskId = null;
             }
-          })
-          .withFailureHandler(err => {
-            alert('課題作成中にエラーが発生しました: ' + err.message);
-          })
-          .createTask(teacherCode, payload, self, persona);
+          }
+        };
+
+        classIds.forEach(cid => {
+          const payload = makePayload(cid);
+          if (!payload) return;
+          google.script.run
+            .withSuccessHandler(onSuccess)
+            .withFailureHandler(err => {
+              alert('課題作成中にエラーが発生しました: ' + err.message);
+            })
+            .createTask(teacherCode, payload, self, persona);
+        });
 
         // ボタンアニメーション
         const btn = document.getElementById('createBtn');
@@ -638,8 +647,8 @@
               const label = document.createElement('label');
               label.className = 'flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer';
               const input = document.createElement('input');
-              input.type = 'radio';
-              input.name = 'taskClassRadio';
+              input.type = 'checkbox';
+              input.name = 'taskClassCheckbox';
               input.value = id;
               label.appendChild(input);
               label.appendChild(document.createTextNode(map[id]));
@@ -792,8 +801,8 @@
           document.getElementById('aiToolsSection').classList.remove('hidden');
           renderOptionInputs(data.choices || []);
         }
-        const clsRadio = document.querySelector(`#taskClassButtons input[value="${task.classId}"]`);
-        if (clsRadio) clsRadio.checked = true;
+        const clsCheckbox = document.querySelector(`#taskClassButtons input[value="${task.classId}"]`);
+        if (clsCheckbox) clsCheckbox.checked = true;
         selectedClassId = task.classId || null;
         document.querySelectorAll('#currentClassCard .class-card').forEach(c => {
           c.classList.toggle('selected', c.dataset.id === String(task.classId));
@@ -980,8 +989,8 @@
             document.querySelectorAll('#currentClassCard .class-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             selectedClassId = id;
-            const radio = document.querySelector(`#taskClassButtons input[value="${id}"]`);
-            if (radio) radio.checked = true;
+            const checkbox = document.querySelector(`#taskClassButtons input[value="${id}"]`);
+            if (checkbox) checkbox.checked = true;
             if (window.gsap) {
               gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
             }
