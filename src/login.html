@@ -80,6 +80,15 @@
           <span>Googleで認証</span>
         </button>
       </form>
+    <div class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg">
+      <h3 class="text-yellow-400 font-bold mb-2">【開発者向け】</h3>
+      <p class="text-xs text-gray-400 mb-2">
+        開発中は、以下のボタンで認証をスキップできます。
+      </p>
+      <button id="devLoginBtn" type="button" class="w-full bg-yellow-600 text-white p-2 rounded-lg font-bold border-b-4 border-yellow-800 hover:bg-yellow-500">
+        開発モードでログイン (教師)
+      </button>
+    </div>
     </section>
   </main>
 
@@ -185,6 +194,18 @@
       document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
       document.getElementById('savedRegistrations').addEventListener('change', onSelectRegistration);
       setupFieldFocus();
+      const devLoginBtn = document.getElementById("devLoginBtn");
+      if (devLoginBtn) {
+        devLoginBtn.addEventListener("click", () => {
+          google.script.run
+            .withSuccessHandler(result => {
+              const { teacherCode } = result;
+              alert("開発モードでログインしました。");
+              window.top.location.href = SCRIPT_URL + "?page=manage&teacher=" + teacherCode;
+            })
+            .initTeacher("dev_teacher");
+        });
+      }
     });
 
     function toHalf(str) { return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0)); }
