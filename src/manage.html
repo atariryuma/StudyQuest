@@ -402,9 +402,6 @@
         container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
 
-        const typePrompt = `${choiceType}を${count}個`;
-        const prompt = `${subject} の課題「${question}」に対する回答例として${typePrompt}箇条書きで提示してください。`;
-
         google.script.run
           .withSuccessHandler(res => {
             const choices = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
@@ -418,7 +415,7 @@
           .withFailureHandler(err => {
             container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
           })
-          .callGeminiAPI_GAS(teacherCode, prompt, persona);
+          .generateChoicePrompt(teacherCode, question, choiceType, count, persona);
       });
 
       document.getElementById('generateFollowupBtn').addEventListener('click', () => {
@@ -433,8 +430,6 @@
         container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
 
-        const prompt = `${subject} の課題「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
-
         google.script.run
           .withSuccessHandler(res => {
             const lines = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
@@ -443,7 +438,7 @@
           .withFailureHandler(err => {
             container.textContent = '生成に失敗しました: ' + err.message;
           })
-          .callGeminiAPI_GAS(teacherCode, prompt, persona);
+          .generateDeepeningPrompt(teacherCode, question, persona);
       });
 
       document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {

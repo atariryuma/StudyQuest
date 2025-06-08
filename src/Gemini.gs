@@ -83,3 +83,39 @@ function generateFollowupFromAnswer(teacherCode, answerText, persona) {
   const prompt = `次の生徒の回答を基に理解を深めるための質問を2つ箇条書きで提示してください。\n回答:「${answerText}」`;
   return callGeminiAPI_GAS(teacherCode, prompt, persona);
 }
+
+/**
+ * generateProblemPrompt(teacherCode, subject, question, persona):
+ * 指定された教科とテーマから新しい問題文を生成
+ */
+function generateProblemPrompt(teacherCode, subject, question, persona) {
+  subject = String(subject || '').trim();
+  question = String(question || '').trim();
+  if (!subject && !question) return '';
+  const prompt = `教科「${subject}」で使用する課題として「${question}」に関する問題文を1つ提案してください。`;
+  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+}
+
+/**
+ * generateChoicePrompt(teacherCode, question, type, count, persona):
+ * 質問に対する選択肢例を生成
+ */
+function generateChoicePrompt(teacherCode, question, type, count, persona) {
+  question = String(question || '').trim();
+  type = String(type || '').trim();
+  count = Number(count) || 1;
+  if (!question) return '';
+  const prompt = `「${question}」の回答例として${type}を${count}個箇条書きで提示してください。`;
+  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+}
+
+/**
+ * generateDeepeningPrompt(teacherCode, question, persona):
+ * 生徒に更なる考察を促す質問例を生成
+ */
+function generateDeepeningPrompt(teacherCode, question, persona) {
+  question = String(question || '').trim();
+  if (!question) return '';
+  const prompt = `「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
+  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+}
