@@ -55,9 +55,7 @@ test('listBoard reads new submission columns', () => {
     earnedXp: 3,
     totalXp: 13,
     level: 2,
-    trophies: '',
-    aiCalls: 0,
-    attempts: 0
+    trophies: ''
   });
   expect(rows[1].studentId).toBe('s1');
 });
