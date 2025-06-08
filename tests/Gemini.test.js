@@ -16,13 +16,12 @@ test('generateFollowupFromAnswer builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((t, p, persona) => {
-    calls.push({ t, p, persona });
+  context.callGeminiAPI_GAS = jest.fn((p, persona) => {
+    calls.push({ p, persona });
     return 'ok';
   });
-  const res = context.generateFollowupFromAnswer('T1', 'sample answer', 'P');
+  const res = context.generateFollowupFromAnswer('sample answer', 'P');
   expect(res).toBe('ok');
-  expect(calls[0].t).toBe('T1');
   expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('sample answer');
 });
@@ -45,7 +44,7 @@ test('callGeminiAPI_GAS uses getGlobalGeminiApiKey', () => {
   loadGemini(context);
   const spy = jest.fn(() => 'TESTKEY');
   context.getGlobalGeminiApiKey = spy;
-  context.callGeminiAPI_GAS('TC', 'prompt', '');
+  context.callGeminiAPI_GAS('prompt', '');
   expect(spy).toHaveBeenCalled();
   expect(context.UrlFetchApp.fetch.mock.calls[0][0]).toContain('key=TESTKEY');
 });

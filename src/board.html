@@ -335,7 +335,7 @@
             .withFailureHandler(err => {
               followupOut.textContent = '生成に失敗しました: ' + err.message;
             })
-            .generateFollowupFromAnswer(teacherCode, ans, persona);
+            .generateFollowupFromAnswer(ans, persona);
         });
       }
 
