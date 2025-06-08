@@ -391,7 +391,11 @@
     showThinking(false);
 
     const rows = history.filter(r => r[1] === task.id);
-    rows.forEach(r => appendMsg('student', r[3]));
+    const frag = document.createDocumentFragment();
+    rows.forEach(r => frag.appendChild(appendMsg('student', r[3], true)));
+    document.getElementById('chatLog').appendChild(frag);
+    renderIcons();
+    document.getElementById('chatLog').scrollTop = document.getElementById('chatLog').scrollHeight;
     
     renderInputForStep(q, rows.length);
     updateProgressBar();
@@ -479,11 +483,12 @@
     updateSendButton();
   }
 
-  function appendMsg(type, text) {
+  function appendMsg(type, text, skipAppend) {
       const log = document.getElementById('chatLog');
       const div = document.createElement('div');
       const avatarImg = document.createElement('img');
       avatarImg.className = 'avatar';
+      avatarImg.loading = 'lazy';
       const textDiv = document.createElement('div');
       textDiv.className = 'p-3 rounded-lg max-w-[80%]';
       const p = document.createElement('p');
@@ -507,12 +512,14 @@
           textDiv.classList.add('bg-gray-700', 'rounded-bl-none', 'whitespace-pre-wrap');
       }
 
-      div.prepend(textDiv);
-      div.prepend(avatarImg);
-      log.appendChild(div);
-      renderIcons();
-      log.scrollTop = log.scrollHeight;
-      return div;
+        div.prepend(textDiv);
+        div.prepend(avatarImg);
+        if (!skipAppend) {
+            log.appendChild(div);
+            renderIcons();
+            log.scrollTop = log.scrollHeight;
+        }
+        return div;
   }
 
   function typeWriter(text, type) {
