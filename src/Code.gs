@@ -7,7 +7,6 @@ const SHEET_TOC        = '📜 目次';
 const SHEET_TASKS      = 'Tasks';
 const SHEET_SUBMISSIONS = 'Submissions';
 const SHEET_STUDENTS   = 'Students';
-const SHEET_DASHBOARD  = 'Dashboard';
 const SHEET_AI_FEEDBACK = 'AIフィードバックログ';
 const SHEET_SETTINGS  = 'Settings';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
