@@ -192,14 +192,17 @@
 
 <script>
   // GASから渡される変数を定義
-  const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
-  const teacherCode = '<?!= teacher ?>';
-  const grade = '<?!= grade ?>';
-  const classroom = '<?!= classroom ?>';
-  const number = '<?!= number ?>';
-  const version = '<?!= version ?>';
-  const teacherPhotoUrl = '<?!= teacherPhotoUrl ?>' || "https://placehold.co/64x64/7e22ce/ffffff?text=ME";
+  // ▼▼▼ エラー修正箇所 ▼▼▼
+  // GASからの変数が未定義の場合でもスクリプトが停止しないように、デフォルト値を設定
+  const SCRIPT_URL = '<?!= typeof scriptUrl !== "undefined" ? scriptUrl.replace("/dev","/exec") : "" ?>';
+  const teacherCode = '<?!= typeof teacher !== "undefined" ? teacher : "" ?>';
+  const grade = '<?!= typeof grade !== "undefined" ? grade : "" ?>';
+  const classroom = '<?!= typeof classroom !== "undefined" ? classroom : "" ?>';
+  const number = '<?!= typeof number !== "undefined" ? number : "" ?>';
+  const version = '<?!= typeof version !== "undefined" ? version : "1.0" ?>';
+  const teacherPhotoUrl = '<?!= typeof teacherPhotoUrl !== "undefined" ? teacherPhotoUrl : "" ?>' || "https://placehold.co/64x64/7e22ce/ffffff?text=ME";
   const studentId = `${grade}-${classroom}-${number}`;
+  // ▲▲▲ エラー修正箇所 ▲▲▲
 
   // AIナビゲーターのアイコン
   const aiIconUrl = "https://placehold.co/40x40/4b5563/ffffff?text=🤖";
