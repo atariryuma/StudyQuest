@@ -27,7 +27,6 @@ function doGet(e) {
   template.classroom   = (e && e.parameter && e.parameter['class'])  ? e.parameter['class']  : '';
   template.number      = (e && e.parameter && e.parameter.number)    ? e.parameter.number    : '';
   template.version     = getSqVersion();
-  template.clientId    = getOAuthClientId();
   const result = template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)

@@ -283,6 +283,17 @@ function initStudent(teacherCode, grade, classroom, number) {
 }
 
 /**
+ * registerStudentToClass(info):
+ * 生徒をクラスに登録して初期化します
+ */
+function registerStudentToClass(info) {
+  console.time('registerStudentToClass');
+  initStudent(info.teacherCode, info.grade, info.classroom, info.number);
+  console.timeEnd('registerStudentToClass');
+  return { status: 'ok' };
+}
+
+/**
  * recordStudentLogin_(sheet, row):
  * 指定行の最終ログイン日時と累計ログイン回数を更新します
  */

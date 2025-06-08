@@ -101,6 +101,14 @@ function initTeacher(passcode) {
   }
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
+  const storedPass = props.getProperty('teacherPasscode');
+  if (storedPass) {
+    if (storedPass !== passcode) {
+      return { status: 'error', message: 'パスコードが違います。' };
+    }
+  } else {
+    props.setProperty('teacherPasscode', passcode);
+  }
 
   const stored = props.getProperty('teacherCode_' + email);
   if (stored) {
