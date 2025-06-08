@@ -771,7 +771,12 @@
         const list = document.getElementById('subjectHistory');
         if (!list) return;
         list.innerHTML = '';
-        const hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+        let hist = [];
+        try {
+          hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+        } catch (_) {
+          hist = [];
+        }
         hist.forEach(s => {
           const opt = document.createElement('option');
           opt.value = s;
@@ -780,11 +785,15 @@
       }
 
       function addSubjectHistory(subj) {
-        let hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
-        hist = hist.filter(s => s !== subj);
-        hist.unshift(subj);
-        if (hist.length > 8) hist = hist.slice(0,8);
-        localStorage.setItem('subjectHistory', JSON.stringify(hist));
+        try {
+          let hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+          hist = hist.filter(s => s !== subj);
+          hist.unshift(subj);
+          if (hist.length > 8) hist = hist.slice(0,8);
+          localStorage.setItem('subjectHistory', JSON.stringify(hist));
+        } catch (_) {
+          // ignore storage errors
+        }
       }
 
       function loadDraft() {
@@ -800,11 +809,19 @@
           subject: document.getElementById('subject').value,
           question: document.getElementById('question').value
         };
-        localStorage.setItem('taskDraft', JSON.stringify(draft));
+        try {
+          localStorage.setItem('taskDraft', JSON.stringify(draft));
+        } catch (_) {
+          // ignore storage errors
+        }
       }
 
       function clearDraft() {
-        localStorage.removeItem('taskDraft');
+        try {
+          localStorage.removeItem('taskDraft');
+        } catch (_) {
+          // ignore storage errors
+        }
       }
 
       function updateAiCreditDisplay() {

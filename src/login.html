@@ -279,7 +279,12 @@
 
       debug('🔄 ページ読み込み完了');
       gsap.from('#loginBox', { scale: 0, duration: 0.6, ease: 'back' });
-      const history = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
+      let history = [];
+      try {
+        history = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
+      } catch (_) {
+        history = [];
+      }
       const list = document.getElementById('teacherHistory');
       list.innerHTML = '';
       history.forEach(code => {
@@ -308,11 +313,15 @@
 
     function addHistory(code) {
       code = String(code || '').toUpperCase();
-      let list = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
-      list = list.filter(c => c !== code);
-      list.unshift(code);
-      if (list.length > 5) list = list.slice(0,5);
-      localStorage.setItem('teacherCodeHistory', JSON.stringify(list));
+      try {
+        let list = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
+        list = list.filter(c => c !== code);
+        list.unshift(code);
+        if (list.length > 5) list = list.slice(0,5);
+        localStorage.setItem('teacherCodeHistory', JSON.stringify(list));
+      } catch (_) {
+        // Ignore storage errors
+      }
     }
 
     function toggleTeacherMode() {
