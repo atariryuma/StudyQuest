@@ -7,7 +7,6 @@ function listBoard(teacherCode) {
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  // 12列目まで取得
   const data = sheet.getRange(2, 1, lastRow - 1, 12).getValues();
   const sliceStart = Math.max(0, data.length - 30);
   const slice = data.slice(sliceStart).reverse();

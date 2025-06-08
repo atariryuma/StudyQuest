@@ -61,6 +61,7 @@ function logToSpreadsheet(logData) {
   if (!ss) return;
   const sheet = ss.getSheetByName(SHEET_AI_FEEDBACK);
   if (!sheet) return;
+  const logId = sheet.getLastRow();
   sheet.appendRow([
     Utilities.getUuid(),
     logData.taskId || '',
@@ -89,7 +90,7 @@ function generateProblemPrompt(teacherCode, subject, question, persona) {
   question = String(question || '').trim();
   if (!subject && !question) return '';
   const prompt = `教科「${subject}」で使用する課題として「${question}」に関する問題文を1つ提案してください。`;
-  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona);
 }
 
 /**
@@ -102,7 +103,7 @@ function generateChoicePrompt(teacherCode, question, type, count, persona) {
   count = Number(count) || 1;
   if (!question) return '';
   const prompt = `「${question}」の回答例として${type}を${count}個箇条書きで提示してください。`;
-  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona);
 }
 
 /**
@@ -113,5 +114,5 @@ function generateDeepeningPrompt(teacherCode, question, persona) {
   question = String(question || '').trim();
   if (!question) return '';
   const prompt = `「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
-  return callGeminiAPI_GAS(teacherCode, prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona);
 }
