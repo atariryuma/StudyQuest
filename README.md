@@ -28,7 +28,7 @@
 
 `OAUTH_CLIENT_ID` はスクリプトプロパティまたは環境変数 `OAUTH_CLIENT_ID` に登録してください。ログインページでは `doGet` から埋め込まれた値を使用して Google Identity Services を初期化します。
 
-フォームでは教師/生徒を切り替えられます。教師はチェックを入れてGoogle認証するだけで `manage.html` へ進みます。生徒は `quest.html` に遷移します。IDトークン取得処理は次の通りです。【F:src/login.html†L460-L493】
+フォームでは教師/生徒を切り替えられます。教師はチェックを入れてGoogle認証するだけで `manage.html` へ進みます。生徒は `quest.html` に遷移します。IDトークン取得処理は次の通りです。【F:src/login.html†L340-L382】
 
 ---
 
