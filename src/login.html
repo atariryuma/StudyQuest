@@ -161,6 +161,7 @@
             <input id="teacherCode" type="text" placeholder="教師コード" class="w-full p-3 pl-10 rounded-lg text-white" required list="teacherHistory">
             <datalist id="teacherHistory"></datalist>
           </div>
+          <select id="savedRegistrations" class="w-full p-3 rounded-lg text-white hidden"></select>
         </div>
         <div id="studentFields" class="space-y-3">
           <div class="grid grid-cols-3 gap-2">
@@ -277,6 +278,9 @@
     // ==============================
     // ログイン画面のスクリプト
     // ==============================
+    let cachedToken = null;
+    let awaitingSelection = false;
+    let registrationInfo = null;
     document.addEventListener('DOMContentLoaded', () => {
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
@@ -303,6 +307,8 @@
       document.getElementById('teacherCode').addEventListener('input', normalizeTeacherCode);
       document.getElementById('grade').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
       document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
+      const regSelect = document.getElementById('savedRegistrations');
+      if (regSelect) regSelect.addEventListener('change', onSelectRegistration);
       // "組" は全角入力を許可し、Enter(送信)時に半角へ変換するため、リアルタイム変換は行わない
       setupFieldFocus();
     });
@@ -356,6 +362,36 @@
       }
     }
 
+    function populateRegistrationSelect(regs) {
+      const sel = document.getElementById('savedRegistrations');
+      if (!sel) return;
+      if (!regs || regs.length === 0) {
+        sel.classList.add('hidden');
+        sel.innerHTML = '';
+        return;
+      }
+      let opts = '<option value="">-- 登録済みクラス --</option>';
+      regs.forEach(r => {
+        opts += `<option value="${r.teacherCode}|${r.studentId}">${r.teacherCode} ${r.studentId}</option>`;
+      });
+      sel.innerHTML = opts;
+      sel.classList.remove('hidden');
+    }
+
+    function onSelectRegistration(e) {
+      const val = e.target.value;
+      if (!val) return;
+      const [teacherCode, studentId] = val.split('|');
+      const parts = studentId.split('-');
+      if (parts.length === 3) {
+        document.getElementById('grade').value = parts[0];
+        document.getElementById('classroom').value = parts[1];
+        document.getElementById('number').value = parts[2];
+      }
+      document.getElementById('teacherCode').value = teacherCode;
+      awaitingSelection = false;
+    }
+
     function handleSubmit(e) {
       e.preventDefault();
       clearError();
@@ -368,6 +404,71 @@
         gsap.to(btn, { scale: 1, duration: 0.1 });
       });
 
+      const proceed = () => {
+        const idToken = cachedToken;
+        if (isTeacher) {
+          const passcode = document.getElementById('passcode').value.trim();
+          google.script.run
+            .withSuccessHandler(res => {
+              const { status, teacherCode, message } = res;
+              if (status === 'new') {
+                document.getElementById('newCodeSpan').textContent = teacherCode;
+                document.getElementById('newCodeSpan2').textContent = teacherCode;
+                document.getElementById('firstMessage').style.display = 'flex';
+                document.getElementById('closeFirstMsg').onclick = () => {
+                  document.getElementById('firstMessage').style.display = 'none';
+                  addHistory(teacherCode);
+                  window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+                };
+              } else if (status === 'ok') {
+                addHistory(teacherCode);
+                window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+              } else {
+                showError(message || 'エラーが発生しました。');
+                hideLoadingOverlay();
+                btn.disabled = false;
+              }
+            })
+            .withFailureHandler(err => {
+              showError('教師ログインでエラー: ' + err.message);
+              hideLoadingOverlay();
+              btn.disabled = false;
+            })
+            .handleTeacherAuth(idToken, passcode);
+        } else {
+          const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
+          const grade = document.getElementById('grade').value.trim();
+          const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
+          const number = document.getElementById('number').value.trim();
+
+          if (!teacherCode || !grade || !classroom || !number) {
+            showError('入力内容を確認してください。');
+            hideLoadingOverlay();
+            btn.disabled = false;
+            return;
+          }
+
+          const info = { teacherCode, grade, classroom, number, studentId: `${grade}-${classroom}-${number}` };
+          google.script.run
+            .withSuccessHandler(() => {
+              addHistory(teacherCode);
+              const params = new URLSearchParams({ grade, class: classroom, number, teacher: teacherCode }).toString();
+              window.top.location.href = SCRIPT_URL + '?page=quest&' + params;
+            })
+            .withFailureHandler(err => {
+              showError('生徒登録でエラー: ' + err.message);
+              hideLoadingOverlay();
+              btn.disabled = false;
+            })
+            .registerStudentToClass(idToken, info);
+        }
+      };
+
+      if (cachedToken && !awaitingSelection) {
+        proceed();
+        return;
+      }
+
       google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: response => {
@@ -379,62 +480,26 @@
             return;
           }
 
-          if (isTeacher) {
-            const passcode = document.getElementById('passcode').value.trim();
-            google.script.run
-              .withSuccessHandler(res => {
-                const { status, teacherCode, message } = res;
-                if (status === 'new') {
-                  document.getElementById('newCodeSpan').textContent = teacherCode;
-                  document.getElementById('newCodeSpan2').textContent = teacherCode;
-                  document.getElementById('firstMessage').style.display = 'flex';
-                  document.getElementById('closeFirstMsg').onclick = () => {
-                    document.getElementById('firstMessage').style.display = 'none';
-                    addHistory(teacherCode);
-                    window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-                  };
-                } else if (status === 'ok') {
-                  addHistory(teacherCode);
-                  window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-                } else {
-                  showError(message || 'エラーが発生しました。');
-                  hideLoadingOverlay();
-                  btn.disabled = false;
-                }
-              })
-              .withFailureHandler(err => {
-                showError('教師ログインでエラー: ' + err.message);
+          cachedToken = idToken;
+          google.script.run
+            .withSuccessHandler(info => {
+              registrationInfo = info || {};
+              if (!isTeacher && registrationInfo.registrations && registrationInfo.registrations.length > 0) {
+                populateRegistrationSelect(registrationInfo.registrations);
+                awaitingSelection = true;
                 hideLoadingOverlay();
                 btn.disabled = false;
-              })
-              .handleTeacherAuth(idToken, passcode);
-          } else {
-            const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
-            const grade = document.getElementById('grade').value.trim();
-            const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
-            const number = document.getElementById('number').value.trim();
-
-            if (!teacherCode || !grade || !classroom || !number) {
-              showError('入力内容を確認してください。');
+              } else {
+                awaitingSelection = false;
+                proceed();
+              }
+            })
+            .withFailureHandler(err => {
+              showError('情報取得でエラー: ' + err.message);
               hideLoadingOverlay();
               btn.disabled = false;
-              return;
-            }
-
-            const info = { teacherCode, grade, classroom, number, studentId: `${grade}-${classroom}-${number}` };
-            google.script.run
-              .withSuccessHandler(() => {
-                addHistory(teacherCode);
-                const params = new URLSearchParams({ grade, class: classroom, number, teacher: teacherCode }).toString();
-                window.top.location.href = SCRIPT_URL + '?page=quest&' + params;
-              })
-              .withFailureHandler(err => {
-                showError('生徒登録でエラー: ' + err.message);
-                hideLoadingOverlay();
-                btn.disabled = false;
-              })
-              .registerStudentToClass(idToken, info);
-          }
+            })
+            .getStudentInfo(idToken);
         }
       });
       google.accounts.id.prompt();
