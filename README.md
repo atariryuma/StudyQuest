@@ -190,4 +190,21 @@ StudyQuest_<TeacherCode>/
 
 ---
 
+## テスト実行
+
+1. 依存ライブラリのインストール
+
+```bash
+npm install
+# Codex 環境では scripts/setup-codex.sh
+```
+
+2. テストの実行
+
+```bash
+npm test
+```
+
+---
+
 この README をもとに、設計方針とデータ定義を正しく実装してください。何か不明点があれば随時ドキュメントを更新し、共有をお願いします。
