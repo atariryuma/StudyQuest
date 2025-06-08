@@ -1,17 +1,12 @@
 /**
  * Gemini APIを呼び出し、指定されたプロンプトに対する応答を返します。
  * @param {string} prompt - ユーザーが入力したプロンプト
- * @param {string} persona - '小学生向け', '中学生向け', '教師向け' のいずれか
+ * @param {string} persona - 任意のペルソナ文（先頭に付与される）
  * @return {string} Geminiからの応答テキスト、またはエラーメッセージ
  */
 function callGeminiAPI_GAS(prompt, persona) {
-  const personaMap = {
-    '小学生向け': 'あなたは小学校高学年以上向けの優しい先生です。',
-    '中学生向け': 'あなたは中学生向けの適切な言葉遣いをする先生です。',
-    '教師向け':   'あなたは現役教師が使用するプロンプト形式です。'
-  };
-  const base = personaMap[persona] || '';
-  const finalPrompt = base + '\n' + prompt;
+  const base = String(persona || '').trim();
+  const finalPrompt = base ? base + '\n' + prompt : prompt;
 
   const apiKey = getGlobalGeminiApiKey(); // APIキーはPropertiesServiceから取得することを推奨
   if (!apiKey) {
