@@ -80,7 +80,7 @@
           <span>Googleで認証</span>
         </button>
       </form>
-    <div class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg">
+    <div id="devLoginSection" class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg hidden">
       <h3 class="text-yellow-400 font-bold mb-2">【開発者向け】</h3>
       <p class="text-xs text-gray-400 mb-2">
         開発中は、以下のボタンで認証をスキップできます。
@@ -127,6 +127,8 @@
     let cachedToken = null;
     let awaitingSelection = false;
     let registrationInfo = null;
+    let devLoginSection;
+    let devLoginRevealed = false;
 
     let debugContentElem;
     function debug(msg) {
@@ -194,18 +196,25 @@
       document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
       document.getElementById('savedRegistrations').addEventListener('change', onSelectRegistration);
       setupFieldFocus();
-      const devLoginBtn = document.getElementById("devLoginBtn");
+      const devLoginBtn = document.getElementById('devLoginBtn');
+      devLoginSection = document.getElementById('devLoginSection');
       if (devLoginBtn) {
-        devLoginBtn.addEventListener("click", () => {
+        devLoginBtn.addEventListener('click', () => {
           google.script.run
             .withSuccessHandler(result => {
               const { teacherCode } = result;
-              alert("開発モードでログインしました。");
-              window.top.location.href = SCRIPT_URL + "?page=manage&teacher=" + teacherCode;
+              alert('開発モードでログインしました。');
+              window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
             })
-            .initTeacher("dev_teacher");
+            .initTeacher('dev_teacher');
         });
       }
+      document.addEventListener('keydown', e => {
+        if (e.altKey && e.key.toLowerCase() === 'd' && document.getElementById('teacherMode').checked) {
+          devLoginSection.classList.remove('hidden');
+          devLoginRevealed = true;
+        }
+      });
     });
 
     function toHalf(str) { return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0)); }
@@ -380,8 +389,14 @@
         });
     }
 
-    function showLoadingOverlay() { document.getElementById('loadingOverlay').classList.remove('hidden'); }
-    function hideLoadingOverlay() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+    function showLoadingOverlay() {
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      if (devLoginSection) devLoginSection.classList.add('hidden');
+    }
+    function hideLoadingOverlay() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+      if (devLoginSection && devLoginRevealed) devLoginSection.classList.remove('hidden');
+    }
     function showError(msg) { const el = document.getElementById('errorMessage'); if(el) {el.textContent=msg; el.classList.remove('hidden');}}
     function clearError() { const el = document.getElementById('errorMessage'); if(el) {el.textContent=''; el.classList.add('hidden');} }
 
