@@ -52,15 +52,13 @@ test('loginAsStudent finds enrollment and global data', () => {
   const teacherDb = { getSheetByName: jest.fn(name => name === 'Enrollments' ? enrollSheet : null) };
   const globalDb = { getSheetByName: jest.fn(() => userSheet) };
   const context = {
-    // ▼▼▼ コンフリクトを修正した箇所 ▼▼▼
-    getTeacherDb_: jest.fn(() => teacherDb),
-    getGlobalDb_: jest.fn(() => globalDb),
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => k === 'Global_Master_DB' ? 'gid' : null }) },
-    // ▲▲▲ ここまで ▲▲▲
     Session: { getEffectiveUser: () => ({ getEmail: () => 'stud@example.com' }) },
     processLoginBonus: jest.fn()
   };
   loadAuth(context);
+  context.getTeacherDb_ = jest.fn(() => teacherDb);
+  context.getGlobalDb_ = jest.fn(() => globalDb);
   const res = context.loginAsStudent('TC');
   expect(res.status).toBe('ok');
   expect(res.userInfo.classData.userEmail).toBe('stud@example.com');
