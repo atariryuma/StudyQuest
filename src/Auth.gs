@@ -120,4 +120,3 @@ function loginAsStudent(teacherCode) {
   try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
   return { status:'ok', userInfo:{ globalData: globalData, classData: classData } };
 }
-
