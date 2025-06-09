@@ -1,16 +1,21 @@
 function initGlobalDb() {
   const props = PropertiesService.getScriptProperties();
+  const propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
   const existing = props.getProperty('GLOBAL_DB_ID');
   if (existing) {
     try {
       SpreadsheetApp.openById(existing);
+      if (typeof props.setProperty === 'function') props.setProperty(propName, existing);
       return { status: 'exists', id: existing };
     } catch (e) {
       props.deleteProperty('GLOBAL_DB_ID');
     }
   }
   const ss = SpreadsheetApp.create('StudyQuest_Global_Master_DB');
-  props.setProperty('GLOBAL_DB_ID', ss.getId());
+  if (typeof props.setProperty === 'function') {
+    props.setProperty('GLOBAL_DB_ID', ss.getId());
+    props.setProperty(propName, ss.getId());
+  }
 
   const sheets = ss.getSheets();
   if (sheets && sheets[0]) {
