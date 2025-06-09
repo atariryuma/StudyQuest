@@ -51,7 +51,7 @@ test('loginAsStudent finds enrollment and global data', () => {
   const globalDb = { getSheetByName: jest.fn(() => userSheet) };
   const context = {
     getSpreadsheetByTeacherCode: jest.fn(() => teacherDb),
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => k === 'GLOBAL_DB_ID' ? 'gid' : null }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => k === 'Global_Master_DB' ? 'gid' : null }) },
     SpreadsheetApp: { openById: jest.fn(id => globalDb) },
     Session: { getEffectiveUser: () => ({ getEmail: () => 'stud@example.com' }) },
     processLoginBonus: jest.fn(),
