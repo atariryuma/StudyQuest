@@ -34,6 +34,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
     removeCacheValue_('tasks_' + teacherCode);
     removeCacheValue_('taskmap_' + teacherCode);
     removeCacheValue_('stats_' + teacherCode);
+    console.timeEnd('createTask');
     return;
   }
 
@@ -54,14 +55,14 @@ function listTasks(teacherCode) {
   console.time('listTasks');
   const cacheKey = 'tasks_' + teacherCode;
   const cached = getCacheValue_(cacheKey);
-  if (cached) return cached;
+  if (cached) { console.timeEnd('listTasks'); return cached; }
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return [];
+  if (!ss) { console.timeEnd('listTasks'); return []; }
   const sheet = ss.getSheetByName(SHEET_TASKS);
-  if (!sheet) return [];
+  if (!sheet) { console.timeEnd('listTasks'); return []; }
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
+  if (lastRow < 2) { console.timeEnd('listTasks'); return []; }
   const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
   const result = data.filter(r => String(r[7] || '') !== '1')
                      .reverse()
@@ -201,9 +202,9 @@ function getTask(teacherCode, taskId) {
 function closeTask(teacherCode, taskId) {
   console.time('closeTask');
   const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return;
+  if (!ss) { console.timeEnd('closeTask'); return; }
   const sheet = ss.getSheetByName(SHEET_TASKS);
-  if (!sheet) return;
+  if (!sheet) { console.timeEnd('closeTask'); return; }
   const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
   const idx = ids.indexOf(taskId);
   if (idx >= 0) {
