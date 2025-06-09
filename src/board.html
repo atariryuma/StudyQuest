@@ -310,7 +310,7 @@
     
     function loadBoard(taskId) {
         debug(`ボード読み込み開始 (TaskID: ${taskId || '指定なし'})`);
-        const func = taskId ? 'listTaskBoard' : 'listBoard';
+        const func = taskId ? 'listTaskBoard' : 'loadBoardData';
         google.script.run.withSuccessHandler(rows => {
             debug(`データ取得成功: ${rows.length}件`);
             currentAnswersData = rows;
