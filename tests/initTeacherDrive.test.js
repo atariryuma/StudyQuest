@@ -19,6 +19,8 @@ test('initTeacher returns existing code if already stored', () => {
       })
     },
     FOLDER_NAME_PREFIX: 'StudyQuest_',
+    SHEET_TROPHIES: 'Trophies',
+    SHEET_ITEMS: 'Items',
     DriveApp: { getFolderById: jest.fn(()=>({})), searchFolders: jest.fn() },
     logError_: () => {},
     Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) }
