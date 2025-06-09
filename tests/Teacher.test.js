@@ -192,6 +192,7 @@ test('initTeacher creates Items sheet with correct header', () => {
     SHEET_STUDENTS: 'Students',
     SHEET_SUBMISSIONS: 'Submissions',
     SHEET_AI_FEEDBACK: 'AI',
+    SHEET_TROPHIES: 'Trophies',
     SHEET_ITEMS: 'Items',
     STUDENT_SHEET_PREFIX: 'stu_',
     DriveApp: {
