@@ -327,14 +327,14 @@ function getStudentHistory(teacherCode, studentId) {
   studentId = String(studentId || '').trim();
   const cacheKey = 'history_' + teacherCode + '_' + studentId;
   const cached = getCacheValue_(cacheKey);
-  if (cached) return cached;
+  if (cached) { console.timeEnd('getStudentHistory'); return cached; }
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return [];
+  if (!ss) { console.timeEnd('getStudentHistory'); return []; }
   const sheet = findStudentSheet_(ss, studentId);
-  if (!sheet) return [];
+  if (!sheet) { console.timeEnd('getStudentHistory'); return []; }
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
+  if (lastRow < 2) { console.timeEnd('getStudentHistory'); return []; }
   const rows = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
   putCacheValue_(cacheKey, rows, 30);
   console.timeEnd('getStudentHistory');

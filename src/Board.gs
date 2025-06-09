@@ -10,16 +10,17 @@ function listBoard(teacherCode) {
   console.time('listBoard');
   const cacheKey = 'board_' + teacherCode;
   const cached = getCacheValue_(cacheKey);
-  if (cached) return cached;
+  if (cached) { console.timeEnd('listBoard'); return cached; }
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return [];
+  if (!ss) { console.timeEnd('listBoard'); return []; }
   const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
   if (!sheet) {
+    console.timeEnd('listBoard');
     return [{ name: "お知らせ", answer: `「${SHEET_SUBMISSIONS}」シートが見つかりません。` }];
   }
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
+  if (lastRow < 2) { console.timeEnd('listBoard'); return []; }
   const lastCol = Math.min(sheet.getLastColumn(), 13);
   const numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
   const startRow = lastRow - numRows + 1;
@@ -45,15 +46,15 @@ function listTaskBoard(teacherCode, taskId) {
   console.time('listTaskBoard');
   const cacheKey = 'taskBoard_' + teacherCode + '_' + taskId;
   const cached = getCacheValue_(cacheKey);
-  if (cached) return cached;
+  if (cached) { console.timeEnd('listTaskBoard'); return cached; }
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
-  if (!ss) return [];
+  if (!ss) { console.timeEnd('listTaskBoard'); return []; }
   const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
-  if (!sheet) return [];
+  if (!sheet) { console.timeEnd('listTaskBoard'); return []; }
 
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
+  if (lastRow < 2) { console.timeEnd('listTaskBoard'); return []; }
   const lastCol = Math.min(sheet.getLastColumn(), 13);
   const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
@@ -93,9 +94,10 @@ function getStatistics(teacherCode) {
   console.time('getStatistics');
   const cacheKey = 'stats_' + teacherCode;
   const cached = getCacheValue_(cacheKey);
-  if (cached) return cached;
+  if (cached) { console.timeEnd('getStatistics'); return cached; }
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
+    console.timeEnd('getStatistics');
     return { taskCount: 0, studentCount: 0 };
   }
   const taskSheet    = ss.getSheetByName(SHEET_TASKS);
