@@ -28,11 +28,6 @@
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen" style="font-family:'DotGothic16',sans-serif;">
   <main class="space-y-4 text-center">
     <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
-    <label class="flex items-center justify-center gap-2">
-      <input type="checkbox" id="teacher-check" class="form-checkbox">
-      <span>私は教師です</span>
-    </label>
-    <input id="kyoushi-input" type="text" placeholder="kyoushi" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none" style="display:none;" />
     <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-purple-800 hover:bg-purple-500">教師としてログイン</button>
     <button id="student-login-btn" class="game-btn bg-cyan-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-cyan-800 hover:bg-cyan-500">生徒としてログイン</button>
     <form id="teacher-secret-form" class="space-y-2" style="display:none;">
@@ -58,12 +53,6 @@
     const teacherBtn = document.getElementById('teacher-login-btn');
     const studentBtn = document.getElementById('student-login-btn');
     const secretForm = document.getElementById('teacher-secret-form');
-    const teacherCheck = document.getElementById('teacher-check');
-    const kyoushiInput = document.getElementById('kyoushi-input');
-
-    teacherCheck.addEventListener('change', () => {
-      kyoushiInput.style.display = teacherCheck.checked ? '' : 'none';
-    });
 
     teacherBtn.addEventListener('click', () => {
       showLoadingOverlay();
