@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
   <script>
     // Lucide Iconsの動的読み込み
     fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
@@ -590,11 +591,33 @@
   }
   function updateXpBar() {
     document.getElementById('playerLevel').textContent = level;
-    document.getElementById('xpCurrent').textContent = xp;
     const nextXp = level * 100;
+    document.getElementById('xpCurrent').textContent = xp;
     document.getElementById('xpNext').textContent = nextXp;
     const pct = Math.min((xp / nextXp) * 100, 100);
-    gsap.to('#xpFill', { width: pct + '%', duration: 0.5 });
+    gsap.set('#xpFill', { width: pct + '%' });
+  }
+
+  function animateXpBar(oldLv, oldXp, newLv, newXp) {
+    const fill = document.getElementById('xpFill');
+    const startPct = Math.min((oldXp / (oldLv * 100)) * 100, 100);
+    const endPct = Math.min((newXp / (newLv * 100)) * 100, 100);
+    const tl = gsap.timeline();
+    tl.set(fill, { width: startPct + '%' });
+    if (newLv > oldLv) {
+      tl.to(fill, { width: '100%', duration: 0.5 }).add(() => {
+        document.getElementById('playerLevel').textContent = newLv;
+        document.getElementById('xpCurrent').textContent = 0;
+        document.getElementById('xpNext').textContent = newLv * 100;
+        showLevelUp(newLv);
+      }).set(fill, { width: '0%' });
+    }
+    tl.to(fill, { width: endPct + '%', duration: 0.5 });
+    tl.eventCallback('onComplete', () => {
+      document.getElementById('playerLevel').textContent = newLv;
+      document.getElementById('xpCurrent').textContent = newXp;
+      document.getElementById('xpNext').textContent = newLv * 100;
+    });
   }
 
   function updateProgressBar() {
@@ -691,31 +714,53 @@
 
   function showLevelUp(newLv) {
     const modal = document.getElementById('levelUpModal');
-    modal.innerHTML = `<div class="glass-panel p-6 rounded-xl text-center"><h2 class="text-2xl font-bold mb-4">レベルアップ！</h2><p class="text-xl">Lv.${newLv}</p><button id="levelUpOk" class="game-btn mt-4 bg-pink-600 text-white px-4 py-2 rounded">OK</button></div>`;
+    modal.innerHTML = `<div class="glass-panel p-8 rounded-xl text-center space-y-4"><h2 class="text-2xl font-bold text-yellow-300">レベルアップ！</h2><p class="text-xl">Lv.${newLv}</p><button id="levelUpOk" class="game-btn bg-pink-600 text-white px-6 py-2 rounded font-bold border-pink-800 hover:bg-pink-500">OK</button></div>`;
     modal.classList.remove('hidden');
+    if (window.confetti) { window.confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }); }
     document.getElementById('levelUpOk').addEventListener('click', () => { modal.classList.add('hidden'); });
   }
 
-  function showFeedbackModal(correct, explanation) {
+  function showFeedbackModal(res, finalAnswer) {
+    const correctAns = String(res.correctAnswer || '').trim();
+    const isCorrect = correctAns && correctAns === String(finalAnswer || '').trim();
+    const color = isCorrect ? 'green' : 'red';
+    const icon = isCorrect ? 'check-circle' : 'x-octagon';
+    const xpGain = res.earnedXp || 0;
+    const coinGain = Math.floor(xpGain / 10);
     const modal = document.getElementById('feedbackModal');
-    modal.innerHTML = `<div class="glass-panel p-6 rounded-xl text-center"><h3 class="text-lg font-bold mb-2">フィードバック</h3><p class="mb-2">正解: ${escapeHtml(correct)}</p><p class="whitespace-pre-wrap">${escapeHtml(explanation)}</p><button id="feedbackOk" class="game-btn mt-4 bg-cyan-600 text-white px-4 py-2 rounded">OK</button></div>`;
+    modal.innerHTML = `<div class="glass-panel p-6 rounded-xl text-center space-y-2"><i data-lucide="${icon}" class="w-12 h-12 mx-auto text-${color}-400"></i><p class="font-bold text-${color}-400">${isCorrect ? '正解！' : '不正解'}</p><p class="whitespace-pre-wrap text-sm">${escapeHtml(res.explanation || '')}</p><p class="text-sm">XP +<span id="fbXp">0</span> / Coins +<span id="fbCoin">0</span></p><button id="feedbackOk" class="game-btn mt-2 bg-cyan-600 text-white px-4 py-2 rounded">OK</button></div>`;
     modal.classList.remove('hidden');
-    document.getElementById('feedbackOk').addEventListener('click', () => { modal.classList.add('hidden'); });
     renderIcons();
+    const obj1 = { v: 0 };
+    gsap.to(obj1, { v: xpGain, duration: 0.8, onUpdate: () => { document.getElementById('fbXp').textContent = Math.floor(obj1.v); } });
+    const obj2 = { v: 0 };
+    gsap.to(obj2, { v: coinGain, duration: 0.8, delay: 0.2, onUpdate: () => { document.getElementById('fbCoin').textContent = Math.floor(obj2.v); } });
+    document.getElementById('feedbackOk').addEventListener('click', () => { modal.classList.add('hidden'); });
+  }
+
+  function storeNewTrophies(arr) {
+    if (!Array.isArray(arr) || !arr.length) return;
+    try {
+      const raw = sessionStorage.getItem('newTrophies');
+      const current = raw ? JSON.parse(raw) : [];
+      arr.forEach(id => { if (!current.includes(id)) current.push(id); });
+      sessionStorage.setItem('newTrophies', JSON.stringify(current));
+    } catch (e) {}
   }
 
   function onSubmissionSuccess(res) {
     hideLoadingOverlay();
     if (!res || res.status !== 'ok') { alert('提出に失敗しました'); return; }
     const prevLevel = level;
+    const prevXp = xp;
     totalXp = res.totalXp || totalXp;
     level = res.level || level;
     xp = totalXp;
     for (let l = 1; l < level; l++) { xp -= l * 100; }
     if (xp < 0) xp = 0;
-    updateXpBar();
-    if (level > prevLevel) showLevelUp(level);
-    showFeedbackModal(res.correctAnswer || '', res.explanation || '');
+    animateXpBar(prevLevel, prevXp, level, xp);
+    storeNewTrophies(res.trophies || []);
+    showFeedbackModal(res, stepAnswers[QuestStep.FINAL_ANSWER]);
     showResultScreen();
     loadTasks();
   }
