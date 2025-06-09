@@ -841,37 +841,25 @@
         creditEl.innerHTML = `生成クレジット: ${diamonds}`;
       }
 
-        function updateGenerationHistory() {
-          const wrapper = document.getElementById('generationHistoryWrapper');
-          const container = document.getElementById('generationHistory');
-          if (!wrapper || !container) return;
-          if (generationHistory.length === 0) {
-            wrapper.classList.add('hidden');
-            return;
-          }
-          wrapper.classList.remove('hidden');
-          let html = '';
-          for (let i = generationHistory.length - 1; i >= 0; i--) {
-            const historySet = generationHistory[i];
-            const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-            html += `
-              <div class="border-t border-gray-700 pt-2">
-                <p class="text-xs font-bold text-gray-500">履歴 ${i + 1}</p>
-                <ul class="list-disc list-inside text-xs">${listItems}</ul>
-              </div>`;
-          }
-          container.innerHTML = html;
+      function updateGenerationHistory() {
+        const wrapper = document.getElementById('generationHistoryWrapper');
+        const container = document.getElementById('generationHistory');
+        if (!wrapper || !container) return;
+        if (generationHistory.length === 0) {
+          wrapper.classList.add('hidden');
+          return;
         }
-
         wrapper.classList.remove('hidden');
         let html = '';
-        generationHistory.forEach((historySet, index) => {
+        for (let i = generationHistory.length - 1; i >= 0; i--) {
+          const historySet = generationHistory[i];
           const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-          html = `<div class="border-t border-gray-700 pt-2">
-            <p class="text-xs font-bold text-gray-500">履歴 ${index + 1}</p>
-            <ul class="list-disc list-inside text-xs">${listItems}</ul>
-          </div>` + html;
-        });
+          html += `
+            <div class="border-t border-gray-700 pt-2">
+              <p class="text-xs font-bold text-gray-500">履歴 ${i + 1}</p>
+              <ul class="list-disc list-inside text-xs">${listItems}</ul>
+            </div>`;
+        }
         container.innerHTML = html;
       }
 
@@ -1011,15 +999,17 @@
         });
 
         container.innerHTML = html;
-        container.querySelectorAll('.task-card').forEach(card => {
-          const id = card.dataset.id;
-          card.addEventListener('mouseenter', () => prefetchBoardData(teacherCode, id));
-          card.addEventListener('click', e => {
-            if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
-              location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${id}`;
-            }
-          });
-        });
+        container.onmouseenter = e => {
+          const card = e.target.closest('.task-card');
+          if (card) prefetchBoardData(teacherCode, card.dataset.id);
+        };
+        container.onclick = e => {
+          const card = e.target.closest('.task-card');
+          if (!card) return;
+          if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
+            location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${card.dataset.id}`;
+          }
+        };
 
         if (rows[0]) prefetchBoardData(teacherCode, rows[0].id);
 
@@ -1144,19 +1134,18 @@
           html += `<div class="class-card${selected}" data-id="${id}">${map[id]}</div>`;
         });
         cont.innerHTML = html;
-        cont.querySelectorAll('.class-card').forEach(card => {
-          const id = card.dataset.id;
-          card.addEventListener('click', () => {
-            document.querySelectorAll('#currentClassCard .class-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            selectedClassId = id;
-            const checkbox = document.querySelector(`#taskClassButtons input[value="${id}"]`);
-            if (checkbox) checkbox.checked = true;
-            if (window.gsap) {
-              gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
-            }
-          });
-        });
+        cont.onclick = e => {
+          const card = e.target.closest('.class-card');
+          if (!card) return;
+          cont.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          selectedClassId = card.dataset.id;
+          const checkbox = document.querySelector(`#taskClassButtons input[value="${selectedClassId}"]`);
+          if (checkbox) checkbox.checked = true;
+          if (window.gsap) {
+            gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
+          }
+        };
       }
 
 
