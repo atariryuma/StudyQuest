@@ -277,9 +277,29 @@
 
         document.getElementById('openClassBtn').addEventListener('click', openClassModal);
         document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
-        
+
         const settingBtn = document.getElementById('classSettingBtn');
         if (settingBtn) settingBtn.addEventListener('click', openClassSettingDialog);
+
+        const gradeSel = document.getElementById('modalGrade');
+        const classSel = document.getElementById('modalClass');
+        const saveBtn = document.getElementById('saveClassBtn');
+        const classModal = document.getElementById('classModal');
+        if (gradeSel) gradeSel.addEventListener('change', updatePreview);
+        if (classSel) classSel.addEventListener('change', updatePreview);
+        if (classModal) classModal.addEventListener('click', e => { if (e.target === classModal) closeClassModal(); });
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                const g = gradeSel.value;
+                const c = classSel.value;
+                if (!g || !c) { alert('学年と組を選択してください'); return; }
+                const ids = registeredClasses.concat([[g, c]]).map(x => x.join(',')).join(';');
+                google.script.run
+                    .withSuccessHandler(map => { renderClassCards(map); closeClassModal(); })
+                    .withFailureHandler(err => alert('登録に失敗しました: ' + err.message))
+                    .updateClassIdMap(teacherCode, ids);
+            });
+        }
         
         document.getElementById('deleteDraftBtn').addEventListener('click', () => {
             if (!draftTaskId) {
@@ -677,12 +697,62 @@
         return { text: 'テキスト回答', radio: '選択式', checkbox: 'チェック' }[type] || '不明';
     }
 
-    function openClassModal() { /* ... */ }
-    function closeClassModal() { /* ... */ }
-    function updatePreview() { /* ... */ }
-    function deleteSelectedClass() { /* ... */ }
-    function openClassSettingDialog() { /* ... */ }
-    function renderClassCards(map) { /* ... */ }
+    function openClassModal() {
+        const modal = document.getElementById('classModal');
+        if (!modal) return;
+        document.getElementById('modalGrade').value = '';
+        document.getElementById('modalClass').value = '';
+        updatePreview();
+        modal.classList.remove('hidden');
+    }
+
+    function closeClassModal() {
+        const modal = document.getElementById('classModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function updatePreview() {
+        const grade = document.getElementById('modalGrade').value;
+        const klass = document.getElementById('modalClass').value;
+        const preview = grade && klass ? `${grade}年${klass}組` : '';
+        document.getElementById('classPreview').textContent = preview;
+    }
+
+    function deleteSelectedClass() {
+        if (!selectedClassId) { alert('削除するクラスを選択してください'); return; }
+        if (!confirm('選択したクラスを削除しますか？')) return;
+        const idx = parseInt(selectedClassId, 10) - 1;
+        const list = registeredClasses.filter((_, i) => i !== idx);
+        const ids = list.map(c => c.join(',')).join(';');
+        google.script.run
+            .withSuccessHandler(map => { renderClassCards(map); selectedClassId = null; })
+            .withFailureHandler(err => alert('削除に失敗しました: ' + err.message))
+            .updateClassIdMap(teacherCode, ids);
+    }
+
+    function openClassSettingDialog() { openClassModal(); }
+
+    function renderClassCards(map) {
+        const area = document.getElementById('currentClassCard');
+        if (!area) return;
+        area.innerHTML = '';
+        registeredClasses = [];
+        Object.keys(map || {}).forEach(id => {
+            const [g, c] = String(map[id]).split('-');
+            registeredClasses.push([g, c]);
+            const card = document.createElement('span');
+            card.className = 'class-card';
+            card.dataset.id = id;
+            card.textContent = `${g}年${c}組`;
+            card.addEventListener('click', () => {
+                const prev = area.querySelector('.class-card.selected');
+                if (prev) prev.classList.remove('selected');
+                card.classList.add('selected');
+                selectedClassId = id;
+            });
+            area.appendChild(card);
+        });
+    }
   </script>
 
 </body>
