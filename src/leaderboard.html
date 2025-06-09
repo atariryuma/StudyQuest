@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leaderboard - StudyQuest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#1a1b26;font-family:'DotGothic16',sans-serif;}</style>
+</head>
+<body class="min-h-screen p-4 text-gray-200">
+  <h1 class="text-xl font-bold mb-4">ランキング</h1>
+  <table class="min-w-full text-sm" id="leaderboardTable">
+    <thead><tr class="text-left"><th>Rank</th><th>Name</th><th>Lv</th><th>XP</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    const params=new URLSearchParams(location.search);
+    const teacher=params.get('teacher')||'';
+    function renderLeaderboard(data){
+      const tbody=document.querySelector('#leaderboardTable tbody');
+      tbody.innerHTML=data.map(r=>`<tr><td>${r.rank}</td><td>${r.handleName}</td><td>${r.level}</td><td>${r.totalXp}</td></tr>`).join('');
+    }
+    if(google && google.script && google.script.run){
+      google.script.run.withSuccessHandler(renderLeaderboard).getLeaderboard(teacher);
+    }
+  </script>
+</body>
+</html>
