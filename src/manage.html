@@ -320,7 +320,7 @@
                                         <option value="長文">長文</option>
                                     </select>
                                     <input type="number" id="choiceCount" min="1" value="3" class="w-16 p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm" />
-                                    <button type="button" id="generate-choices-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
+                                    <button type="button" id="generate-choices-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">選択肢をAIで生成</button>
                                 </div>
                                 <div id="optionInputs" class="space-y-2"></div>
                                 <div id="optionControls" class="flex gap-2 text-xs"></div>
@@ -331,7 +331,7 @@
                             </div>
                             <div id="followupTool" class="p-3 rounded-lg ai-tool-panel space-y-3">
                                 <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>Geminiによる深掘りの質問例</label>
-                                <button type="button" id="generate-followup-btn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">質問を生成</button>
+                                <button type="button" id="generate-followup-btn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">深掘り質問をAIに聞く</button>
                                 <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
                             </div>
                         </div>
@@ -561,15 +561,14 @@
 
         const choiceType = document.getElementById('aiChoiceType').value;
         const count = parseInt(document.getElementById('choiceCount').value, 10) || 3;
-        const question = document.getElementById('question').value.trim();
         const persona = document.getElementById('personaInput').value;
         const container = document.getElementById('optionInputs');
         container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
 
         google.script.run
-          .withSuccessHandler(res => {
-            const choices = res.choices || (res.split ? res.split(/\n|・/).map(s => s.trim()).filter(s => s) : []);
+          .withSuccessHandler(text => {
+            const choices = text.split(/\n|・/).map(s => s.trim()).filter(s => s);
             generationHistory.push(choices);
             document.getElementById('choiceCount').value = choices.length;
             renderOptionInputs(choices);
@@ -581,7 +580,7 @@
           .withFailureHandler(err => {
             container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
           })
-          .generateTaskContent(subject, q, choiceType);
+          .generateChoicePrompt(teacherCode, q, choiceType, count, persona);
       });
 
       document.getElementById('generate-followup-btn').addEventListener('click', () => {
@@ -597,13 +596,13 @@
         renderIcons(document);
 
         google.script.run
-          .withSuccessHandler(res => {
-            alert(res);
+          .withSuccessHandler(text => {
+            container.textContent = text;
           })
           .withFailureHandler(err => {
-            alert('生成に失敗しました: ' + err.message);
+            container.innerHTML = `<span class="text-red-500">生成に失敗しました: ${escapeHtml(err.message)}</span>`;
           })
-          .generateFollowUpQuestion(subject, question);
+          .generateDeepeningPrompt(teacherCode, question, persona);
       });
 
       document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
