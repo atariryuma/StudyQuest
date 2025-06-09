@@ -8,6 +8,8 @@ function loadGemini(context) {
 }
 
 function loadTeacher(context) {
+  const utils = fs.readFileSync(path.join(__dirname, '../src/Utils.gs'), 'utf8');
+  vm.runInNewContext(utils, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Teacher.gs'), 'utf8');
   vm.runInNewContext(code, context);
 }

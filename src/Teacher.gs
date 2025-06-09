@@ -1,11 +1,6 @@
 /**
  * generateTeacherCode(): 6桁英数字のユニークな教師コードを生成
  */
-if (typeof getCacheValue_ !== 'function') {
-  function getCacheValue_() { return null; }
-  function putCacheValue_() {}
-  function removeCacheValue_() {}
-}
 
 const _ssCache = {};
 

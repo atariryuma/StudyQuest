@@ -1,11 +1,5 @@
 const BOARD_FETCH_LIMIT = 30;
 
-// Fallbacks when running in a non-GAS environment (e.g. tests)
-if (typeof getCacheValue_ !== 'function') {
-  function getCacheValue_() { return null; }
-  function putCacheValue_() {}
-}
-
 function listBoard(teacherCode) {
   console.time('listBoard');
   const cacheKey = 'board_' + teacherCode;

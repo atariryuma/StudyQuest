@@ -2,11 +2,6 @@
  * createTask(teacherCode, payloadAsJson, selfEval):
  * 新しい課題を課題一覧シートに追加
  */
-if (typeof removeCacheValue_ !== 'function') {
-  function getCacheValue_() { return null; }
-  function putCacheValue_() {}
-  function removeCacheValue_() {}
-}
 
 function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   console.time('createTask');

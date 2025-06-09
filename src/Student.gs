@@ -3,11 +3,6 @@
 * 学年・組・番号の組み合わせから既存シートを柔軟に探索し、
 * 必要に応じて正規化した名前へリネームして返す
 */
-if (typeof getCacheValue_ !== 'function') {
-  function getCacheValue_() { return null; }
-  function putCacheValue_() {}
-  function removeCacheValue_() {}
-}
 
 function bulkAppend_(sheet, rows) {
   if (!sheet || !rows || rows.length === 0) return;

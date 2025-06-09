@@ -3,6 +3,8 @@ const vm = require('vm');
 const path = require('path');
 
 function loadAuth(context) {
+  const utils = fs.readFileSync(path.join(__dirname, '../src/Utils.gs'), 'utf8');
+  vm.runInNewContext(utils, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Auth.gs'), 'utf8');
   vm.runInNewContext(code, context);
 }
@@ -50,16 +52,13 @@ test('loginAsStudent finds enrollment and global data', () => {
   const teacherDb = { getSheetByName: jest.fn(name => name === 'Enrollments' ? enrollSheet : null) };
   const globalDb = { getSheetByName: jest.fn(() => userSheet) };
   const context = {
-    getSpreadsheetByTeacherCode: jest.fn(() => teacherDb),
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => k === 'Global_Master_DB' ? 'gid' : null }) },
-    SpreadsheetApp: { openById: jest.fn(id => globalDb) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: () => null }) },
     Session: { getEffectiveUser: () => ({ getEmail: () => 'stud@example.com' }) },
-    processLoginBonus: jest.fn(),
-    getCacheValue_: () => null,
-    putCacheValue_: () => {},
-    logError_: () => {}
+    processLoginBonus: jest.fn()
   };
   loadAuth(context);
+  context.getTeacherDb_ = jest.fn(() => teacherDb);
+  context.getGlobalDb_ = jest.fn(() => globalDb);
   const res = context.loginAsStudent('TC');
   expect(res.status).toBe('ok');
   expect(res.userInfo.classData.userEmail).toBe('stud@example.com');
