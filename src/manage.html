@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
 
     <style>
@@ -275,7 +275,8 @@
             </div>
 
             <!-- Right Column: Quest Management -->
-            <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="lg:col-span-2 flex gap-6">
+                <div class="flex flex-col gap-6 h-full w-full">
 
                 <!-- New Quest Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
@@ -358,6 +359,7 @@
                     <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
                 </section>
 
+                </div>
             </div>
         </main>
       </div>
@@ -368,23 +370,33 @@
     window.teacherCode = '<?!= teacher ?>';
   </script>
 
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js" defer></script>
-
   <script>
   <?!= include('shared/escapeHtml'); ?>
     // Lucide Icons を SVG に置き換える
     function renderIcons(scope) {
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons({
-          nameAttr: 'data-icon',
-          attrs: {},
-          icons: window.lucide.icons
-        });
-      }
+      // lucide.js の初期化を待つため、わずかに遅延させる
+      setTimeout(() => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+          }
+      }, 50);
     }
 
     function toHalf(str) {
       return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+    }
+
+    function escapeHtml(str) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[&<>"']/g, function(match) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[match];
+        });
     }
 
     // デバッグログ出力用
