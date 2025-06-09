@@ -8,40 +8,54 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-  <style>body{background:#1a1b26;font-family:'DotGothic16',sans-serif;}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+  <script>
+    fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
+      .then(r=>r.text()).then(t=>{const s=document.createElement('script');s.innerHTML=t;document.head.appendChild(s);s.onload=()=>{ if(window.lucide){ window.lucide.createIcons(); } }});
+  </script>
+  <style>
+    body{background:#1a1b26;color:#c0caf5;font-family:'DotGothic16',sans-serif;}
+    .pixel-bg{background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px;}
+    .glass-panel{background:rgba(26,27,38,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);}
+  </style>
 </head>
-<body class="min-h-screen p-4 text-gray-200">
-  <main class="max-w-xl mx-auto space-y-4">
-    <h1 class="text-xl font-bold">プロフィール</h1>
-    <div id="profileContainer" class="space-y-2"></div>
+<body class="min-h-screen p-4 pixel-bg">
+  <main class="max-w-3xl mx-auto space-y-4">
+    <div id="statusCard" class="glass-panel p-4 rounded-xl space-y-3">
+      <h1 class="text-xl font-bold">プロフィール</h1>
+      <div>
+        <div class="flex justify-between text-sm mb-1">
+          <span>Lv. <span id="profLevel">1</span></span>
+          <span><span id="profCoins">0</span> Coins</span>
+        </div>
+        <div class="h-4 bg-gray-900/50 rounded-full border border-gray-600 overflow-hidden relative">
+          <div id="profXpFill" class="h-full bg-gradient-to-r from-pink-500 to-yellow-500 w-0"></div>
+          <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white tracking-wider"><span id="profXpCurrent">0</span> / <span id="profXpNext">100</span> XP</div>
+        </div>
+      </div>
+    </div>
+    <section id="trophySection" class="glass-panel p-4 rounded-xl">
+      <h2 class="text-lg font-bold flex items-center gap-2 mb-3"><i data-lucide="trophy" class="w-5 h-5 text-yellow-400"></i>トロフィー</h2>
+      <div id="trophyGrid" class="grid grid-cols-4 gap-4"></div>
+    </section>
   </main>
+  <div id="trophyModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden"></div>
   <script>
     <?!= include('shared/escapeHtml'); ?>
-    function renderProfile(data){
-      const c=document.getElementById('profileContainer');
-      if(!data){c.textContent='No data';return;}
-      let html='';
-      html+=`<p><span class="font-bold">Name:</span> ${escapeHtml(data.handleName||'')}</p>`;
-      html+=`<p><span class="font-bold">Level:</span> ${escapeHtml(data.level)}</p>`;
-      html+=`<p><span class="font-bold">XP:</span> ${escapeHtml(data.totalXp)}</p>`;
-      html+=`<p><span class="font-bold">Coins:</span> ${escapeHtml(data.coins)}</p>`;
-      if(data.trophies&&data.trophies.length){
-        html+='<div><span class="font-bold">Trophies:</span><ul class="list-disc pl-5">'+
-          data.trophies.map(t=>`<li>${escapeHtml(t)}</li>`).join('')+'</ul></div>';
-      }
-      if(data.items&&data.items.length){
-        html+='<div><span class="font-bold">Items:</span><ul class="list-disc pl-5">'+
-          data.items.map(i=>`<li>${escapeHtml(i.itemId)} x ${escapeHtml(i.quantity)}</li>`).join('')+'</ul></div>';
-      }
-      c.innerHTML=html;
-    }
-    document.addEventListener('DOMContentLoaded',()=>{
-      const p=new URLSearchParams(location.search);
-      const teacher=p.get('teacher')||'';
-      if(google&&google.script&&google.script.run){
-        google.script.run.withSuccessHandler(renderProfile).loadProfileData(teacher);
-      }
-    });
+    const allTrophies=[
+      {id:'t1',name:'Beginner',icon:'award'},
+      {id:'t2',name:'Explorer',icon:'compass'},
+      {id:'t3',name:'Scholar',icon:'book-open'},
+      {id:'t4',name:'Champion',icon:'shield'},
+      {id:'t5',name:'Legend',icon:'crown'}
+    ];
+    function calcXpInLevel(total,level){let xp=total;for(let l=1;l<level;l++){xp-=l*100;}return xp<0?0:xp;}
+    function renderIcons(){if(window.lucide){window.lucide.createIcons();}}
+    function highlightNew(){let raw=sessionStorage.getItem('newTrophies');if(!raw) return;let ids;try{ids=JSON.parse(raw);}catch(e){ids=[];}if(!ids.length) return;ids.forEach(id=>{const el=document.querySelector(`[data-id="${id}"]`);if(el){gsap.fromTo(el,{scale:1.5},{scale:1,duration:0.6,repeat:1,yoyo:true});}});const m=document.getElementById('trophyModal');m.innerHTML='<div class="glass-panel p-6 rounded-xl text-center"><h3 class="text-xl mb-4">新しいトロフィーを獲得しました！</h3><button id="tmOk" class="game-btn bg-pink-600 text-white px-4 py-2 rounded">OK</button></div>';m.classList.remove('hidden');renderIcons();if(window.confetti){window.confetti({particleCount:100,spread:70,origin:{y:0.6}});}document.getElementById('tmOk').addEventListener('click',()=>{m.classList.add('hidden');});sessionStorage.removeItem('newTrophies');}
+    function renderTrophies(earned){const g=document.getElementById('trophyGrid');let html='';allTrophies.forEach(t=>{const has=earned.includes(t.id);const cls=has?'text-yellow-400':'text-gray-500 opacity-40';html+=`<div class="flex flex-col items-center"><i data-id="${t.id}" data-lucide="${t.icon}" class="w-8 h-8 ${cls}"></i><span class="text-xs mt-1">${escapeHtml(t.name)}</span></div>`;});g.innerHTML=html;renderIcons();highlightNew();}
+    function renderProfile(data){const xp=calcXpInLevel(data.totalXp,data.level);document.getElementById('profLevel').textContent=data.level;document.getElementById('profCoins').textContent=data.coins;document.getElementById('profXpCurrent').textContent=xp;document.getElementById('profXpNext').textContent=data.level*100;gsap.to('#profXpFill',{width:(xp/(data.level*100))*100+'%',duration:0.5});renderTrophies(data.trophies||[]);}
+    document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(location.search);const teacher=p.get('teacher')||'';if(google&&google.script&&google.script.run){google.script.run.withSuccessHandler(renderProfile).loadProfileData(teacher);} });
   </script>
 </body>
 </html>
