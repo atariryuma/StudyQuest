@@ -1188,8 +1188,9 @@
           alert('学年と組を選択してください。');
           return;
         }
-        registeredClasses.push([g, c]);
-        const idsString = registeredClasses.map(x => x.join(',')).join(';');
+        const idsString = [...registeredClasses, [g, c]]
+          .map(x => x.join(','))
+          .join(';');
         google.script.run
           .withSuccessHandler(map => {
             loadClassOptions();
