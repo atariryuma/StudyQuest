@@ -51,8 +51,87 @@ function processLoginBonus(userEmail) {
 }
 
 function checkAndAwardTrophies(userEmail, context) {
-  // Trophy logic not implemented yet
-  return [];
+  userEmail = String(userEmail || '').trim();
+  if (!userEmail) return [];
+
+  context = context || {};
+  const teacherCode = context.teacherCode;
+
+  const teacherDb = getSpreadsheetByTeacherCode(teacherCode);
+  const globalDb = getGlobalDb_();
+  if (!teacherDb || !globalDb) return [];
+
+  const trophySheet = teacherDb.getSheetByName('Trophies');
+  const logSheet = globalDb.getSheetByName('Global_Trophies_Log');
+  const userSheet = globalDb.getSheetByName('Global_Users');
+  if (!trophySheet || !logSheet || !userSheet) return [];
+
+  const userEmails = userSheet.getRange(2, 1, Math.max(0, userSheet.getLastRow() - 1), 1)
+                               .getValues().flat();
+  const uIdx = userEmails.indexOf(userEmail);
+  if (uIdx === -1) return [];
+
+  const userRow = userSheet.getRange(uIdx + 2, 1, 1, userSheet.getLastColumn()).getValues()[0];
+  const userData = {
+    Global_TotalXP: Number(userRow[3]) || 0,
+    Global_Level: Number(userRow[4]) || 0,
+    Global_Coins: Number(userRow[5]) || 0,
+    LoginStreak: Number(userRow[9]) || 0
+  };
+
+  const logs = logSheet.getRange(2, 1, Math.max(0, logSheet.getLastRow() - 1), 3)
+                        .getValues();
+  const earned = new Set();
+  logs.forEach(r => {
+    if (r[1] === userEmail) earned.add(r[2]);
+  });
+
+  const trophies = trophySheet.getRange(2, 1, Math.max(0, trophySheet.getLastRow() - 1), 5)
+                               .getValues();
+  const awarded = [];
+
+  trophies.forEach(row => {
+    const id = row[0];
+    if (!id || earned.has(id)) return;
+    let cond;
+    try {
+      cond = JSON.parse(row[4]);
+    } catch (e) {
+      cond = null;
+    }
+    if (!cond) return;
+    if (evaluateTrophyCondition_(cond, userData, context)) {
+      logSheet.appendRow([Utilities.getUuid(), userEmail, id, new Date()]);
+      awarded.push(id);
+    }
+  });
+  return awarded;
+}
+
+function evaluateTrophyCondition_(cond, userData, context) {
+  if (typeof cond !== 'object' || cond === null) return false;
+  for (var key in cond) {
+    var expected = cond[key];
+    var actual = userData[key];
+    if (actual === undefined) actual = context[key];
+    if (actual === undefined) return false;
+    if (typeof expected === 'number') {
+      if (Number(actual) < expected) return false;
+    } else if (typeof expected === 'object') {
+      if ('gte' in expected || '$gte' in expected) {
+        var g = expected.gte !== undefined ? expected.gte : expected.$gte;
+        if (Number(actual) < Number(g)) return false;
+      } else if ('eq' in expected || '$eq' in expected) {
+        var eq = expected.eq !== undefined ? expected.eq : expected.$eq;
+        if (actual != eq) return false;
+      } else {
+        if (actual !== expected) return false;
+      }
+    } else {
+      if (actual !== expected) return false;
+    }
+  }
+  return true;
 }
 
 function purchaseItem(userEmail, itemId, quantity) {
