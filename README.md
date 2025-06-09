@@ -51,11 +51,9 @@
     * 管理画面の指示に従い、生徒の名簿（メールアドレス、名前など）を記述したCSVファイルをアップロードします。
     * これで、生徒がシステムにログインできる状態になります。
 
-以下のとおりMarkdown形式に整形しました。コピペしてお使いください。
-
 ---
 
-##  画面遷移図（改訂版）
+## 画面遷移図（改訂版）
 
 アプリケーションにおけるユーザーの操作に基づいた画面（View）間の遷移フローを定義します。
 
@@ -172,3 +170,7 @@ Run the following commands in the project root:
 npm install   # install dev dependencies
 npm test      # execute Jest test suite
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
