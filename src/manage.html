@@ -320,7 +320,7 @@
                                         <option value="長文">長文</option>
                                     </select>
                                     <input type="number" id="choiceCount" min="1" value="3" class="w-16 p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm" />
-                                    <button type="button" id="generateChoicesBtn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
+                                    <button type="button" id="generate-choices-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
                                 </div>
                                 <div id="optionInputs" class="space-y-2"></div>
                                 <div id="optionControls" class="flex gap-2 text-xs"></div>
@@ -331,7 +331,7 @@
                             </div>
                             <div id="followupTool" class="p-3 rounded-lg ai-tool-panel space-y-3">
                                 <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>Geminiによる深掘りの質問例</label>
-                                <button type="button" id="generateFollowupBtn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">質問を生成</button>
+                                <button type="button" id="generate-followup-btn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">質問を生成</button>
                                 <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
                             </div>
                         </div>
@@ -425,6 +425,8 @@
       debugContentElem = document.getElementById('debugContent');
       const debugPanel = document.getElementById('debugPanel');
       const versionEl = document.getElementById('versionInfo');
+      const params = new URLSearchParams(location.search);
+      teacherCode = params.get('teacher') || teacherCode;
       const debugCloseBtn = document.getElementById('debugClose');
       versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
       debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
@@ -485,11 +487,10 @@
           reader.onload = e => {
             google.script.run
               .withSuccessHandler(() => {
-                loadClassStats();
-                loadStudentInfo();
+                loadDashboardData(teacherCode);
               })
               .withFailureHandler(err => alert('登録に失敗: ' + err.message))
-              .registerStudentsFromCsv(teacherCode, e.target.result);
+              .registerUsersFromCsv(teacherCode, e.target.result);
           };
           reader.readAsText(file);
         });
@@ -545,7 +546,7 @@
         });
       }
 
-      document.getElementById('generateChoicesBtn').addEventListener('click', () => {
+      document.getElementById('generate-choices-btn').addEventListener('click', () => {
         if (aiCredits <= 0) return;
 
         const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
@@ -561,7 +562,6 @@
         const choiceType = document.getElementById('aiChoiceType').value;
         const count = parseInt(document.getElementById('choiceCount').value, 10) || 3;
         const question = document.getElementById('question').value.trim();
-        // subject は既に取得済みなので再宣言しない
         const persona = document.getElementById('personaInput').value;
         const container = document.getElementById('optionInputs');
         container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
@@ -569,22 +569,22 @@
 
         google.script.run
           .withSuccessHandler(res => {
-            const choices = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
+            const choices = res.choices || (res.split ? res.split(/\n|・/).map(s => s.trim()).filter(s => s) : []);
             generationHistory.push(choices);
             document.getElementById('choiceCount').value = choices.length;
             renderOptionInputs(choices);
             updateGenerationHistory();
             if (aiCredits <= 0) {
-              document.getElementById('generateChoicesBtn').disabled = true;
+              document.getElementById('generate-choices-btn').disabled = true;
             }
           })
           .withFailureHandler(err => {
             container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
           })
-          .callGeminiAPI_GAS(prompt, persona);
+          .generateTaskContent(subject, q, choiceType);
       });
 
-      document.getElementById('generateFollowupBtn').addEventListener('click', () => {
+      document.getElementById('generate-followup-btn').addEventListener('click', () => {
         const container = document.getElementById('followupSuggestions');
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
@@ -598,13 +598,12 @@
 
         google.script.run
           .withSuccessHandler(res => {
-            const lines = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
-            container.textContent = lines.map(l => `・${l}`).join('\n');
+            alert(res);
           })
           .withFailureHandler(err => {
-            container.textContent = '生成に失敗しました: ' + err.message;
+            alert('生成に失敗しました: ' + err.message);
           })
-          .callGeminiAPI_GAS(prompt, persona);
+          .generateFollowUpQuestion(subject, question);
       });
 
       document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
@@ -691,7 +690,7 @@
           completed++;
           debug('createTask success ' + completed + '/' + total);
           if (completed === total) {
-            loadTasks();
+            loadDashboardData(teacherCode);
             updateWidgets();
             addSubjectHistory(subject);
             resetForm();
@@ -746,13 +745,25 @@
           if (confirm('この課題を削除しますか？')) {
             google.script.run
               .withSuccessHandler(() => {
-                loadTasks();
+                loadDashboardData(teacherCode);
                 updateWidgets();
               })
               .withFailureHandler(err => {
                 alert('削除中にエラーが発生しました: ' + err.message);
               })
               .deleteTask(teacherCode, id);
+          }
+          return;
+        }
+
+        const close = e.target.closest('.closeBtn');
+        if (close) {
+          const id = close.dataset.id;
+          if (confirm('この課題を終了しますか？')) {
+            google.script.run
+              .withSuccessHandler(() => loadDashboardData(teacherCode))
+              .withFailureHandler(err => alert('更新に失敗しました: ' + err.message))
+              .updateTask(teacherCode, id, { status: 'closed' });
           }
           return;
         }
@@ -790,6 +801,16 @@
         google.script.run
           .withSuccessHandler(renderStudentTable)
           .listStudents(teacherCode);
+      }
+
+      function loadDashboardData(code) {
+        google.script.run
+          .withSuccessHandler(data => {
+            renderTasks(data.tasks || []);
+            renderStudentTable(data.students || []);
+          })
+          .withFailureHandler(err => alert('データ取得に失敗しました: ' + err.message))
+          .loadDashboardData(code);
       }
 
       function renderStudentTable(students) {
@@ -1086,6 +1107,9 @@
                 <button class="deleteBtn p-1" data-id="${x.id}" title="この課題を削除">
                   <i data-icon="Trash2" class="w-6 h-6 text-red-400"></i>
                 </button>
+                <button class="closeBtn p-1" data-id="${x.id}" title="この課題を終了">
+                  <i data-icon="CheckSquare" class="w-6 h-6 text-green-400"></i>
+                </button>
               </div>
             </div>`;
         });
@@ -1246,10 +1270,11 @@
 
 
       // 10) 画面初回ロード
-      loadTasks();
+      const params = new URLSearchParams(location.search);
+      teacherCode = params.get('teacher') || teacherCode;
+      loadDashboardData(teacherCode);
       updateWidgets();
       loadClassStats();
-      loadStudentInfo();
       updateDateTime();
       setInterval(updateDateTime, 1000);
       renderIcons(document);

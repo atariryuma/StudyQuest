@@ -166,3 +166,14 @@ function generateTaskContent(subject, topic, type) {
   };
   return callGeminiAPI_(prompt, schema);
 }
+
+/**
+ * generateFollowUpQuestion(topic, originalQuestion):
+ * 与えられたテーマと元の質問から深掘り質問を生成
+ */
+function generateFollowUpQuestion(topic, originalQuestion) {
+  topic = String(topic || '').trim();
+  originalQuestion = String(originalQuestion || '').trim();
+  const prompt = `Provide a short follow up question about "${topic}" based on "${originalQuestion}".`;
+  return callGeminiAPI_(prompt);
+}
