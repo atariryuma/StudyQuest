@@ -194,11 +194,11 @@
                     </div>
                 </section>
 
-                <!-- Settings Panel -->
+                <!-- Class Management Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
                     <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
                         <i data-lucide="sliders-horizontal" class="w-6 h-6 text-gray-400"></i>
-                        <span>各種設定</span>
+                        <span>クラス管理</span>
                     </h2>
                     <div class="space-y-4">
                         <div>
@@ -230,11 +230,53 @@
                     </div>
                 </section>
 
-            <!-- Quest List Panel (Moved Here) -->
-            <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i><span>公開中のクエスト一覧</span></h2>
-                <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
-            </section>
+                <!-- Class Info Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="book-open" class="w-6 h-6 text-indigo-400"></i>
+                        <span>クラス情報</span>
+                    </h2>
+                    <table class="min-w-full text-sm" id="classTable">
+                        <thead>
+                            <tr>
+                                <th class="border px-2">クラス</th>
+                                <th class="border px-2">人数</th>
+                                <th class="border px-2">平均レベル</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </section>
+
+                <!-- Student Info Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="users" class="w-6 h-6 text-green-400"></i>
+                        <span>生徒情報</span>
+                    </h2>
+                    <table class="min-w-full text-sm" id="studentTable">
+                        <thead>
+                            <tr>
+                                <th class="border px-2">ID</th>
+                                <th class="border px-2">クラス</th>
+                                <th class="border px-2">XP</th>
+                                <th class="border px-2">Lv</th>
+                                <th class="border px-2">最終ログイン</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </section>
+
+                <!-- Quest List Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i>
+                        <span>公開中のクエスト一覧</span>
+                    </h2>
+                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
+                </section>
+
             </div>
 
             <!-- Right Column: Quest Management -->
@@ -312,11 +354,18 @@
                     </form>
                 </section>
 
+                <!-- Quest List Panel -->
+                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i>
+                        <span>公開中のクエスト一覧</span>
+                    </h2>
+                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
+                </section>
+
             </div>
         </main>
       </div>
-    </section>
-  </main>
 
   <!-- SCRIPT_URL と teacherCode をグローバルへセット -->
   <script>
@@ -707,6 +756,40 @@
           .getStatistics(teacherCode);
       }
 
+      function loadClassStats() {
+        google.script.run
+          .withSuccessHandler(renderClassTable)
+          .getClassStatistics(teacherCode);
+      }
+
+      function renderClassTable(stats) {
+        const tbody = document.querySelector('#classTable tbody');
+        if (!tbody) return;
+        let html = '';
+        Object.keys(stats || {}).forEach(key => {
+          const s = stats[key];
+          html += `<tr><td class="border px-2">${key}</td><td class="border px-2 text-right">${s.count}</td><td class="border px-2 text-right">${s.avgLevel.toFixed(1)}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+      }
+
+      function loadStudentInfo() {
+        google.script.run
+          .withSuccessHandler(renderStudentTable)
+          .listStudents(teacherCode);
+      }
+
+      function renderStudentTable(students) {
+        const tbody = document.querySelector('#studentTable tbody');
+        if (!tbody) return;
+        let html = '';
+        (students || []).forEach(st => {
+          const date = st.lastLogin ? new Date(st.lastLogin).toLocaleDateString('ja-JP') : '';
+          html += `<tr><td class="border px-2">${st.id}</td><td class="border px-2">${st.grade}-${st.class}</td><td class="border px-2 text-right">${st.totalXp}</td><td class="border px-2 text-right">${st.level}</td><td class="border px-2">${date}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+      }
+
       function updateDateTime() {
         const now = new Date();
         const text = now.toLocaleString('ja-JP', {
@@ -789,10 +872,6 @@
           });
           list.innerHTML = html;
         }
-        let html = '';
-        hist.forEach(s => { html += `<option value="${escapeHtml(s)}"></option>`; });
-        list.innerHTML = html;
-      }
 
       function addSubjectHistory(subj) {
         try {
@@ -1152,6 +1231,8 @@
       // 10) 画面初回ロード
       loadTasks();
       updateWidgets();
+      loadClassStats();
+      loadStudentInfo();
       updateDateTime();
       setInterval(updateDateTime, 1000);
       renderIcons(document);
