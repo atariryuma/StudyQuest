@@ -27,11 +27,15 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
     getLastRow: jest.fn(() => 1),
     autoResizeColumn: jest.fn()
   };
+  const insertedNames = [];
   const ssStub = {
     getId: jest.fn(() => 'sid'),
     getSheets: jest.fn(() => [sheetStub]),
     getUrl: jest.fn(() => 'url'),
-    insertSheet: jest.fn(() => ({ appendRow: jest.fn(), setTabColor: jest.fn(), getSheetId: jest.fn(() => 2), getLastRow: jest.fn(() => 1) })),
+    insertSheet: jest.fn(name => {
+      insertedNames.push(name);
+      return { appendRow: jest.fn(), setTabColor: jest.fn(), getSheetId: jest.fn(() => 2), getLastRow: jest.fn(() => 1) };
+    }),
     getSheetByName: jest.fn(() => sheetStub)
   };
   const context = {
@@ -48,6 +52,8 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
     SHEET_STUDENTS: 'Students',
     SHEET_SUBMISSIONS: 'Submissions',
     SHEET_AI_FEEDBACK: 'AI',
+    SHEET_TROPHIES: 'Trophies',
+    SHEET_ITEMS: 'Items',
     STUDENT_SHEET_PREFIX: 'stu_',
     DriveApp: {
       createFolder: jest.fn(() => ({ getId: ()=>'fid' })),
@@ -74,6 +80,10 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   expect(result.status).toBe('new');
   expect(result.teacherCode).toBe('ABC123');
   expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB_ABC123');
+  expect(insertedNames).toEqual(expect.arrayContaining(['Trophies', 'Items']));
+  const tocCalls = sheetStub.appendRow.mock.calls.map(c => c[0][0] || '');
+  expect(tocCalls.some(v => v.includes('Trophies'))).toBe(true);
+  expect(tocCalls.some(v => v.includes('Items'))).toBe(true);
 });
 
 test('initTeacher tasks sheet header includes draft column', () => {
@@ -114,6 +124,8 @@ test('initTeacher tasks sheet header includes draft column', () => {
     SHEET_STUDENTS: 'Students',
     SHEET_SUBMISSIONS: 'Submissions',
     SHEET_AI_FEEDBACK: 'AI',
+    SHEET_TROPHIES: 'Trophies',
+    SHEET_ITEMS: 'Items',
     STUDENT_SHEET_PREFIX: 'stu_',
     DriveApp: {
       createFolder: jest.fn(() => ({ getId: ()=>'fid' })),
@@ -179,6 +191,8 @@ test('initTeacher submissions sheet header matches README order', () => {
     SHEET_STUDENTS: 'Students',
     SHEET_SUBMISSIONS: 'Submissions',
     SHEET_AI_FEEDBACK: 'AI',
+    SHEET_TROPHIES: 'Trophies',
+    SHEET_ITEMS: 'Items',
     STUDENT_SHEET_PREFIX: 'stu_',
     DriveApp: {
       createFolder: jest.fn(() => ({ getId: ()=>'fid' })),

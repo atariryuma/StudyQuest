@@ -7,6 +7,8 @@ const SHEET_TOC        = '📜 目次';
 const SHEET_TASKS      = 'Tasks';
 const SHEET_SUBMISSIONS = 'Submissions';
 const SHEET_STUDENTS   = 'Students';
+const SHEET_TROPHIES   = 'Trophies';
+const SHEET_ITEMS      = 'Items';
 // 以前は日本語名 "AIフィードバックログ" を使用していましたが、
 // README の表記に合わせて英語名に変更
 const SHEET_AI_FEEDBACK = 'AI_Log';

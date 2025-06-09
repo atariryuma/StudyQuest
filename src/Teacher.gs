@@ -191,6 +191,20 @@ function initTeacher(passcode) {
       columnsJa: ['ログID','提出ID','フィード内容','生成日時']
     },
     {
+      name: SHEET_TROPHIES,
+      color: "ffcc00",
+      header: ['TrophyID', 'Name', 'Description', 'IconURL', 'Condition'],
+      description: "獲得可能なトロフィーを定義します。",
+      columnsJa: ['トロフィーID','名称','説明','アイコンURL','条件(JSON)']
+    },
+    {
+      name: SHEET_ITEMS,
+      color: "00c851",
+      header: ['ItemID', 'Name', 'Type', 'Price', 'Effect'],
+      description: "購入可能なアイテムを定義します。",
+      columnsJa: ['アイテムID','名称','種別','価格','効果(JSON)']
+    },
+    {
       name: SHEET_SETTINGS,
       color: "aaaaaa",
       header: ['type', 'value1', 'value2'],
