@@ -3,6 +3,8 @@ const vm = require('vm');
 const path = require('path');
 
 function loadAuth(context) {
+  const utils = fs.readFileSync(path.join(__dirname, '../src/Utils.gs'), 'utf8');
+  vm.runInNewContext(utils, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Auth.gs'), 'utf8');
   vm.runInNewContext(code, context);
 }
@@ -50,15 +52,13 @@ test('loginAsStudent finds enrollment and global data', () => {
   const teacherDb = { getSheetByName: jest.fn(name => name === 'Enrollments' ? enrollSheet : null) };
   const globalDb = { getSheetByName: jest.fn(() => userSheet) };
   const context = {
-    getSpreadsheetByTeacherCode: jest.fn(() => teacherDb),
+    // ▼▼▼ コンフリクトを修正した箇所 ▼▼▼
     getTeacherDb_: jest.fn(() => teacherDb),
     getGlobalDb_: jest.fn(() => globalDb),
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => k === 'Global_Master_DB' ? 'gid' : null }) },
+    // ▲▲▲ ここまで ▲▲▲
     Session: { getEffectiveUser: () => ({ getEmail: () => 'stud@example.com' }) },
-    processLoginBonus: jest.fn(),
-    getCacheValue_: () => null,
-    putCacheValue_: () => {},
-    logError_: () => {}
+    processLoginBonus: jest.fn()
   };
   loadAuth(context);
   const res = context.loginAsStudent('TC');
