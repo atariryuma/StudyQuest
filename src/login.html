@@ -7,7 +7,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    .game-btn {
+      transition: all 0.2s ease;
+      border-bottom-width: 4px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+    }
+    .game-btn:not(:disabled):hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 0 15px rgba(250,204,21,0.4);
+    }
+    .game-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+      box-shadow: none;
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen" style="font-family:'DotGothic16',sans-serif;">
   <main class="space-y-4 text-center">
