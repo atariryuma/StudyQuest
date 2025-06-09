@@ -113,3 +113,11 @@ function getStatistics(teacherCode) {
   console.timeEnd('getStatistics');
   return result;
 }
+
+/**
+ * loadBoardData(teacherCode):
+ * listBoard wrapper for frontend
+ */
+function loadBoardData(teacherCode) {
+  return listBoard(teacherCode);
+}
