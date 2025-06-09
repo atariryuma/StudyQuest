@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profile - StudyQuest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#1a1b26;font-family:'DotGothic16',sans-serif;}</style>
+</head>
+<body class="min-h-screen p-4 text-gray-200">
+  <main class="max-w-xl mx-auto space-y-4">
+    <h1 class="text-xl font-bold">プロフィール</h1>
+    <div id="profileContainer" class="space-y-2"></div>
+  </main>
+  <script>
+    <?!= include('shared/escapeHtml'); ?>
+    function renderProfile(data){
+      const c=document.getElementById('profileContainer');
+      if(!data){c.textContent='No data';return;}
+      let html='';
+      html+=`<p><span class="font-bold">Name:</span> ${escapeHtml(data.handleName||'')}</p>`;
+      html+=`<p><span class="font-bold">Level:</span> ${escapeHtml(data.level)}</p>`;
+      html+=`<p><span class="font-bold">XP:</span> ${escapeHtml(data.totalXp)}</p>`;
+      html+=`<p><span class="font-bold">Coins:</span> ${escapeHtml(data.coins)}</p>`;
+      if(data.trophies&&data.trophies.length){
+        html+='<div><span class="font-bold">Trophies:</span><ul class="list-disc pl-5">'+
+          data.trophies.map(t=>`<li>${escapeHtml(t)}</li>`).join('')+'</ul></div>';
+      }
+      if(data.items&&data.items.length){
+        html+='<div><span class="font-bold">Items:</span><ul class="list-disc pl-5">'+
+          data.items.map(i=>`<li>${escapeHtml(i.itemId)} x ${escapeHtml(i.quantity)}</li>`).join('')+'</ul></div>';
+      }
+      c.innerHTML=html;
+    }
+    document.addEventListener('DOMContentLoaded',()=>{
+      const p=new URLSearchParams(location.search);
+      const teacher=p.get('teacher')||'';
+      if(google&&google.script&&google.script.run){
+        google.script.run.withSuccessHandler(renderProfile).loadProfileData(teacher);
+      }
+    });
+  </script>
+</body>
+</html>
