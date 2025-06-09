@@ -104,6 +104,10 @@
         </div>
       </div>
     </header>
+    <nav class="glass-panel rounded-xl p-2 flex justify-around items-center text-sm shadow">
+      <a href="profile.html" id="linkProfile" class="hover:underline">プロフィール</a>
+      <a href="leaderboard.html" id="linkLeaderboard" class="hover:underline">ランキング</a>
+    </nav>
 
     <div class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
       <!-- ===== サイドバー: クエストボード ===== -->
@@ -180,12 +184,15 @@
   </div>
   <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"></div>
   <div id="loadingOverlay" class="fixed inset-0 flex items-center justify-center text-white text-xl font-bold bg-black/80 z-50">ロード中…</div>
+  <div id="feedbackModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden"></div>
+  <div id="levelUpModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden"></div>
 
 
 <script>
   // GASから渡される変数を定義
   const SCRIPT_URL = '<?!= typeof scriptUrl !== "undefined" ? scriptUrl.replace("/dev","/exec") : "" ?>';
-  const teacherCode = '<?!= typeof teacher !== "undefined" ? teacher : "" ?>';
+  const urlParams = new URLSearchParams(window.location.search);
+  let teacherCode = urlParams.get('teacher') || '<?!= typeof teacher !== "undefined" ? teacher : "" ?>';
   const grade = '<?!= typeof grade !== "undefined" ? grade : "" ?>';
   const classroom = '<?!= typeof classroom !== "undefined" ? classroom : "" ?>';
   const number = '<?!= typeof number !== "undefined" ? number : "" ?>';
@@ -202,6 +209,7 @@
   let xp = 0; let level = 1; let totalXp = 0;
   const xpPerQuest = 10;
   let currentTask = null; let aiCalls = 0;
+  let state = { isLoading: false, userInfo: null, tasks: {}, activeTask: null, chatHistory: [] };
   const QuestStep = { INITIAL_ANSWER: 0, DEEPENING_QUESTION: 1, REASONING: 2, FINAL_ANSWER: 3, COMPLETED: 4, };
   let questStep = QuestStep.INITIAL_ANSWER;
   let stepAnswers = ['', '', '', ''];
@@ -235,19 +243,37 @@
     })[fn](code, taskId);
   }
 
+  function loadStudentData(code) {
+    showLoadingOverlay();
+    if (google && google.script && google.script.run && typeof google.script.run.loadStudentData === 'function') {
+      google.script.run
+        .withSuccessHandler(data => {
+          state.userInfo = data.userInfo || null;
+          state.tasks = data.tasks || { uncompleted: [], completed: [] };
+          state.chatHistory = data.chatHistory || [];
+          updateProfileHeader();
+          renderLists(state.tasks.uncompleted || [], state.chatHistory);
+          hideLoadingOverlay();
+        })
+        .withFailureHandler(e => {
+          alert('データ取得に失敗しました: ' + e.message);
+          hideLoadingOverlay();
+        })
+        .loadStudentData(code);
+    } else {
+      initStudent();
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    if (!teacherCode || !grade || !classroom || !number) {
+    if (!teacherCode) {
         document.getElementById('loadingOverlay').textContent = '不正なアクセスです。';
         return;
     }
-    
     document.getElementById('versionInfo').textContent = version;
-    document.getElementById('studentIdContainer').textContent = `ID: ${studentId}`;
     document.querySelectorAll('.ai-avatar').forEach(img => img.src = aiIconSvg);
-
     document.getElementById('sendBtn').addEventListener('click', handleSend);
-    
-    initStudent();
+    loadStudentData(teacherCode);
   });
 
   function initStudent() {
@@ -624,9 +650,8 @@
   
   function finalizeSubmission() {
     showLoadingOverlay();
-    addXp(xpPerQuest);
     google.script.run
-        .withSuccessHandler(() => { showResultScreen(); loadTasks(); })
+        .withSuccessHandler(onSubmissionSuccess)
         .withFailureHandler(e => { alert('提出に失敗しました: ' + e.message); hideLoadingOverlay(); })
         .processSubmission(teacherCode, studentId, currentTask.id, stepAnswers[QuestStep.FINAL_ANSWER]);
     questStep = QuestStep.COMPLETED;
@@ -649,6 +674,50 @@
         screen.classList.add('hidden'); screen.classList.remove('flex');
         showInitialWelcomeMessage();
     });
+  }
+
+  function updateProfileHeader() {
+    if (!state.userInfo) return;
+    const g = state.userInfo.globalData || {};
+    document.getElementById('playerLevel').textContent = g.globalLevel || level;
+    document.getElementById('studentIdContainer').textContent = g.handleName ? g.handleName : studentId;
+    totalXp = g.globalTotalXp || totalXp;
+    level = g.globalLevel || level;
+    xp = totalXp;
+    for (let l = 1; l < level; l++) { xp -= l * 100; }
+    if (xp < 0) xp = 0;
+    updateXpBar();
+  }
+
+  function showLevelUp(newLv) {
+    const modal = document.getElementById('levelUpModal');
+    modal.innerHTML = `<div class="glass-panel p-6 rounded-xl text-center"><h2 class="text-2xl font-bold mb-4">レベルアップ！</h2><p class="text-xl">Lv.${newLv}</p><button id="levelUpOk" class="game-btn mt-4 bg-pink-600 text-white px-4 py-2 rounded">OK</button></div>`;
+    modal.classList.remove('hidden');
+    document.getElementById('levelUpOk').addEventListener('click', () => { modal.classList.add('hidden'); });
+  }
+
+  function showFeedbackModal(correct, explanation) {
+    const modal = document.getElementById('feedbackModal');
+    modal.innerHTML = `<div class="glass-panel p-6 rounded-xl text-center"><h3 class="text-lg font-bold mb-2">フィードバック</h3><p class="mb-2">正解: ${escapeHtml(correct)}</p><p class="whitespace-pre-wrap">${escapeHtml(explanation)}</p><button id="feedbackOk" class="game-btn mt-4 bg-cyan-600 text-white px-4 py-2 rounded">OK</button></div>`;
+    modal.classList.remove('hidden');
+    document.getElementById('feedbackOk').addEventListener('click', () => { modal.classList.add('hidden'); });
+    renderIcons();
+  }
+
+  function onSubmissionSuccess(res) {
+    hideLoadingOverlay();
+    if (!res || res.status !== 'ok') { alert('提出に失敗しました'); return; }
+    const prevLevel = level;
+    totalXp = res.totalXp || totalXp;
+    level = res.level || level;
+    xp = totalXp;
+    for (let l = 1; l < level; l++) { xp -= l * 100; }
+    if (xp < 0) xp = 0;
+    updateXpBar();
+    if (level > prevLevel) showLevelUp(level);
+    showFeedbackModal(res.correctAnswer || '', res.explanation || '');
+    showResultScreen();
+    loadTasks();
   }
 
   function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
