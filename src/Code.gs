@@ -13,7 +13,6 @@ const SHEET_ITEMS      = 'Items';
 // README の表記に合わせて英語名に変更
 const SHEET_AI_FEEDBACK = 'AI_Log';
 const SHEET_SETTINGS  = 'Settings';
-const SHEET_ITEMS     = 'Items';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
 const PROP_GLOBAL_MASTER_DB = 'Global_Master_DB';
