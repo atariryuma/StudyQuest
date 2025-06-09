@@ -1,6 +1,6 @@
 {
   "name": "studyquest",
-  "version": "1.0.171",
+  "version": "1.0.172",
   "private": true,
   "scripts": {
     "deploy": "clasp push --force --no-open",
@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@google/clasp": "^2.4.2",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "jsdom": "^22.1.0"
   }
 }
