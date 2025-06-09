@@ -1,24 +1,26 @@
-// Authentication and user login helpers per StudyQuest spec v4.3
-
-function getGlobalDb_() {
-  const cacheKey = 'GLOBAL_DB';
-  const cached = typeof getCacheValue_ === 'function' ? getCacheValue_(cacheKey) : null;
-  if (cached) return cached;
-  const props = PropertiesService.getScriptProperties();
-  const propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined')
-    ? PROP_GLOBAL_MASTER_DB
-    : 'Global_Master_DB';
-  const id = props.getProperty(propName);
-  if (!id) return null;
-  try {
-    const ss = SpreadsheetApp.openById(id);
-    if (typeof putCacheValue_ === 'function') putCacheValue_(cacheKey, ss, 300);
-    return ss;
-  } catch (e) {
-    if (typeof logError_ === 'function') logError_('getGlobalDb_', e);
-    return null;
+var INITIAL_TEACHER_SECRET = "changeme";
+function setupInitialTeacher(secretKey) {
+  if (secretKey !== INITIAL_TEACHER_SECRET) {
+    return { status: "error", message: "invalid_key" };
   }
+  const email = Session.getEffectiveUser().getEmail();
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty("teacherCode_" + email)) {
+    return { status: "error", message: "already_exists" };
+  }
+  const teacherCode = Utilities.getUuid().substring(0,6).toUpperCase();
+  const folder = DriveApp.createFolder("StudyQuest_" + teacherCode);
+  const ss = SpreadsheetApp.create("StudyQuest_DB_" + teacherCode);
+  DriveApp.getFileById(ss.getId()).moveTo(folder);
+  const settings = ss.insertSheet("Settings");
+  settings.appendRow(["ownerEmail", email]);
+  props.setProperty("teacherCode_" + email, teacherCode);
+  props.setProperty("ssId_" + teacherCode, ss.getId());
+  props.setProperty(teacherCode, folder.getId());
+  return { status: "ok", teacherCode: teacherCode };
 }
+
+// Authentication and user login helpers per StudyQuest spec v4.3
 
 function loginAsTeacher() {
   const email = Session.getEffectiveUser().getEmail();
@@ -34,7 +36,7 @@ function loginAsTeacher() {
 function loginAsStudent(teacherCode) {
   teacherCode = String(teacherCode || '').trim();
   const email = Session.getEffectiveUser().getEmail();
-  const teacherDb = getSpreadsheetByTeacherCode(teacherCode);
+  const teacherDb = getTeacherDb_(teacherCode);
   const globalDb = getGlobalDb_();
   if (!teacherDb || !globalDb) return { status: 'error', message: 'invalid_teacher' };
   const enroll = teacherDb.getSheetByName('Enrollments');

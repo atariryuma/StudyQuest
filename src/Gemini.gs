@@ -124,3 +124,45 @@ function generateDeepeningPrompt(teacherCode, question, persona) {
   const prompt = `「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
   return callGeminiAPI_GAS(prompt, persona);
 }
+
+/**
+ * callGeminiAPI_(prompt, schema): Gemini API core wrapper returning JSON/text
+ */
+function callGeminiAPI_(prompt, schema) {
+  const apiKey = (typeof getGlobalGeminiApiKey === 'function') ? getGlobalGeminiApiKey() : '';
+  if (!apiKey) throw new Error('missing_api_key');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey;
+  const payload = {
+    contents: [{ parts: [{ text: String(prompt || '') }] }],
+    generationConfig: { responseMimeType: schema ? 'application/json' : 'text/plain' }
+  };
+  if (schema) payload.generationConfig.responseSchema = schema;
+  const options = { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), muteHttpExceptions: true };
+  const res = UrlFetchApp.fetch(url, options);
+  const obj = JSON.parse(res.getContentText());
+  const cand = obj.candidates && obj.candidates[0] && obj.candidates[0].content && obj.candidates[0].content.parts[0];
+  if (!cand) throw new Error('no_response');
+  if (schema) return JSON.parse(cand.text || '{}');
+  return cand.text || '';
+}
+
+/**
+ * generateTaskContent(subject, topic, type): AI assisted task content generation
+ */
+function generateTaskContent(subject, topic, type) {
+  subject = String(subject || '').trim();
+  topic = String(topic || '').trim();
+  type = String(type || '').trim();
+  const prompt = `Create a ${type} task for subject "${subject}" about "${topic}" and respond in JSON.`;
+  const schema = {
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      question: { type: 'string' },
+      correctAnswer: { type: 'string' },
+      explanation: { type: 'string' }
+    },
+    required: ['title','question','correctAnswer','explanation']
+  };
+  return callGeminiAPI_(prompt, schema);
+}
