@@ -1,386 +1,92 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>StudyQuest - ログイン画面</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>StudyQuest - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
-  <style>
-    body { font-family: 'DotGothic16', sans-serif; background-color: #1a1b26; overflow: hidden; }
-    #particleCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-    .glass-panel { background: rgba(26, 27, 38, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
-    .game-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
-    .game-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    input, select { background-color: rgba(20, 21, 30, 0.8); border: 1px solid #4a4f8a; }
-    input:focus, select:focus { outline: none; --tw-ring-color: #f472b6; box-shadow: 0 0 0 2px var(--tw-ring-color); border-color: #f472b6; }
-    .role-btn.selected { transform: scale(1.05); }
-    .role-btn:not(.selected) { filter: grayscale(50%) opacity(70%); }
-    .form-section { transition: opacity 0.3s, height 0.5s; overflow: hidden; }
-    #debugPanel { position: fixed; bottom: 1rem; right: 1rem; width: 320px; max-height: 200px; background: rgba(31, 41, 55, 0.9); border: 1px solid #4b5563; border-radius: 0.5rem; overflow-y: auto; padding: 0.75rem; font-size: 0.75rem; line-height: 1.2; color: #d1d5db; z-index: 100; }
-    #debugPanelHeader { font-weight: bold; margin-bottom: 0.5rem; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
-    #debugClose { cursor: pointer; color: #f87171; }
-    #devToggleArea { position: fixed; bottom: 0; left: 0; width: 24px; height: 24px; cursor: pointer; }
-  </style>
+  <script src="https://cdn.tailwindcss.com" defer></script>
 </head>
-<body class="text-gray-200">
-
-  <canvas id="particleCanvas"></canvas>
-
-  <main class="min-h-screen flex items-center justify-center p-4">
-    <section id="loginBox" class="glass-panel rounded-2xl p-8 w-full max-w-md shadow-2xl">
-      <div class="text-center mb-6">
-        <i data-lucide="swords" class="w-12 h-12 text-pink-400 mx-auto mb-2"></i>
-        <h1 class="text-3xl font-bold tracking-widest text-white">StudyQuest</h1>
-        <p class="text-gray-400 text-sm mt-1">冒険の準備をしよう！</p>
-      </div>
-
-      <input type="checkbox" id="teacherMode" class="hidden">
-      
-      <div id="stage1" class="grid grid-cols-2 gap-4 mb-6">
-        <button data-role="student" class="role-btn w-full game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500">生徒</button>
-        <button data-role="teacher" class="role-btn w-full game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500">教師</button>
-      </div>
-
-      <form id="loginForm" class="hidden space-y-4">
-        <div id="passcodeWrap" class="hidden">
-            <label for="passcode" class="text-sm text-yellow-300 text-center block">初回登録用の「合言葉」を入力</label>
-            <div class="relative">
-                <i data-lucide="key-round" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input id="passcode" type="password" placeholder="合言葉" class="w-full p-3 pl-10 rounded-lg text-white">
-            </div>
-        </div>
-
-        <div id="studentFieldsContainer">
-            <select id="savedRegistrations" class="w-full p-3 rounded-lg text-white hidden mb-2"></select>
-
-            <div id="teacherCodeWrap">
-                <div class="relative">
-                    <i data-lucide="hash" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                    <input id="teacherCode" type="text" placeholder="教師コード" class="w-full p-3 pl-10 rounded-lg text-white" list="teacherHistory">
-                    <datalist id="teacherHistory"></datalist>
-                </div>
-            </div>
-            <div id="studentFields" class="grid grid-cols-3 gap-2 mt-2">
-                <input id="grade" type="number" placeholder="学年" class="w-full p-3 rounded-lg text-white">
-                <input id="classroom" type="text" placeholder="組" class="w-full p-3 rounded-lg text-white">
-                <input id="number" type="number" placeholder="番号" class="w-full p-3 rounded-lg text-white">
-            </div>
-        </div>
-
-        <p id="errorMessage" class="text-red-400 text-sm hidden text-center h-4"></p>
-
-        <button id="loginBtn" type="submit" class="w-full game-btn bg-pink-600 text-white p-3 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex items-center justify-center gap-2">
-          <i data-lucide="log-in" class="w-5 h-5"></i>
-          <span>ログイン</span>
-        </button>
-      </form>
-    <div id="devLoginSection" class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg hidden">
-      <h3 class="text-yellow-400 font-bold mb-2">【開発者向け】</h3>
-      <p class="text-xs text-gray-400 mb-2">
-        開発中は、以下のボタンで認証をスキップできます。
-      </p>
-      <button id="devLoginBtn" type="button" class="w-full bg-yellow-600 text-white p-2 rounded-lg font-bold border-b-4 border-yellow-800 hover:bg-yellow-500">
-        開発モードでログイン (教師)
-      </button>
-    </div>
-    </section>
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen" style="font-family:'DotGothic16',sans-serif;">
+  <main class="space-y-4 text-center">
+    <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
+    <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-purple-800 hover:bg-purple-500">教師としてログイン</button>
+    <button id="student-login-btn" class="game-btn bg-cyan-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-cyan-800 hover:bg-cyan-500">生徒としてログイン</button>
   </main>
 
-  <div id="firstMessage" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-panel modal rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-      <p class="mb-2">🎉 初回ログインありがとうございます！</p>
-      <p class="mb-2">これから Google Drive 上に</p>
-      <p class="mb-2"><strong>「StudyQuest_<span id="newCodeSpan"></span>」</strong>フォルダを作成します。</p>
-      <p class="mb-4">生徒の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
-      <button id="closeFirstMsg" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">了解しました</button>
+  <div id="errorModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-white text-black p-6 rounded-lg w-72 text-center space-y-4">
+      <p id="errorText"></p>
+      <button id="closeError" class="px-4 py-2 bg-gray-800 text-white rounded">閉じる</button>
     </div>
   </div>
-
-  <div id="debugPanel" class="hidden">
-    <div id="debugPanelHeader"><span>デバッグログ</span><span id="debugClose">✕</span></div>
-    <div id="debugContent"></div>
-  </div>
-  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"></div>
-  <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center text-white text-xl font-bold select-none">ロード中…</div>
-  <div id="devToggleArea" class="fixed bottom-0 left-0 w-6 h-6"></div>
-
+  <div id="loadingOverlay" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 text-white z-40">ロード中…</div>
 
   <script>
-    <?!= include('shared/escapeHtml'); ?>
-    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
-    const version = '<?!= version ?>';
-    const teacherParam = '<?!= teacher ?>';
-    const gradeParam = '<?!= grade ?>';
-    const classParam = '<?!= classroom ?>';
-    const numberParam = '<?!= number ?>';
+    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
 
-
-    // ==============================
-    // 既存のスクリプトをここに統合
-    // ==============================
-    let devLoginSection;
-    let devLoginRevealed = false;
-
-    let debugContentElem;
-    function debug(msg) {
-      if (!debugContentElem) return;
-      const t = new Date().toLocaleTimeString();
-      debugContentElem.insertAdjacentHTML('beforeend', `<p>[${t}] ${escapeHtml(String(msg))}</p>`);
-      debugContentElem.scrollTop = debugContentElem.scrollHeight;
-    }
-    
-    // Particle effect...
-    const canvas = document.getElementById('particleCanvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-    class Particle { constructor() { this.reset(); } reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3; this.size = Math.random() * 2 + 1; this.alpha = Math.random() * 0.5 + 0.3; } update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) { this.reset(); } } draw() { ctx.fillStyle = `rgba(255,255,255,${this.alpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); } }
-    function initParticles() { particles = []; for (let i = 0; i < 80; i++) particles.push(new Particle()); }
-    function animateParticles() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animateParticles); }
-    initParticles(); animateParticles();
-
-    document.addEventListener('DOMContentLoaded', () => {
-      debugContentElem = document.getElementById('debugContent');
-      const debugPanel = document.getElementById('debugPanel');
-      const versionEl = document.getElementById('versionInfo');
-      if(versionEl) versionEl.textContent = version;
-      const debugCloseBtn = document.getElementById('debugClose');
-      if (versionEl) versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
-      if (debugCloseBtn) debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
-
-      debug('🔄 ページ読み込み完了');
-      gsap.from('#loginBox', { scale: 0.8, opacity: 0, duration: 0.6, ease: 'back.out' });
-
-      // 教師コード履歴の読み込み
-      try {
-        const history = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
-        const list = document.getElementById('teacherHistory');
-        list.innerHTML = '';
-        history.forEach(code => {
-          const opt = document.createElement('option');
-          opt.value = code;
-          list.appendChild(opt);
-        });
-      } catch (e) { debug('履歴読み込み失敗: ' + e); }
-
-      // 新しいUIのイベントリスナー
-      document.querySelectorAll('.role-btn').forEach(button => {
-        button.addEventListener('click', () => {
-          const role = button.dataset.role;
-          document.getElementById('teacherMode').checked = (role === 'teacher');
-          document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('selected'));
-          button.classList.add('selected');
-          
-          gsap.to('#stage1', { opacity: 0, duration: 0.3, onComplete: () => {
-            document.getElementById('stage1').classList.add('hidden');
-            toggleTeacherMode();
-            document.getElementById('loginForm').classList.remove('hidden');
-            gsap.from('#loginForm', { height: 0, opacity: 0, duration: 0.5, ease: 'power2.out' });
-          }});
-        });
-      });
-      
-      document.getElementById('loginForm').addEventListener('submit', handleSubmit);
-      document.getElementById('teacherCode').addEventListener('input', normalizeTeacherCode);
-      document.getElementById('grade').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
-      document.getElementById('number').addEventListener('input', e => { e.target.value = toHalf(e.target.value.replace(/[^0-9]/g,'')); });
-      document.getElementById('savedRegistrations').addEventListener('change', onSelectRegistration);
-      setupFieldFocus();
-      const devLoginBtn = document.getElementById('devLoginBtn');
-      devLoginSection = document.getElementById('devLoginSection');
-      const devToggleArea = document.getElementById('devToggleArea');
-      if (devLoginBtn) {
-        devLoginBtn.addEventListener('click', () => {
-          showLoadingOverlay();
-          devLoginBtn.disabled = true;
-          google.script.run
-            .withSuccessHandler(result => {
-              const { teacherCode } = result;
-              alert('開発モードでログインしました。');
-              hideLoadingOverlay();
-              window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-            })
-            .withFailureHandler(err => {
-              hideLoadingOverlay();
-              devLoginBtn.disabled = false;
-              debug('Dev login failed: ' + err.message);
-            })
-            .initTeacher('dev_teacher');
-        });
-      }
-      if (devToggleArea) {
-        devToggleArea.addEventListener('click', () => {
-          if (document.getElementById('teacherMode').checked) {
-            devLoginSection.classList.remove('hidden');
-            devLoginRevealed = true;
-          }
-        });
-      }
-      document.addEventListener('keydown', e => {
-        if (e.altKey && e.key.toLowerCase() === 'd' && document.getElementById('teacherMode').checked) {
-          devLoginSection.classList.remove('hidden');
-          devLoginRevealed = true;
-        }
-      });
+    document.getElementById('teacher-login-btn').addEventListener('click', () => {
+      showLoadingOverlay();
+      google.script.run
+        .withSuccessHandler(onTeacherLoginSuccess)
+        .withFailureHandler(onLoginFailure)
+        .loginAsTeacher();
     });
 
-    function toHalf(str) { return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0)); }
-    function normalizeTeacherCode() { const el = document.getElementById('teacherCode'); el.value = toHalf(el.value).toUpperCase().replace(/[^A-Z0-9]/g,''); }
-    function addHistory(code) {
-      code = String(code || '').toUpperCase();
-      try {
-        let list = JSON.parse(localStorage.getItem('teacherCodeHistory') || '[]');
-        list = list.filter(c => c !== code); list.unshift(code);
-        if (list.length > 5) list = list.slice(0,5);
-        localStorage.setItem('teacherCodeHistory', JSON.stringify(list));
-      } catch (_) {}
-    }
-
-    function toggleTeacherMode() {
-      const isTeacher = document.getElementById('teacherMode').checked;
-      document.getElementById('passcodeWrap').classList.toggle('hidden', !isTeacher);
-      document.getElementById('studentFieldsContainer').classList.toggle('hidden', isTeacher);
-
-      document.getElementById('passcode').required = isTeacher;
-      document.getElementById('teacherCode').required = !isTeacher;
-      document.getElementById('grade').required = !isTeacher;
-      document.getElementById('classroom').required = !isTeacher;
-      document.getElementById('number').required = !isTeacher;
-    }
-
-    function populateRegistrationSelect(regs) {
-      const sel = document.getElementById('savedRegistrations');
-      if (!sel || !regs || regs.length === 0) {
-        if(sel) sel.classList.add('hidden');
-        return;
-      }
-      let opts = '<option value="">-- 登録済みクラスを選択 --</option>';
-      regs.forEach(r => { opts += `<option value="${r.teacherCode}|${r.studentId}">${r.teacherCode} (${r.studentId})</option>`; });
-      sel.innerHTML = opts;
-      sel.classList.remove('hidden');
-      document.getElementById('teacherCodeWrap').classList.add('hidden');
-      document.getElementById('studentFields').classList.add('hidden');
-    }
-
-    function onSelectRegistration(e) {
-      const val = e.target.value;
-      if (!val) {
-        document.getElementById('teacherCodeWrap').classList.remove('hidden');
-        document.getElementById('studentFields').classList.remove('hidden');
-        return;
-      }
-      const [teacherCode, studentId] = val.split('|');
-      const parts = studentId.split('-');
-      if (parts.length === 3) {
-        document.getElementById('grade').value = parts[0];
-        document.getElementById('classroom').value = parts[1];
-        document.getElementById('number').value = parts[2];
-      }
-      document.getElementById('teacherCode').value = teacherCode;
-      document.getElementById('teacherCodeWrap').classList.remove('hidden');
-      document.getElementById('studentFields').classList.remove('hidden');
-      
-      document.getElementById('teacherCode').disabled = true;
-      document.getElementById('grade').disabled = true;
-      document.getElementById('classroom').disabled = true;
-      document.getElementById('number').disabled = true;
-
-    }
-
-    function handleSubmit(e) {
-      e.preventDefault();
-      clearError();
-      const isTeacher = document.getElementById('teacherMode').checked;
-      const btn = document.getElementById('loginBtn');
+    document.getElementById('student-login-btn').addEventListener('click', () => {
       showLoadingOverlay();
-      btn.disabled = true;
+      google.script.run
+        .withSuccessHandler(onStudentLoginSuccess)
+        .withFailureHandler(onLoginFailure)
+        .loginAsStudent();
+    });
 
-      if (isTeacher) {
-        const passcode = document.getElementById('passcode').value.trim();
-        google.script.run
-          .withSuccessHandler(res => {
-              const { status, teacherCode, message } = res;
-              if (status === 'new') {
-                hideLoadingOverlay();
-                document.getElementById('newCodeSpan').textContent = teacherCode;
-                document.getElementById('newCodeSpan2').textContent = teacherCode;
-                document.getElementById('firstMessage').style.display = 'flex';
-                document.getElementById('closeFirstMsg').onclick = () => {
-                  document.getElementById('firstMessage').style.display = 'none';
-                  addHistory(teacherCode);
-                  window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-                };
-              } else if (status === 'ok') {
-                addHistory(teacherCode);
-                hideLoadingOverlay();
-                window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-            } else {
-              showError(message || 'エラーが発生しました。');
-              hideLoadingOverlay(); btn.disabled = false;
-            }
-          })
-          .withFailureHandler(err => { showError('教師ログインエラー: ' + err.message); hideLoadingOverlay(); btn.disabled = false; })
-          .initTeacher(passcode);
+    function onTeacherLoginSuccess(res) {
+      hideLoadingOverlay();
+      if (res && res.teacherCode) {
+        window.top.location.href = `manage.html?teacher=${res.teacherCode}`;
       } else {
-        const teacherCode = document.getElementById('teacherCode').value.trim().toUpperCase();
-        const grade = document.getElementById('grade').value.trim();
-        const classroom = toHalf(document.getElementById('classroom').value.trim()).toUpperCase();
-        const number = document.getElementById('number').value.trim();
-        if (!teacherCode || !grade || !classroom || !number) {
-          showError('入力内容を確認してください。');
-          hideLoadingOverlay(); btn.disabled = false; return;
-        }
-        const info = { teacherCode, grade, classroom, number, studentId: `${grade}-${classroom}-${number}` };
-          google.script.run
-            .withSuccessHandler(() => {
-              addHistory(teacherCode);
-              hideLoadingOverlay();
-              const params = new URLSearchParams({ grade, class: classroom, number, teacher: teacherCode }).toString();
-              window.top.location.href = SCRIPT_URL + '?page=quest&' + params;
-            })
-          .withFailureHandler(err => { showError('生徒登録エラー: ' + err.message); hideLoadingOverlay(); btn.disabled = false; })
-          .registerStudentToClass(info);
+        showError('ログインに失敗しました。');
       }
     }
-    
-    function setupFieldFocus() {
-        const inputs = [document.getElementById('teacherCode'), document.getElementById('grade'), document.getElementById('classroom'), document.getElementById('number')];
-        inputs[0].focus();
-        inputs.forEach((input, index) => {
-            if(!input) return;
-            input.addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const nextInput = inputs[index + 1];
-                    if (nextInput) {
-                        nextInput.focus();
-                    } else {
-                        document.getElementById('loginBtn').click();
-                    }
-                }
-            });
-        });
+
+    function onStudentLoginSuccess(res) {
+      hideLoadingOverlay();
+      if (!res || !Array.isArray(res.enrolledClasses)) {
+        showError('ログインに失敗しました。');
+        return;
+      }
+      const classes = res.enrolledClasses;
+      if (classes.length === 1) {
+        window.top.location.href = `quest.html?teacher=${classes[0].teacherCode}`;
+      } else if (classes.length > 1) {
+        sessionStorage.setItem('enrolledClasses', JSON.stringify(classes));
+        window.top.location.href = 'class-select.html';
+      } else {
+        showError('どのクラスにも登録されていません');
+      }
     }
 
+    function onLoginFailure(err) {
+      hideLoadingOverlay();
+      showError(err && err.message ? err.message : 'エラーが発生しました');
+    }
+
+    function showError(msg) {
+      document.getElementById('errorText').textContent = msg;
+      document.getElementById('errorModal').classList.remove('hidden');
+    }
+    document.getElementById('closeError').addEventListener('click', () => {
+      document.getElementById('errorModal').classList.add('hidden');
+    });
     function showLoadingOverlay() {
       document.getElementById('loadingOverlay').classList.remove('hidden');
-      if (devLoginSection) devLoginSection.classList.add('hidden');
     }
     function hideLoadingOverlay() {
       document.getElementById('loadingOverlay').classList.add('hidden');
-      if (devLoginSection && devLoginRevealed) devLoginSection.classList.remove('hidden');
     }
-    function showError(msg) { const el = document.getElementById('errorMessage'); if(el) {el.textContent=msg; el.classList.remove('hidden');}}
-    function clearError() { const el = document.getElementById('errorMessage'); if(el) {el.textContent=''; el.classList.add('hidden');} }
-
   </script>
-
 </body>
 </html>
