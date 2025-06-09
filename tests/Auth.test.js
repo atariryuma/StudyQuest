@@ -32,6 +32,22 @@ test('loginAsTeacher returns not_found when missing', () => {
   expect(res.status).toBe('not_found');
 });
 
+test('handleTeacherLogin differentiates new teacher', () => {
+  const props = {};
+  const context = {
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] }) },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'new@example.com' }) },
+    processLoginBonus: jest.fn()
+  };
+  loadAuth(context);
+  let res = context.handleTeacherLogin();
+  expect(res).toEqual({ status: 'new_teacher_prompt_key' });
+  props['teacherCode_new@example.com'] = 'NC123';
+  res = context.handleTeacherLogin();
+  expect(res).toEqual({ status: 'ok', teacherCode: 'NC123' });
+  expect(context.processLoginBonus).toHaveBeenCalledWith('new@example.com');
+});
+
 test('loginAsStudent finds enrollment and global data', () => {
   const enrollRows = [
     ['stud@example.com','student',1,'A',1,new Date('2024-01-01')]
@@ -63,6 +79,32 @@ test('loginAsStudent finds enrollment and global data', () => {
   expect(res.status).toBe('ok');
   expect(res.userInfo.classData.userEmail).toBe('stud@example.com');
   expect(res.userInfo.globalData.globalXp).toBe(10);
+});
+
+test('loginAsStudent without teacherCode lists classes', () => {
+  const enrollSheet1 = {
+    getLastRow: jest.fn(() => 2),
+    getSheetValues: jest.fn(),
+    getRange: jest.fn(() => ({ getValues: () => [['stud@example.com']] }))
+  };
+  const enrollSheet2 = {
+    getLastRow: jest.fn(() => 2),
+    getRange: jest.fn(() => ({ getValues: () => [['other@example.com']] }))
+  };
+  const teacherDb1 = { getSheetByName: jest.fn(name => name === 'Enrollments' ? enrollSheet1 : null) };
+  const teacherDb2 = { getSheetByName: jest.fn(name => name === 'Enrollments' ? enrollSheet2 : null) };
+  const props = { 'ssId_TC1': 'id1', 'ssId_TC2': 'id2', 'Global_Master_DB': 'gid' };
+  const context = {
+    PropertiesService: { getScriptProperties: () => ({ getKeys: () => Object.keys(props), getProperty: k => props[k] }) },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'stud@example.com' }) },
+    processLoginBonus: jest.fn()
+  };
+  loadAuth(context);
+  context.getTeacherDb_ = jest.fn(code => code === 'TC1' ? teacherDb1 : teacherDb2);
+  const res = context.loginAsStudent();
+  expect(Array.isArray(res.enrolledClasses)).toBe(true);
+  expect(res.enrolledClasses.length).toBe(1);
+  expect(res.enrolledClasses[0].teacherCode).toBe('TC1');
 });
 
 test('setupInitialTeacher creates resources and stores ids', () => {

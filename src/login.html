@@ -28,9 +28,20 @@
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen" style="font-family:'DotGothic16',sans-serif;">
   <main class="space-y-4 text-center">
     <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
-    <input id="teacher-code-input" type="text" placeholder="教師コード" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none" />
+    <label class="flex items-center justify-center gap-2">
+      <input type="checkbox" id="teacher-check" class="form-checkbox">
+      <span>私は教師です</span>
+    </label>
+    <input id="kyoushi-input" type="text" placeholder="kyoushi" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none" style="display:none;" />
     <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-purple-800 hover:bg-purple-500">教師としてログイン</button>
     <button id="student-login-btn" class="game-btn bg-cyan-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-cyan-800 hover:bg-cyan-500">生徒としてログイン</button>
+    <form id="teacher-secret-form" class="space-y-2" style="display:none;">
+      <input id="secret-key-input" type="password" placeholder="共通秘密キーを入力" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none" />
+      <div class="flex gap-2 justify-center">
+        <button id="secret-key-submit-btn" type="submit" class="game-btn bg-green-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-green-800 hover:bg-green-500 flex-1">セットアップ実行</button>
+        <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-gray-800 hover:bg-gray-500 flex-1">戻る</button>
+      </div>
+    </form>
   </main>
 
   <div id="errorModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -44,34 +55,72 @@
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
 
-    document.getElementById('teacher-login-btn').addEventListener('click', () => {
-      showLoadingOverlay();
-      google.script.run
-        .withSuccessHandler(onTeacherLoginSuccess)
-        .withFailureHandler(onLoginFailure)
-        .loginAsTeacher();
+    const teacherBtn = document.getElementById('teacher-login-btn');
+    const studentBtn = document.getElementById('student-login-btn');
+    const secretForm = document.getElementById('teacher-secret-form');
+    const teacherCheck = document.getElementById('teacher-check');
+    const kyoushiInput = document.getElementById('kyoushi-input');
+
+    teacherCheck.addEventListener('change', () => {
+      kyoushiInput.style.display = teacherCheck.checked ? '' : 'none';
     });
 
-    document.getElementById('student-login-btn').addEventListener('click', () => {
+    teacherBtn.addEventListener('click', () => {
       showLoadingOverlay();
-      const code = document.getElementById('teacher-code-input').value.trim();
-      if (!code) {
-        hideLoadingOverlay();
-        showError('教師コードを入力してください');
-        return;
-      }
+      google.script.run
+        .withSuccessHandler(onTeacherLoginResponse)
+        .withFailureHandler(onLoginFailure)
+        .handleTeacherLogin();
+    });
+
+    studentBtn.addEventListener('click', () => {
+      showLoadingOverlay();
       google.script.run
         .withSuccessHandler(onStudentLoginSuccess)
         .withFailureHandler(onLoginFailure)
-        .loginAsStudent(code);
+        .loginAsStudent();
     });
 
-    function onTeacherLoginSuccess(res) {
+    secretForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const key = document.getElementById('secret-key-input').value.trim();
+      if (!key) return;
+      showLoadingOverlay();
+      google.script.run
+        .withSuccessHandler(onSetupSuccess)
+        .withFailureHandler(onLoginFailure)
+        .setupInitialTeacher(key);
+    });
+
+    document.getElementById('back-to-login-btn').addEventListener('click', () => {
+      secretForm.style.display = 'none';
+      teacherBtn.style.display = '';
+      studentBtn.style.display = '';
+    });
+
+    function onTeacherLoginResponse(res) {
       hideLoadingOverlay();
-      if (res && res.teacherCode) {
+      if (!res || !res.status) { showError('エラーが発生しました'); return; }
+      switch(res.status) {
+        case 'ok':
+          window.top.location.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(res.teacherCode)}`;
+          break;
+        case 'new_teacher_prompt_key':
+          teacherBtn.style.display = 'none';
+          studentBtn.style.display = 'none';
+          secretForm.style.display = '';
+          break;
+        default:
+          showError('ログインに失敗しました。');
+      }
+    }
+
+    function onSetupSuccess(res) {
+      hideLoadingOverlay();
+      if (res && res.status === 'ok') {
         window.top.location.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(res.teacherCode)}`;
       } else {
-        showError('ログインに失敗しました。');
+        showError('セットアップに失敗しました');
       }
     }
 
