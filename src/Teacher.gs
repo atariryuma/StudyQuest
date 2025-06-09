@@ -191,6 +191,13 @@ function initTeacher(passcode) {
       columnsJa: ['ログID','提出ID','フィード内容','生成日時']
     },
     {
+      name: SHEET_ITEMS,
+      color: "00b050",
+      header: ['ItemID', 'Name', 'Type', 'Price', 'Effect'],
+      description: "アイテムマスタを管理します。",
+      columnsJa: ['アイテムID','名称','種別','価格','効果(JSON)']
+    },
+    {
       name: SHEET_SETTINGS,
       color: "aaaaaa",
       header: ['type', 'value1', 'value2'],
