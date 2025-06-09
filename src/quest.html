@@ -628,7 +628,7 @@
     google.script.run
         .withSuccessHandler(() => { showResultScreen(); loadTasks(); })
         .withFailureHandler(e => { alert('提出に失敗しました: ' + e.message); hideLoadingOverlay(); })
-        .submitAnswer(teacherCode, studentId, currentTask.id, stepAnswers[QuestStep.FINAL_ANSWER], xpPerQuest, totalXp, level, '', aiCalls, document.querySelectorAll('#chatLog .msg-student').length);
+        .processSubmission(teacherCode, studentId, currentTask.id, stepAnswers[QuestStep.FINAL_ANSWER]);
     questStep = QuestStep.COMPLETED;
     document.getElementById('confirmationScreen').classList.add('hidden');
     updateProgressBar();
