@@ -9,82 +9,209 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.395.0/dist/lucide.min.js" defer></script>
 
     <style>
-        body { font-family: 'DotGothic16', sans-serif; background-color: #1a1b26; }
+        body {
+            font-family: 'DotGothic16', sans-serif;
+            background-color: #1a1b26;
+        }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #2a2f4a; }
         ::-webkit-scrollbar-thumb { background: #4a4f8a; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #5a5f9a; }
-        .pixel-bg { background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 16px 16px; }
-        .glass-panel { background: rgba(26, 27, 38, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; }
-        .game-btn:disabled { filter: grayscale(80%); cursor: not-allowed; }
-        .game-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
-        .class-card { padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: #374151; cursor: pointer; font-size: 0.875rem; border: 1px solid transparent; }
-        .class-card.selected { background-color: #4338ca; border-color: #6d28d9; box-shadow: 0 0 10px rgba(109, 40, 217, 0.5); }
-        .ai-tool-panel { background: rgba(0,0,0,0.2); border-left: 2px solid #a855f7; }
-        input:focus, textarea:focus, select:focus { outline: none; --tw-ring-color: #f472b6; box-shadow: 0 0 0 2px var(--tw-ring-color); }
-        #debugPanel { position: fixed; bottom: 2.75rem; right: 0.5rem; width: 320px; max-height: 200px; background: rgba(31, 41, 55, 0.9); border: 1px solid #4b5563; border-radius: 0.5rem; overflow-y: auto; padding: 0.75rem; font-size: 0.75rem; line-height: 1.2; color: #d1d5db; z-index: 50; }
-        #debugPanelHeader { font-weight: bold; margin-bottom: 0.5rem; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+        .pixel-bg {
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .glass-panel {
+            background: rgba(26, 27, 38, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .game-btn {
+            transition: all 0.2s ease;
+            border-bottom-width: 4px;
+        }
+        .game-btn:disabled {
+            filter: grayscale(80%);
+            cursor: not-allowed;
+        }
+        .game-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+        .class-card {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background-color: #374151;
+            cursor: pointer;
+            font-size: 0.875rem;
+            border: 1px solid transparent;
+        }
+        .class-card.selected {
+            background-color: #4338ca;
+            border-color: #6d28d9;
+            box-shadow: 0 0 10px rgba(109, 40, 217, 0.5);
+        }
+        .ai-tool-panel {
+            background: rgba(0,0,0,0.2);
+            border-left: 2px solid #a855f7;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            --tw-ring-color: #f472b6;
+            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+        }
+        /* デバッグパネル */
+        #debugPanel {
+            position: fixed;
+            bottom: 3rem;
+            right: 1rem;
+            width: 320px;
+            max-height: 200px;
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+            overflow-y: auto;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            line-height: 1.2;
+            color: #d1d5db;
+            z-index: 50;
+        }
+        #debugPanelHeader {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #9ca3af;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #debugClose {
+            cursor: pointer;
+            color: #f87171;
+        }
+        #versionInfo { cursor: pointer; }
     </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
 
+    <!-- Main Container -->
     <div class="max-w-7xl mx-auto flex flex-col gap-4">
 
+        <!-- Header -->
         <header class="glass-panel rounded-xl p-3 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
             <div class="flex items-center gap-3">
                 <i data-lucide="shield-check" class="w-8 h-8 text-pink-400"></i>
                 <h1 class="text-2xl font-bold tracking-wider text-white">管理パネル</h1>
             </div>
             <div class="flex items-center gap-3">
-                <a id="backToLogin" href="#" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2">
-                    <i data-lucide="log-out" class="w-4 h-4"></i><span>ログインへ戻る</span>
+                <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>ログインへ戻る</span>
                 </a>
                 <button id="classSettingBtn" class="game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 text-sm flex items-center gap-2">
-                    <i data-lucide="settings" class="w-4 h-4"></i><span>クラス設定</span>
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>クラス設定</span>
                 </button>
             </div>
         </header>
 
+        <!-- Modals -->
         <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 rounded-2xl shadow-2xl">
             <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-2xl shadow-2xl text-6xl font-bold text-center tracking-widest"></div>
         </div>
         <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
             <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl space-y-4 w-80 modal-content">
-                <div><label for="modalGrade" class="block text-sm mb-1">学年</label><select id="modalGrade" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm"><option value="">-- 学年 --</option><option value="1">1年</option><option value="2">2年</option><option value="3">3年</option><option value="4">4年</option><option value="5">5年</option><option value="6">6年</option></select></div>
-                <div><label for="modalClass" class="block text-sm mb-1">組</label><select id="modalClass" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm"><option value="">-- 組 --</option><option value="1">1組</option><option value="2">2組</option><option value="3">3組</option><option value="4">4組</option></select></div>
+                <div>
+                    <label for="modalGrade" class="block text-sm mb-1">学年</label>
+                    <select id="modalGrade" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+                        <option value="">-- 学年 --</option>
+                        <option value="1">1年</option>
+                        <option value="2">2年</option>
+                        <option value="3">3年</option>
+                        <option value="4">4年</option>
+                        <option value="5">5年</option>
+                        <option value="6">6年</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="modalClass" class="block text-sm mb-1">組</label>
+                    <select id="modalClass" class="w-full p-2 rounded bg-gray-700 text-gray-200 focus:outline-none text-sm">
+                        <option value="">-- 組 --</option>
+                        <option value="1">1組</option>
+                        <option value="2">2組</option>
+                        <option value="3">3組</option>
+                        <option value="4">4組</option>
+                    </select>
+                </div>
                 <p id="classPreview" class="text-center text-gray-300"></p>
-                <div class="text-center"><button id="saveClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button></div>
+                <div class="text-center">
+                    <button id="saveClassBtn" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-2xl shadow-2xl text-sm">保存</button>
+                </div>
             </div>
         </div>
 
+        <!-- Main Content Grid -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left Column: Dashboard & Settings -->
             <div class="lg:col-span-1 flex flex-col gap-6">
+
+                <!-- Dashboard Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="layout-dashboard" class="w-6 h-6 text-cyan-400"></i><span>ダッシュボード</span></h2>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="layout-dashboard" class="w-6 h-6 text-cyan-400"></i>
+                        <span>ダッシュボード</span>
+                    </h2>
                     <div class="space-y-4">
                         <div class="flex justify-around text-center">
-                            <div><p class="text-3xl font-bold text-pink-400" id="totalTasks">0</p><p class="text-sm text-gray-400">公開クエスト</p></div>
-                            <div><p class="text-3xl font-bold text-green-400" id="totalStudents">0</p><p class="text-sm text-gray-400">登録生徒数</p></div>
+                            <div>
+                                <p class="text-3xl font-bold text-pink-400" id="totalTasks">0</p>
+                                <p class="text-sm text-gray-400">公開クエスト</p>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold text-green-400" id="totalStudents">0</p>
+                                <p class="text-sm text-gray-400">登録生徒数</p>
+                            </div>
                         </div>
-                        <div class="bg-gray-900/50 p-3 rounded-lg text-center cursor-pointer hover:bg-gray-900"><p class="text-sm text-gray-400">教師コード</p><p id="codeBadge" class="text-2xl font-bold tracking-widest text-amber-300">----</p></div>
-                        <div class="text-white text-center py-2 text-lg flex items-center justify-center gap-2"><i data-lucide="clock" class="w-5 h-5 text-indigo-300"></i><span id="currentDateTimeText"></span></div>
+                        <div class="bg-gray-900/50 p-3 rounded-lg text-center">
+                            <p class="text-sm text-gray-400">教師コード</p>
+                            <p id="codeBadge" class="text-2xl font-bold tracking-widest text-amber-300">----</p>
+                        </div>
+                        <div class="text-white text-center py-2 text-lg flex items-center justify-center gap-2">
+                            <i data-lucide="clock" class="w-5 h-5 text-indigo-300"></i>
+                            <span id="currentDateTimeText"></span>
+                        </div>
                     </div>
                 </section>
+
+                <!-- Settings Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="sliders-horizontal" class="w-6 h-6 text-gray-400"></i><span>各種設定</span></h2>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="sliders-horizontal" class="w-6 h-6 text-gray-400"></i>
+                        <span>各種設定</span>
+                    </h2>
                     <div class="space-y-4">
                         <div>
                             <h3 class="font-bold text-pink-400 mb-2">クラス管理</h3>
                             <div id="currentClassCard" class="flex flex-wrap gap-2 mb-2"></div>
                             <div class="flex gap-2">
-                                <button id="openClassBtn" class="w-1/2 game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4"></i><span>クラスを登録</span></button>
-                                <button id="deleteClassBtn" class="w-1/2 game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center justify-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i><span>クラス削除</span></button>
+                                <button id="openClassBtn" class="w-1/2 game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                    <span>クラスを登録</span>
+                                </button>
+                                <button id="deleteClassBtn" class="w-1/2 game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <span>クラス削除</span>
+                                </button>
                             </div>
                         </div>
                         <div>
@@ -101,56 +228,68 @@
                         </div>
                     </div>
                 </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="bar-chart-3" class="w-6 h-6 text-cyan-400"></i><span>クラス統計</span></h2>
-                    <div class="overflow-x-auto">
-                        <table id="classStatsTable" class="min-w-full text-xs text-left">
-                            <thead>
-                                <tr><th class="border px-2">クラス</th><th class="border px-2">人数</th><th class="border px-2">平均レベル</th></tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="users" class="w-6 h-6 text-cyan-400"></i><span>児童一覧</span></h2>
-                    <div class="overflow-x-auto">
-                        <table id="studentTable" class="min-w-full text-xs text-left">
-                            <thead>
-                                <tr><th class="border px-2">ID</th><th class="border px-2">クラス</th><th class="border px-2">XP</th><th class="border px-2">Lv</th><th class="border px-2">最終ログイン</th></tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </section>
+
+            <!-- Quest List Panel (Moved Here) -->
+            <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i><span>公開中のクエスト一覧</span></h2>
+                <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
+            </section>
             </div>
+
+            <!-- Right Column: Quest Management -->
             <div class="lg:col-span-2 flex flex-col gap-6">
+
+                <!-- New Quest Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="plus-square" class="w-6 h-6 text-amber-400"></i><span>生成AIサポートで課題作成</span></h2>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
+                        <i data-lucide="plus-square" class="w-6 h-6 text-amber-400"></i>
+                        <span>新しいクエストを作成</span>
+                    </h2>
                     <form id="taskForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-sm mb-1 text-gray-400">教科</label><input id="subject" type="text" list="subjectHistory" placeholder="例: 算数, 国語..." class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"><datalist id="subjectHistory"></datalist></div>
-                            <div><label class="block text-sm mb-1 text-gray-400">対象クラス</label><div id="taskClassButtons" class="flex flex-wrap gap-2"></div></div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">教科</label>
+                                <input id="subject" type="text" list="subjectHistory" placeholder="例: 算数, 国語..." class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                <datalist id="subjectHistory"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">対象クラス</label>
+                                <div id="taskClassButtons" class="flex flex-wrap gap-2"></div>
+                            </div>
                         </div>
-                        <div><label class="block text-sm mb-1 text-gray-400">クエスト内容 (問題文)</label><textarea id="question" rows="3" placeholder="ここに問題文を入力します。" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></textarea></div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-400">クエスト内容 (問題文)</label>
+                            <textarea id="question" rows="3" placeholder="ここに問題文を入力します。" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></textarea>
+                        </div>
                         <div>
                             <label class="block text-sm mb-1 text-gray-400">回答タイプ</label>
                             <div class="flex gap-2 text-sm">
                                 <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="text" class="sr-only" checked> テキスト回答</label>
                                 <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="radio" class="sr-only"> 選択式</label>
-                                <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="checkbox" class="sr-only"> チェック</label>
+                                <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="checkbox" class="sr-only"> チェックボックス</label>
                             </div>
                         </div>
                         <div id="aiToolsSection" class="space-y-4 hidden">
                             <div id="choiceTool" class="p-3 rounded-lg ai-tool-panel space-y-3">
-                                <div class="flex justify-between items-center"><label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-4 h-4"></i>Geminiで選択肢を生成</label><div id="aiCredit" class="text-sm text-amber-300 font-bold">生成クレジット: 💎 💎 💎</div></div>
+                                <div class="flex justify-between items-center">
+                                    <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-4 h-4"></i>Geminiで選択肢を生成</label>
+                                    <div id="aiCredit" class="text-sm text-amber-300 font-bold">生成クレジット: 💎 💎 💎</div>
+                                </div>
                                 <div class="flex items-center gap-2">
-                                    <select id="aiChoiceType" class="flex-grow p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm"><option value="単語">単語</option><option value="短文">短文</option><option value="長文">長文</option></select>
-                                    <input type="number" id="choiceCount" min="1" value="3" class="w-16 p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm" /><button type="button" id="generateChoicesBtn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
+                                    <select id="aiChoiceType" class="flex-grow p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm">
+                                        <option value="単語">単語</option>
+                                        <option value="短文">短文</option>
+                                        <option value="長文">長文</option>
+                                    </select>
+                                    <input type="number" id="choiceCount" min="1" value="3" class="w-16 p-2 bg-gray-800/80 rounded-md border border-gray-600 text-sm" />
+                                    <button type="button" id="generateChoicesBtn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">生成</button>
                                 </div>
                                 <div id="optionInputs" class="space-y-2"></div>
                                 <div id="optionControls" class="flex gap-2 text-xs"></div>
-                                <div id="generationHistoryWrapper" class="hidden"><button type="button" id="toggleHistoryBtn" class="text-xs text-gray-400 hover:text-white">生成履歴を見る ▼</button><div id="generationHistory" class="hidden mt-2 p-2 bg-gray-900/50 rounded-md space-y-2"></div></div>
+                                <div id="generationHistoryWrapper" class="hidden">
+                                    <button type="button" id="toggleHistoryBtn" class="text-xs text-gray-400 hover:text-white">生成履歴を見る ▼</button>
+                                    <div id="generationHistory" class="hidden mt-2 p-2 bg-gray-900/50 rounded-md space-y-2"></div>
+                                </div>
                             </div>
                             <div id="followupTool" class="p-3 rounded-lg ai-tool-panel space-y-3">
                                 <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>Geminiによる深掘りの質問例</label>
@@ -158,450 +297,634 @@
                                 <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
                             </div>
                         </div>
-                        <label class="block text-sm mb-1 text-gray-400 cursor-pointer"><input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する</label>
-                        <button type="submit" id="createBtn" class="w-full game-btn bg-amber-600 text-white px-4 py-2 rounded-lg font-bold border-amber-800 hover:bg-amber-500 text-base flex items-center justify-center gap-2"><i data-lucide="wand-sparkles" class="w-5 h-5"></i><span>クエストを作成する</span></button>
-                        <button type="button" id="deleteDraftBtn" class="w-full game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 text-base mt-2 flex items-center justify-center gap-2"><i data-lucide="trash-2" class="w-5 h-5"></i><span>下書きを削除</span></button>
+                        <label class="block text-sm mb-1 text-gray-400 cursor-pointer">
+                            <input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する
+                        </label>
+                        <button type="submit" id="createBtn" class="w-full game-btn bg-amber-600 text-white px-4 py-2 rounded-lg font-bold border-amber-800 hover:bg-amber-500 text-base flex items-center justify-center gap-2">
+                            <i data-lucide="wand-sparkles" class="w-5 h-5"></i>
+                            <span>クエストを作成する</span>
+                        </button>
+                        <button type="button" id="deleteDraftBtn" class="w-full game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 text-base mt-2 flex items-center justify-center gap-2">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            <span>下書きを削除</span>
+                        </button>
                     </form>
                 </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i><span>課題履歴</span></h2>
-                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
-                </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="history" class="w-6 h-6 text-cyan-400"></i><span>課題情報</span></h2>
-                    <ul id="logList" class="list-disc pl-5 space-y-1 text-sm"></ul>
-                </section>
+
             </div>
         </main>
-    </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- SCRIPT_URL と teacherCode をグローバルへセット -->
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
-    let teacherCode = '<?!= teacher ?>';
-    if (!teacherCode || teacherCode === '----') {
-      const p = new URLSearchParams(window.location.search);
-      teacherCode = p.get('teacher') || '';
-    }
+    window.teacherCode = '<?!= teacher ?>';
   </script>
 
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js" defer></script>
+
   <script>
-    <?!= include('shared/escapeHtml'); ?>
-    
-    function renderIcons() {
+  <?!= include('shared/escapeHtml'); ?>
+    // Lucide Icons を SVG に置き換える
+    function renderIcons(scope) {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
+        window.lucide.createIcons({
+          nameAttr: 'data-icon',
+          attrs: {},
+          icons: window.lucide.icons
+        });
       }
     }
 
     function toHalf(str) {
-      return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+      return str.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
     }
 
+    // デバッグログ出力用
     let debugContentElem;
     let registeredClasses = [];
     let selectedClassId = null;
     function debug(msg) {
       if (!debugContentElem) return;
       const t = new Date().toLocaleTimeString();
-      debugContentElem.insertAdjacentHTML('beforeend', `<p class="break-all">[${t}] ${escapeHtml(String(msg))}</p>`);
+      debugContentElem.insertAdjacentHTML('beforeend', `<p>[${t}] ${msg}</p>`);
       debugContentElem.scrollTop = debugContentElem.scrollHeight;
     }
 
-    // (prefetch functions remain the same)
+    function storePrefetchData(code, taskId, rows) {
+      try {
+        sessionStorage.setItem(
+          `prefetch_${code}_${taskId || 'all'}`,
+          JSON.stringify({ ts: Date.now(), data: rows })
+        );
+      } catch (e) {}
+    }
+
+    function prefetchBoardData(code, taskId) {
+      try {
+        const raw = sessionStorage.getItem(`prefetch_${code}_${taskId || 'all'}`);
+        if (raw) {
+          const obj = JSON.parse(raw);
+          if (Date.now() - obj.ts < 60000) return;
+        }
+      } catch (e) {}
+      const fn = taskId ? 'listTaskBoard' : 'listBoard';
+      google.script.run.withSuccessHandler(rows => {
+        storePrefetchData(code, taskId, rows);
+      })[fn](code, taskId);
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-        debugContentElem = document.getElementById('debugContent');
-        const debugPanel = document.getElementById('debugPanel');
-        const versionEl = document.getElementById('versionInfo');
-        const debugCloseBtn = document.getElementById('debugClose');
-        if(versionEl) versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
-        if(debugCloseBtn) debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
+      debugContentElem = document.getElementById('debugContent');
+      const debugPanel = document.getElementById('debugPanel');
+      const versionEl = document.getElementById('versionInfo');
+      const debugCloseBtn = document.getElementById('debugClose');
+      versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
+      debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
 
-        debug('🔄 ページ読み込み完了');
-        debug(`▶ teacherCode="${teacherCode}"`);
-        
-        if (!teacherCode) {
-            alert('不正なアクセスです。');
-            window.top.location.href = SCRIPT_URL + '?page=login';
-            return;
+      debug('🔄 ページ読み込み完了');
+      debug(`▶ teacherCode="${teacherCode}"`);
+      // 1) teacherCode が null/空文字 ならログインページに戻す
+      if (!teacherCode) {
+        alert('不正なアクセスです。');
+        window.top.location.href = SCRIPT_URL + '?page=login';
+        return;
+      }
+
+      let aiCredits = 3;
+      let generationHistory = [];
+      let draftTaskId = null;
+      updateAiCreditDisplay();
+
+      // 2) 右上バッジをセット
+      document.getElementById('codeBadge').textContent = teacherCode;
+      document.getElementById('codeBadge').addEventListener('click', () => {
+        document.getElementById('teacherCodeModalText').textContent = teacherCode;
+        document.getElementById('teacherCodeModal').classList.remove('hidden');
+      });
+      document.getElementById('teacherCodeModal').addEventListener('click', () => {
+        document.getElementById('teacherCodeModal').classList.add('hidden');
+      });
+
+      // Gemini 設定読み込み
+      loadGeminiSettings();
+      loadClassOptions();
+      loadSubjectHistory();
+      loadDraft();
+      document.getElementById('subject').addEventListener('input', saveDraft);
+      document.getElementById('question').addEventListener('input', saveDraft);
+      document.getElementById('personaInput').addEventListener('change', saveGeminiSettings);
+      const testBtn = document.getElementById('geminiTestBtn');
+      if (testBtn) {
+        testBtn.addEventListener('click', () => {
+          const prompt = document.getElementById('geminiTestPrompt').value;
+          const resultEl = document.getElementById('geminiTestResult');
+          const persona = document.getElementById('personaInput').value;
+          resultEl.textContent = '送信中...';
+          google.script.run
+            .withSuccessHandler(res => { resultEl.textContent = res; })
+            .withFailureHandler(err => { resultEl.textContent = '失敗: ' + err.message; })
+            .callGeminiAPI_GAS(prompt, persona);
+        });
+      }
+      document.getElementById('openClassBtn').addEventListener('click', openClassModal);
+      document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
+      const settingBtn = document.getElementById('classSettingBtn');
+      if (settingBtn) {
+        settingBtn.addEventListener('click', openClassSettingDialog);
+      }
+      document.getElementById('deleteDraftBtn').addEventListener('click', () => {
+        if (!draftTaskId) {
+          resetForm();
+          return;
         }
+        google.script.run
+          .withSuccessHandler(() => {
+            resetForm();
+            draftTaskId = null;
+          })
+          .withFailureHandler(err => alert('削除に失敗しました: ' + err.message))
+          .deleteDraftTask(teacherCode, draftTaskId);
+      });
 
-        // ▼▼▼ 修正点2: 全ての初期化処理をDOMContentLoaded内にまとめ、イベントリスナーを設定 ▼▼▼
+      // 3) 回答タイプ選択時のAIツール表示制御
+      Array.from(document.getElementsByName('ansType')).forEach(radio => {
+        radio.addEventListener('change', e => {
+          const isText = e.target.value === 'text';
+          document.getElementById('aiToolsSection').classList.remove('hidden');
+          document.getElementById('choiceTool').classList.toggle('hidden', isText);
+          if (!isText) {
+            const cnt = parseInt(document.getElementById('choiceCount').value, 10) || 1;
+            renderOptionInputs(Array(cnt).fill(''));
+          }
+        });
+      });
 
-        let aiCredits = 3;
-        let generationHistory = [];
-        let draftTaskId = null;
+      function updateToolVisibility() {
+        const radio = document.querySelector('input[name="ansType"]:checked');
+        if (!radio) return;
+        const isText = radio.value === 'text';
+        document.getElementById('aiToolsSection').classList.remove('hidden');
+        document.getElementById('choiceTool').classList.toggle('hidden', isText);
+        if (!isText) {
+          const cnt = parseInt(document.getElementById('choiceCount').value, 10) || 1;
+          renderOptionInputs(Array(cnt).fill(''));
+        }
+      }
+
+      const countInput = document.getElementById('choiceCount');
+      if (countInput) {
+        countInput.addEventListener('input', e => {
+          const n = parseInt(e.target.value, 10) || 0;
+          renderOptionInputs(Array(n).fill(''));
+        });
+      }
+
+      document.getElementById('generateChoicesBtn').addEventListener('click', () => {
+        if (aiCredits <= 0) return;
+
+        const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
+        const cls = clsRadio ? clsRadio.value : '';
+        const subject = document.getElementById('subject').value.trim();
+        const q = document.getElementById('question').value.trim();
+        const draftPayload = JSON.stringify({ classId: cls, subject, question: q });
+        google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
+
+        aiCredits--;
         updateAiCreditDisplay();
 
-        const backLink = document.getElementById('backToLogin');
-        if (backLink) {
-            backLink.href = SCRIPT_URL + '?page=login';
-            backLink.addEventListener('click', e => {
-                e.preventDefault();
-                window.top.location.href = backLink.href;
-            });
-        }
-        document.getElementById('codeBadge').textContent = teacherCode;
-        document.getElementById('codeBadge').addEventListener('click', () => {
-            document.getElementById('teacherCodeModalText').textContent = teacherCode;
-            document.getElementById('teacherCodeModal').classList.remove('hidden');
-        });
-        document.getElementById('teacherCodeModal').addEventListener('click', () => {
-            document.getElementById('teacherCodeModal').classList.add('hidden');
-        });
+        const choiceType = document.getElementById('aiChoiceType').value;
+        const count = parseInt(document.getElementById('choiceCount').value, 10) || 3;
+        const question = document.getElementById('question').value.trim();
+        // subject は既に取得済みなので再宣言しない
+        const persona = document.getElementById('personaInput').value;
+        const container = document.getElementById('optionInputs');
+        container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
+        renderIcons(document);
 
-        loadGeminiSettings();
-        loadClassOptions();
-        loadSubjectHistory();
-        loadDraft();
-        google.script.run.withSuccessHandler(renderClassStats).getClassStatistics(teacherCode);
-        google.script.run.withSuccessHandler(renderStudentTable).listStudents(teacherCode);
-        google.script.run.withSuccessHandler(renderLogList).listBoard(teacherCode);
-        
-        document.getElementById('subject').addEventListener('input', saveDraft);
-        document.getElementById('question').addEventListener('input', saveDraft);
-        document.getElementById('personaInput').addEventListener('change', saveGeminiSettings);
-        
-        const testBtn = document.getElementById('geminiTestBtn');
-        if (testBtn) {
-            testBtn.addEventListener('click', () => {
-                const prompt = document.getElementById('geminiTestPrompt').value;
-                const resultEl = document.getElementById('geminiTestResult');
-                const persona = document.getElementById('personaInput').value;
-                resultEl.textContent = '送信中...';
-                google.script.run
-                    .withSuccessHandler(res => { resultEl.textContent = res; })
-                    .withFailureHandler(err => { resultEl.textContent = '失敗: ' + err.message; })
-                    .callGeminiAPI_GAS(prompt, persona);
-            });
-        }
-
-        document.getElementById('openClassBtn').addEventListener('click', openClassModal);
-        document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
-
-        const settingBtn = document.getElementById('classSettingBtn');
-        if (settingBtn) settingBtn.addEventListener('click', openClassSettingDialog);
-
-        const gradeSel = document.getElementById('modalGrade');
-        const classSel = document.getElementById('modalClass');
-        const saveBtn = document.getElementById('saveClassBtn');
-        const classModal = document.getElementById('classModal');
-        if (gradeSel) gradeSel.addEventListener('change', updatePreview);
-        if (classSel) classSel.addEventListener('change', updatePreview);
-        if (classModal) classModal.addEventListener('click', e => { if (e.target === classModal) closeClassModal(); });
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                const g = gradeSel.value;
-                const c = classSel.value;
-                if (!g || !c) { alert('学年と組を選択してください'); return; }
-                const ids = registeredClasses.concat([[g, c]]).map(x => x.join(',')).join(';');
-                google.script.run
-                    .withSuccessHandler(map => { renderClassCards(map); closeClassModal(); })
-                    .withFailureHandler(err => alert('登録に失敗しました: ' + err.message))
-                    .updateClassIdMap(teacherCode, ids);
-            });
-        }
-        
-        document.getElementById('deleteDraftBtn').addEventListener('click', () => {
-            if (!draftTaskId) {
-                resetForm();
-                return;
+        google.script.run
+          .withSuccessHandler(res => {
+            const choices = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
+            generationHistory.push(choices);
+            document.getElementById('choiceCount').value = choices.length;
+            renderOptionInputs(choices);
+            updateGenerationHistory();
+            if (aiCredits <= 0) {
+              document.getElementById('generateChoicesBtn').disabled = true;
             }
-            google.script.run
-                .withSuccessHandler(() => { resetForm(); draftTaskId = null; })
-                .withFailureHandler(err => alert('削除に失敗しました: ' + err.message))
-                .deleteDraftTask(teacherCode, draftTaskId);
-        });
+          })
+          .withFailureHandler(err => {
+            container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
+          })
+          .callGeminiAPI_GAS(prompt, persona);
+      });
 
-        Array.from(document.getElementsByName('ansType')).forEach(radio => {
-            radio.addEventListener('change', e => updateToolVisibility());
-        });
-        
-        const countInput = document.getElementById('choiceCount');
-        if (countInput) {
-            countInput.addEventListener('input', e => {
-                const n = parseInt(e.target.value, 10) || 0;
-                renderOptionInputs(Array(n).fill(''));
-            });
+      document.getElementById('generateFollowupBtn').addEventListener('click', () => {
+        const container = document.getElementById('followupSuggestions');
+        const question = document.getElementById('question').value.trim();
+        const subject = document.getElementById('subject').value.trim();
+        const persona = document.getElementById('personaInput').value;
+        const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
+        const cls = clsRadio ? clsRadio.value : '';
+        const draftPayload = JSON.stringify({ classId: cls, subject, question });
+        google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
+        container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
+        renderIcons(document);
+
+        google.script.run
+          .withSuccessHandler(res => {
+            const lines = res.split(/\n|・/).map(s => s.trim()).filter(s => s);
+            container.textContent = lines.map(l => `・${l}`).join('\n');
+          })
+          .withFailureHandler(err => {
+            container.textContent = '生成に失敗しました: ' + err.message;
+          })
+          .callGeminiAPI_GAS(prompt, persona);
+      });
+
+      document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
+        const historyDiv = document.getElementById('generationHistory');
+        const isHidden = historyDiv.classList.toggle('hidden');
+        e.target.textContent = isHidden ? '生成履歴を見る ▼' : '生成履歴を隠す ▲';
+      });
+
+      document.getElementById('optionInputs').addEventListener('click', e => {
+        if (e.target.closest('.removeOptionBtn')) {
+          e.target.closest('.flex').remove();
+          const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
+          renderOptionInputs(values);
         }
+      });
 
-        document.getElementById('generateChoicesBtn').addEventListener('click', () => {
-            if (aiCredits <= 0) return;
-            aiCredits--;
-            updateAiCreditDisplay();
-            if (aiCredits <= 0) document.getElementById('generateChoicesBtn').disabled = true;
+      document.getElementById('optionControls').addEventListener('click', e => {
+        if (e.target.id === 'addOptionBtn') {
+          const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
+          values.push('');
+          renderOptionInputs(values);
+        }
+        if (e.target.id === 'removeOptionBtn') {
+          const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
+          values.pop();
+          renderOptionInputs(values);
+        }
+      });
 
-            const question = document.getElementById('question').value.trim();
-            const prompt = `「${question}」という問題に対する選択肢を${document.getElementById('choiceCount').value}個、${document.getElementById('aiChoiceType').value}で作成してください。`;
-            const persona = document.getElementById('personaInput').value;
-            const container = document.getElementById('optionInputs');
-            container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
-            renderIcons();
-
-            google.script.run
-                .withSuccessHandler(res => {
-                    const choices = res.split(/\n|・/).map(s => s.replace(/^[0-9]+\.\s*/, '').trim()).filter(s => s);
-                    generationHistory.push(choices);
-                    document.getElementById('choiceCount').value = choices.length;
-                    renderOptionInputs(choices);
-                    updateGenerationHistory();
-                })
-                .withFailureHandler(err => { container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`; })
-                .callGeminiAPI_GAS(prompt, persona);
-        });
-
-        document.getElementById('generateFollowupBtn').addEventListener('click', () => {
-            const container = document.getElementById('followupSuggestions');
-            const question = document.getElementById('question').value.trim();
-            const prompt = `「${question}」という問題について、生徒の思考を深めるためのフォローアップの質問を3つ提案してください。`;
-            const persona = document.getElementById('personaInput').value;
-            container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
-            renderIcons();
-
-            google.script.run
-                .withSuccessHandler(res => { container.textContent = res; })
-                .withFailureHandler(err => { container.textContent = '生成に失敗しました: ' + err.message; })
-                .callGeminiAPI_GAS(prompt, persona);
-        });
-
-        document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
-            const historyDiv = document.getElementById('generationHistory');
-            const isHidden = historyDiv.classList.toggle('hidden');
-            e.target.textContent = isHidden ? '生成履歴を見る ▼' : '生成履歴を隠す ▲';
-        });
-
-        document.getElementById('optionInputs').addEventListener('click', e => {
-            if (e.target.closest('.removeOptionBtn')) {
-                e.target.closest('.flex').remove();
-                document.getElementById('choiceCount').value = document.querySelectorAll('#optionInputs input[type="text"]').length;
-            }
-        });
-
-        document.getElementById('optionControls').addEventListener('click', e => {
-            const values = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(i => i.value);
-            if (e.target.id === 'addOptionBtn') values.push('');
-            if (e.target.id === 'removeOptionBtn') values.pop();
-            renderOptionInputs(values);
-        });
-
-        document.getElementById('taskForm').addEventListener('submit', handleTaskFormSubmit);
-
-        document.addEventListener('click', e => {
-            if (e.target.closest('.copyBtn')) {
-                const id = e.target.closest('.copyBtn').dataset.id;
-                google.script.run
-                    .withSuccessHandler(task => { loadTaskIntoForm(task); window.scrollTo({ top: 0, behavior: 'smooth' }); })
-                    .withFailureHandler(err => alert('取得に失敗しました: ' + err.message))
-                    .getTask(teacherCode, id);
-            } else if (e.target.closest('.deleteBtn')) {
-                const id = e.target.closest('.deleteBtn').dataset.id;
-                if (confirm('この課題を削除しますか？')) {
-                    google.script.run
-                        .withSuccessHandler(() => { loadTasks(); updateWidgets(); })
-                        .withFailureHandler(err => alert('削除中にエラーが発生しました: ' + err.message))
-                        .deleteTask(teacherCode, id);
-                }
-            }
-        });
-        
-        // 初回ロード
-        loadTasks();
-        updateWidgets();
-        updateDateTime();
-        setInterval(updateDateTime, 1000);
-        renderIcons();
-        updateToolVisibility();
-        gsap.from('main', { opacity: 0, y: 20, duration: 0.6 });
-
-        // ▲▲▲ 修正点2 ▲▲▲
-    });
-
-    // ▼▼▼ 修正点3: 散在していた関数を整理・統合 ▼▼▼
-    
-    function handleTaskFormSubmit(e) {
+      // 5) 「新しい課題」フォーム送信時
+      const taskForm = document.getElementById('taskForm');
+      taskForm.addEventListener('submit', e => {
         e.preventDefault();
         debug('taskForm submit');
 
-        const classIds = Array.from(document.querySelectorAll('input[name="taskClassCheckbox"]:checked')).map(cb => cb.value);
+        const clsCheckboxes = Array.from(document.querySelectorAll('input[name="taskClassCheckbox"]:checked'));
+        const classIds = clsCheckboxes.map(cb => cb.value);
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
         const persona = document.getElementById('personaInput').value;
-        const ansType = document.querySelector('input[name="ansType"]:checked').value;
+        const checkedRadio = document.querySelector('input[name="ansType"]:checked');
+        if (!checkedRadio) {
+          alert('回答タイプを選択してください。');
+          return;
+        }
+        const ansType = checkedRadio.value;
 
-        if (classIds.length === 0 || !subject || !q) {
-            alert('クラス、教科、問題文は必須です。');
-            return;
+        if (classIds.length === 0) {
+          alert('クラスを選択してください。');
+          return;
+        }
+        if (!subject) {
+          alert('教科を入力してください。');
+          return;
+        }
+        if (!q) {
+          alert('問題文を入力してください。');
+          return;
         }
 
-        const makePayload = (cls) => {
-            let payload = { classId: cls, subject, question: q, type: ansType };
-            if (ansType !== 'text') {
-                const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]')).map(inp => inp.value.trim());
-                if (inputs.some(text => text === '')) {
-                    alert('すべての選択肢を入力してください。');
-                    return null;
-                }
-                payload.choices = inputs;
-            }
-            return JSON.stringify(payload);
+        // ペイロードをタイプ別に組み立て
+        const makePayload = cls => {
+          if (ansType === 'text') {
+            return JSON.stringify({ classId: cls, subject, question: q, type: 'text' });
+          }
+          const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
+                              .map(inp => inp.value.trim());
+          if (inputs.some(text => text === '')) {
+            alert('すべての選択肢を入力してください。');
+            return null;
+          }
+          return JSON.stringify({
+            classId: cls,
+            subject,
+            question: q,
+            type: ansType,
+            choices: inputs
+          });
         };
-
         let completed = 0;
         const total = classIds.length;
-        classIds.forEach(cid => {
-            const payload = makePayload(cid);
-            if (!payload) return;
-            debug('createTask for class ' + cid);
-            google.script.run
-                .withSuccessHandler(() => {
-                    completed++;
-                    if (completed === total) {
-                        loadTasks(); updateWidgets(); addSubjectHistory(subject); resetForm(); clearDraft();
-                    }
-                })
-                .withFailureHandler(err => alert('課題作成エラー: ' + err.message))
-                .createTask(teacherCode, payload, self, persona);
-        });
-    }
+        const onSuccess = () => {
+          completed++;
+          debug('createTask success ' + completed + '/' + total);
+          if (completed === total) {
+            loadTasks();
+            updateWidgets();
+            addSubjectHistory(subject);
+            resetForm();
+            clearDraft();
+            if (draftTaskId) {
+              google.script.run.deleteDraftTask(teacherCode, draftTaskId);
+              draftTaskId = null;
+            }
+          }
+        };
 
-    function updateWidgets() {
+        classIds.forEach(cid => {
+          const payload = makePayload(cid);
+          if (!payload) return;
+          debug('createTask for class ' + cid);
+          google.script.run
+            .withSuccessHandler(onSuccess)
+            .withFailureHandler(err => {
+              alert('課題作成中にエラーが発生しました: ' + err.message);
+              debug('createTask failed: ' + err.message);
+            })
+            .createTask(teacherCode, payload, self, persona);
+        });
+
+        // ボタンアニメーション
+        const btn = document.getElementById('createBtn');
+        if (window.gsap) {
+          gsap.fromTo(btn, { scale: 1.1 }, { scale: 1, duration: 0.2 });
+        }
+      });
+
+      // 7) 課題削除・複製ボタン押下時
+      document.addEventListener('click', e => {
+        const copy = e.target.closest('.copyBtn');
+        if (copy) {
+          const id = copy.dataset.id;
+          google.script.run
+            .withSuccessHandler(task => {
+              loadTaskIntoForm(task);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            })
+            .withFailureHandler(err => {
+              alert('取得に失敗しました: ' + err.message);
+            })
+            .getTask(teacherCode, id);
+          return;
+        }
+
+        const del = e.target.closest('.deleteBtn');
+        if (del) {
+          const id = del.dataset.id;
+          if (confirm('この課題を削除しますか？')) {
+            google.script.run
+              .withSuccessHandler(() => {
+                loadTasks();
+                updateWidgets();
+              })
+              .withFailureHandler(err => {
+                alert('削除中にエラーが発生しました: ' + err.message);
+              })
+              .deleteTask(teacherCode, id);
+          }
+          return;
+        }
+
+      });
+
+      // 8) ウィジェット更新 (課題数・生徒数)
+      function updateWidgets() {
         google.script.run
           .withSuccessHandler(data => {
-            document.getElementById('totalTasks').textContent = data.taskCount || 0;
-            document.getElementById('totalStudents').textContent = data.studentCount || 0;
+            document.getElementById('totalTasks').textContent = data.taskCount;
+            document.getElementById('totalStudents').textContent = data.studentCount;
           })
           .getStatistics(teacherCode);
-    }
+      }
 
-    function updateDateTime() {
+      function updateDateTime() {
         const now = new Date();
-        const text = now.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-');
+        const text = now.toLocaleString('ja-JP', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        }).replace(/\//g, '-');
         const el = document.getElementById('currentDateTimeText');
         if (el) el.textContent = text;
-    }
+      }
 
-    function loadGeminiSettings() {
+      // Gemini 設定を取得して表示
+      function loadGeminiSettings() {
+        debug('loadGeminiSettings');
         google.script.run
-            .withSuccessHandler(res => { if(res && res.persona) document.getElementById('personaInput').value = res.persona; })
-            .getGeminiSettings(teacherCode);
-    }
+          .withSuccessHandler(res => {
+            document.getElementById('personaInput').value = res.persona || '';
+            document.getElementById('apiStatus').classList.add('hidden');
+            debug('loadGeminiSettings success');
+          })
+          .withFailureHandler(err => {
+            debug('loadGeminiSettings failed: ' + err.message);
+          })
+          .getGeminiSettings(teacherCode);
+      }
 
-    function saveGeminiSettings() {
-        const persona = document.getElementById('personaInput').value;
+      function loadClassOptions() {
+        debug('loadClassOptions');
         google.script.run
-            .withSuccessHandler(() => {
-                const statusEl = document.getElementById('apiStatus');
-                statusEl.textContent = '保存しました';
-                statusEl.classList.remove('hidden');
-            })
-            .setGeminiSettings(teacherCode, undefined, persona);
-    }
-    
-    function loadClassOptions() {
-        google.script.run.withSuccessHandler(map => {
-            registeredClasses = map ? Object.keys(map).map(id => map[id].split('-')) : [];
+          .withSuccessHandler(map => {
+            registeredClasses = Object.keys(map).map(id => map[id].split('-'));
+            selectedClassId = null;
             const area = document.getElementById('taskClassButtons');
             if (area) {
               let html = '';
-              Object.keys(map || {}).forEach(id => {
-                html += `<label class="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer"><input type="checkbox" name="taskClassCheckbox" value="${id}">${map[id]}</label>`;
+              Object.keys(map).forEach(id => {
+                html += `<label class="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-sm cursor-pointer">` +
+                        `<input type="checkbox" name="taskClassCheckbox" value="${id}">${map[id]}</label>`;
               });
               area.innerHTML = html;
             }
-            renderClassCards(map || {});
-        }).getClassIdMap(teacherCode);
-    }
+          renderClassCards(map);
+        })
+          .withFailureHandler(err => {
+            debug('loadClassOptions failed: ' + err.message);
+            alert('取得に失敗: ' + err.message);
+          })
+          .getClassIdMap(teacherCode);
+      }
 
-    function loadSubjectHistory() {
-        const list = document.getElementById('subjectHistory');
-        if (!list) return;
+      // Gemini 設定を保存
+      function saveGeminiSettings() {
+        const persona = document.getElementById('personaInput').value;
+        debug('saveGeminiSettings');
+        google.script.run
+          .withSuccessHandler(() => {
+            document.getElementById('apiStatus').textContent = '保存しました';
+            document.getElementById('apiStatus').classList.remove('hidden');
+            debug('saveGeminiSettings success');
+          })
+          .withFailureHandler(err => {
+            document.getElementById('apiStatus').textContent = '保存に失敗: ' + err.message;
+            document.getElementById('apiStatus').classList.remove('hidden');
+            debug('saveGeminiSettings failed: ' + err.message);
+          })
+          .setGeminiSettings(teacherCode, undefined, persona);
+      }
+
+        function loadSubjectHistory() {
+          const list = document.getElementById('subjectHistory');
+          if (!list) return;
+          let hist = [];
+          try {
+            hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+          } catch (_) {
+            hist = [];
+          }
+          let html = '';
+          hist.forEach(s => {
+            html += `<option value="${escapeHtml(s)}"></option>`;
+          });
+          list.innerHTML = html;
+        }
+        let html = '';
+        hist.forEach(s => { html += `<option value="${escapeHtml(s)}"></option>`; });
+        list.innerHTML = html;
+      }
+
+      function addSubjectHistory(subj) {
         try {
-            const hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
-            list.innerHTML = hist.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
-        } catch (_) {}
-    }
+          let hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
+          hist = hist.filter(s => s !== subj);
+          hist.unshift(subj);
+          if (hist.length > 8) hist = hist.slice(0,8);
+          localStorage.setItem('subjectHistory', JSON.stringify(hist));
+        } catch (_) {
+          // ignore storage errors
+        }
+      }
 
-    function addSubjectHistory(subj) {
+      function loadDraft() {
         try {
-            let hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
-            hist = hist.filter(s => s !== subj); hist.unshift(subj);
-            if (hist.length > 8) hist = hist.slice(0, 8);
-            localStorage.setItem('subjectHistory', JSON.stringify(hist));
+          const d = JSON.parse(localStorage.getItem('taskDraft') || '{}');
+          if (d.subject) document.getElementById('subject').value = d.subject;
+          if (d.question) document.getElementById('question').value = d.question;
         } catch (_) {}
-    }
+      }
 
-    function loadDraft() {
+      function saveDraft() {
+        const draft = {
+          subject: document.getElementById('subject').value,
+          question: document.getElementById('question').value
+        };
         try {
-            const d = JSON.parse(localStorage.getItem('taskDraft') || '{}');
-            if (d.subject) document.getElementById('subject').value = d.subject;
-            if (d.question) document.getElementById('question').value = d.question;
-        } catch (_) {}
-    }
+          localStorage.setItem('taskDraft', JSON.stringify(draft));
+        } catch (_) {
+          // ignore storage errors
+        }
+      }
 
-    function saveDraft() {
-        const draft = { subject: document.getElementById('subject').value, question: document.getElementById('question').value };
-        try { localStorage.setItem('taskDraft', JSON.stringify(draft)); } catch (_) {}
-    }
+      function clearDraft() {
+        try {
+          localStorage.removeItem('taskDraft');
+        } catch (_) {
+          // ignore storage errors
+        }
+      }
 
-    function clearDraft() { try { localStorage.removeItem('taskDraft'); } catch (_) {} }
-
-    function updateAiCreditDisplay() {
+      function updateAiCreditDisplay() {
         const creditEl = document.getElementById('aiCredit');
         if (!creditEl) return;
-        creditEl.innerHTML = `生成クレジット: ${Array(aiCredits).fill('💎').join(' ')}`;
-    }
+        let diamonds = Array(aiCredits).fill('💎').join(' ');
+        creditEl.innerHTML = `生成クレジット: ${diamonds}`;
+      }
 
-    function updateGenerationHistory() {
-        const wrapper = document.getElementById('generationHistoryWrapper');
-        const container = document.getElementById('generationHistory');
-        if (!wrapper || !container) return;
-        if (generationHistory.length === 0) {
+        function updateGenerationHistory() {
+          const wrapper = document.getElementById('generationHistoryWrapper');
+          const container = document.getElementById('generationHistory');
+          if (!wrapper || !container) return;
+          if (generationHistory.length === 0) {
             wrapper.classList.add('hidden');
             return;
-        }
-        wrapper.classList.remove('hidden');
-        container.innerHTML = generationHistory.slice().reverse().map((historySet, index) => {
+          }
+          wrapper.classList.remove('hidden');
+          let html = '';
+          for (let i = generationHistory.length - 1; i >= 0; i--) {
+            const historySet = generationHistory[i];
             const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-            return `<div class="border-t border-gray-700 pt-2"><p class="text-xs font-bold text-gray-500">履歴 ${generationHistory.length - index}</p><ul class="list-disc list-inside text-xs">${listItems}</ul></div>`;
-        }).join('');
-    }
+            html += `
+              <div class="border-t border-gray-700 pt-2">
+                <p class="text-xs font-bold text-gray-500">履歴 ${i + 1}</p>
+                <ul class="list-disc list-inside text-xs">${listItems}</ul>
+              </div>`;
+          }
+          container.innerHTML = html;
+        }
 
-    function resetForm() {
-        document.getElementById('taskForm').reset();
-        document.getElementById('aiToolsSection').classList.add('hidden');
+        wrapper.classList.remove('hidden');
+        let html = '';
+        generationHistory.forEach((historySet, index) => {
+          const listItems = historySet.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+          html = `<div class="border-t border-gray-700 pt-2">
+            <p class="text-xs font-bold text-gray-500">履歴 ${index + 1}</p>
+            <ul class="list-disc list-inside text-xs">${listItems}</ul>
+          </div>` + html;
+        });
+        container.innerHTML = html;
+      }
+
+      // 9) フォームリセットヘルパー
+      function resetForm() {
+        document.getElementById('subject').value = '';
+        document.getElementById('question').value = '';
+        const textRadio = document.querySelector('input[name="ansType"][value="text"]');
+        if (textRadio) textRadio.checked = true;
+        document.getElementById('aiToolsSection').classList.remove('hidden');
+        document.getElementById('choiceTool').classList.add('hidden');
         resetOptionInputs();
+        document.getElementById('selfEval').checked = false;
         clearDraft();
-    }
+      }
 
-    function resetOptionInputs() {
+      function resetOptionInputs() {
         const area = document.getElementById('optionInputs');
         const controls = document.getElementById('optionControls');
         if (area) area.innerHTML = '';
         if (controls) controls.innerHTML = '';
-    }
+      }
 
-    function renderOptionInputs(choices = []) {
+      // 選択肢入力欄を動的生成
+      function renderOptionInputs(choices = []) {
         const container = document.getElementById('optionInputs');
         const controls = document.getElementById('optionControls');
-        if (!container || !controls) return;
-        container.innerHTML = (choices.length > 0 ? choices : ['']).map((choice, index) => `
-            <div class="flex items-center gap-2">
-                <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
-                <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
-            </div>`).join('');
-        controls.innerHTML = `<button type="button" id="addOptionBtn" class="text-green-400 hover:text-green-300 text-xs">+ 選択肢を追加</button>`;
-        renderIcons();
-    }
-    
-    function updateToolVisibility() {
-        const radio = document.querySelector('input[name="ansType"]:checked');
-        if (!radio) return;
-        const isText = radio.value === 'text';
-        document.getElementById('aiToolsSection').classList.toggle('hidden', isText);
-        if(!isText) renderOptionInputs();
-    }
+        if (!container) return;
+        container.innerHTML = '';
+        if (controls) controls.innerHTML = '';
+        if (choices.length === 0) choices = [''];
 
-    function loadTaskIntoForm(task) {
+        let html = '';
+        choices.forEach((choice, index) => {
+          html += `
+            <div class="flex items-center gap-2">
+              <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
+              <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+            </div>`;
+        });
+        container.innerHTML = html;
+
+          if (controls) {
+            controls.innerHTML = `
+              <button type="button" id="addOptionBtn" class="text-green-400 hover:text-green-300">+ 選択肢を追加</button>
+              <button type="button" id="removeOptionBtn" class="text-red-400 hover:text-red-300">- 最後を削除</button>
+            `;
+          }
+
+          renderIcons(document);
+        }
+
+      // 既存課題をフォームに読み込む
+      function loadTaskIntoForm(task) {
         if (!task) return;
         let data;
         try { data = JSON.parse(task.q); } catch (_) { return; }
@@ -610,150 +933,255 @@
         document.getElementById('question').value = data.question || '';
         const radio = document.querySelector(`input[name="ansType"][value="${data.type}"]`);
         if (radio) radio.checked = true;
-        updateToolVisibility();
-        if (data.type !== 'text') {
-            document.getElementById('choiceCount').value = (data.choices || []).length;
-            renderOptionInputs(data.choices || []);
+        document.getElementById('aiToolsSection').classList.remove('hidden');
+        const isText = data.type === 'text';
+        document.getElementById('choiceTool').classList.toggle('hidden', isText);
+        if (!isText) {
+          document.getElementById('choiceCount').value = (data.choices || []).length || 1;
+          renderOptionInputs(data.choices || []);
         }
         const clsCheckbox = document.querySelector(`#taskClassButtons input[value="${task.classId}"]`);
         if (clsCheckbox) clsCheckbox.checked = true;
-    }
+        selectedClassId = task.classId || null;
+        document.querySelectorAll('#currentClassCard .class-card').forEach(c => {
+          c.classList.toggle('selected', c.dataset.id === String(task.classId));
+        });
+        updateToolVisibility();
+      }
 
-    function loadTasks() {
+      /**
+       * 画面下部の「課題一覧」を取得して表示する
+      */
+      function loadTasks() {
+        debug('loadTasks');
         google.script.run
-            .withSuccessHandler(renderTasks)
-            .withFailureHandler(err => {
-                document.getElementById('tasksContainer').innerHTML = '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
-            })
-            .listTasks(teacherCode);
-    }
-    
-    function renderTasks(rows) {
+          .withSuccessHandler(renderTasks)
+          .withFailureHandler(err => {
+            console.error('listTasks エラー:', err);
+            document.getElementById('tasksContainer').innerHTML =
+              '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
+            debug('loadTasks failed: ' + err.message);
+          })
+          .listTasks(teacherCode);
+      }
+
+      /**
+       * 取得した rows をカードで描画する
+       * rows は [{ id, q, selfEval, date }, …] の配列
+       */
+      function renderTasks(rows) {
         const container = document.getElementById('tasksContainer');
         rows = Array.isArray(rows) ? rows.filter(r => !r.closed) : [];
         container.innerHTML = '';
-        if (rows.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center">課題はまだありません。</p>';
-            return;
+        if (!rows || rows.length === 0) {
+          container.innerHTML = '<p class="text-gray-500 text-center">課題はまだありません。</p>';
+          return;
         }
 
-        container.innerHTML = rows.map(x => {
-            let data, detailHtml;
-            try {
-                data = JSON.parse(x.q);
-                detailHtml = `<p class="text-sm text-indigo-300 mb-1">【${escapeHtml(data.subject || '—')}】</p>
-                              <p class="text-sm mb-1 whitespace-pre-wrap pr-10">${escapeHtml(data.question || '')}</p>
-                              <p class="text-sm text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>`;
-            } catch (_) {
-                detailHtml = `<p class="text-sm mb-1 whitespace-pre-wrap pr-10">${escapeHtml(x.q)}</p>`;
-            }
-            return `<div class="task-card bg-gray-700 p-4 rounded-lg shadow-md transition-transform hover:scale-105 relative cursor-pointer" data-id="${x.id}">
-                        ${detailHtml}
-                        <div class="flex justify-between items-center mt-2 pr-8">
-                            <p class="text-xs text-gray-500">${new Date(x.date).toLocaleDateString()}</p>
-                        </div>
-                        <div class="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col items-center gap-2 text-xs">
-                            <button class="copyBtn p-1" data-id="${x.id}" title="この課題を複製"><i data-lucide="copy" class="w-5 h-5 text-indigo-300"></i></button>
-                            <button class="deleteBtn p-1" data-id="${x.id}" title="この課題を削除"><i data-lucide="trash-2" class="w-5 h-5 text-red-400"></i></button>
-                        </div>
-                    </div>`;
-        }).join('');
+        let html = '';
+        rows.forEach(x => {
+          let data, detailHtml;
+          try {
+            data = JSON.parse(x.q);
+            detailHtml = `
+              <p class="text-sm text-indigo-300 mb-1">【${escapeHtml(data.subject || '—')}】</p>
+              <p class="text-sm mb-1 whitespace-pre-wrap pr-10">${escapeHtml(data.question || '')}</p>
+              <p class="text-sm text-gray-400">回答タイプ: ${renderTypeLabel(data.type)}</p>
+            `;
+          } catch (_) {
+            detailHtml = `<p class="text-sm mb-1 whitespace-pre-wrap pr-10">${escapeHtml(x.q)}</p>`;
+          }
 
-        container.querySelectorAll('.task-card').forEach(card => {
-            card.addEventListener('click', e => {
-                if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
-                    location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${card.dataset.id}`;
-                }
-            });
+          html += `
+            <div class="task-card bg-gray-700 p-4 rounded-2xl shadow-2xl transition-transform hover:scale-102 relative cursor-pointer" data-id="${x.id}">
+              ${detailHtml}
+              <div class="flex justify-between items-center mt-2 pr-8">
+                <p class="text-sm text-gray-400">${x.date}</p>
+              </div>
+              <div class="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col items-center gap-2 text-xs">
+                <button class="copyBtn p-1" data-id="${x.id}" title="この課題を複製">
+                  <i data-icon="Copy" class="w-6 h-6 text-indigo-300"></i>
+                </button>
+                <button class="deleteBtn p-1" data-id="${x.id}" title="この課題を削除">
+                  <i data-icon="Trash2" class="w-6 h-6 text-red-400"></i>
+                </button>
+              </div>
+            </div>`;
         });
-        renderIcons();
-    }
 
-    function renderClassStats(stats) {
-        const tbody = document.querySelector('#classStatsTable tbody');
-        if (!tbody) return;
-        tbody.innerHTML = Object.keys(stats || {}).map(key => {
-            const s = stats[key];
-            return `<tr><td class="border px-2">${key}</td><td class="border px-2 text-right">${s.count}</td><td class="border px-2 text-right">${s.avgLevel.toFixed(1)}</td></tr>`;
-        }).join('');
-    }
+        container.innerHTML = html;
+        container.querySelectorAll('.task-card').forEach(card => {
+          const id = card.dataset.id;
+          card.addEventListener('mouseenter', () => prefetchBoardData(teacherCode, id));
+          card.addEventListener('click', e => {
+            if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
+              location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${id}`;
+            }
+          });
+        });
 
-    function renderStudentTable(students) {
-        const tbody = document.querySelector('#studentTable tbody');
-        if (!tbody) return;
-        tbody.innerHTML = (students || []).map(st => {
-            const date = st.lastLogin ? new Date(st.lastLogin).toLocaleDateString('ja-JP') : '';
-            return `<tr><td class="border px-2">${st.id}</td><td class="border px-2">${st.grade}-${st.class}</td><td class="border px-2 text-right">${st.totalXp}</td><td class="border px-2 text-right">${st.level}</td><td class="border px-2">${date}</td></tr>`;
-        }).join('');
-    }
+        if (rows[0]) prefetchBoardData(teacherCode, rows[0].id);
 
-    function renderLogList(logs) {
-        const list = document.getElementById('logList');
-        if (!list) return;
-        list.innerHTML = (logs || []).map(l => `<li>${l.studentId}: ${escapeHtml(String(l.answer || ''))}</li>`).join('');
-    }
+        // アイコン描画
+        renderIcons(document);
+      }
 
-    function renderTypeLabel(type) {
-        return { text: 'テキスト回答', radio: '選択式', checkbox: 'チェック' }[type] || '不明';
-    }
+      /**
+       * type を日本語ラベルに変換するヘルパー
+       */
+      function renderTypeLabel(type) {
+        switch (type) {
+          case 'text':     return 'テキスト回答';
+          case 'radio':    return '選択式（ラジオ）';
+          case 'checkbox': return 'チェックボックス';
+          default:         return '不明';
+        }
+      }
 
-    function openClassModal() {
+      function openClassModal() {
         const modal = document.getElementById('classModal');
-        if (!modal) return;
         document.getElementById('modalGrade').value = '';
         document.getElementById('modalClass').value = '';
-        updatePreview();
+        document.getElementById('classPreview').textContent = '';
         modal.classList.remove('hidden');
-    }
+        if (window.gsap) {
+          gsap.fromTo(modal, { opacity: 0 }, { opacity: 1, duration: 0.2 });
+          gsap.fromTo(
+            modal.querySelector('.modal-content'),
+            { scale: 0.8, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.3 }
+          );
+        }
+      }
 
-    function closeClassModal() {
+      function closeClassModal() {
         const modal = document.getElementById('classModal');
-        if (modal) modal.classList.add('hidden');
-    }
+        if (window.gsap) {
+          gsap.to(modal, {
+            opacity: 0,
+            duration: 0.2,
+            onComplete: () => modal.classList.add('hidden')
+          });
+        } else {
+          modal.classList.add('hidden');
+        }
+      }
 
-    function updatePreview() {
-        const grade = document.getElementById('modalGrade').value;
-        const klass = document.getElementById('modalClass').value;
-        const preview = grade && klass ? `${grade}年${klass}組` : '';
-        document.getElementById('classPreview').textContent = preview;
-    }
+      document.getElementById('classModal').addEventListener('click', e => {
+        if (e.target.id === 'classModal') closeClassModal();
+      });
 
-    function deleteSelectedClass() {
-        if (!selectedClassId) { alert('削除するクラスを選択してください'); return; }
-        if (!confirm('選択したクラスを削除しますか？')) return;
-        const idx = parseInt(selectedClassId, 10) - 1;
-        const list = registeredClasses.filter((_, i) => i !== idx);
-        const ids = list.map(c => c.join(',')).join(';');
+      document.getElementById('modalGrade').addEventListener('change', updatePreview);
+      document.getElementById('modalClass').addEventListener('change', updatePreview);
+
+      function updatePreview() {
+        const g = document.getElementById('modalGrade').value;
+        const c = document.getElementById('modalClass').value;
+        const preview = document.getElementById('classPreview');
+        preview.textContent = g && c ? `${g}-${c}` : '';
+      }
+
+      document.getElementById('saveClassBtn').addEventListener('click', () => {
+        const g = document.getElementById('modalGrade').value;
+        const c = document.getElementById('modalClass').value;
+        if (!g || !c) {
+          alert('学年と組を選択してください。');
+          return;
+        }
+        registeredClasses.push([g, c]);
+        const idsString = registeredClasses.map(x => x.join(',')).join(';');
         google.script.run
-            .withSuccessHandler(map => { renderClassCards(map); selectedClassId = null; })
-            .withFailureHandler(err => alert('削除に失敗しました: ' + err.message))
-            .updateClassIdMap(teacherCode, ids);
-    }
+          .withSuccessHandler(map => {
+            loadClassOptions();
+            closeClassModal();
+          })
+          .withFailureHandler(err => alert('更新に失敗: ' + err.message))
+          .setClassIdMap(teacherCode, idsString);
+      });
 
-    function openClassSettingDialog() { openClassModal(); }
+      function deleteSelectedClass() {
+        if (!selectedClassId) {
+          alert('削除するクラスを選択してください。');
+          return;
+        }
+        if (!confirm('選択中のクラスを削除しますか？')) return;
+        const idx = parseInt(selectedClassId, 10) - 1;
+        if (idx >= 0 && idx < registeredClasses.length) {
+          registeredClasses.splice(idx, 1);
+        }
+        const idsString = registeredClasses.map(x => x.join(',')).join(';');
+        google.script.run
+          .withSuccessHandler(map => {
+            selectedClassId = null;
+            loadClassOptions();
+          })
+          .withFailureHandler(err => alert('更新に失敗: ' + err.message))
+          .setClassIdMap(teacherCode, idsString);
+      }
 
-    function renderClassCards(map) {
-        const area = document.getElementById('currentClassCard');
-        if (!area) return;
-        area.innerHTML = '';
-        registeredClasses = [];
-        Object.keys(map || {}).forEach(id => {
-            const [g, c] = String(map[id]).split('-');
-            registeredClasses.push([g, c]);
-            const card = document.createElement('span');
-            card.className = 'class-card';
-            card.dataset.id = id;
-            card.textContent = `${g}年${c}組`;
-            card.addEventListener('click', () => {
-                const prev = area.querySelector('.class-card.selected');
-                if (prev) prev.classList.remove('selected');
-                card.classList.add('selected');
-                selectedClassId = id;
-            });
-            area.appendChild(card);
+      function openClassSettingDialog() {
+        const current = registeredClasses.map(x => x.join(',')).join(';');
+        const input = prompt('学年,組 を ; で区切って入力 (例: 6,1;6,2)', current);
+        if (input === null) return;
+        const half = toHalf(input.trim());
+        if (half.split(';').filter(s => s).length > 8) {
+          alert('最大8クラスまで指定できます。');
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(() => loadClassOptions())
+          .withFailureHandler(err => alert('更新に失敗: ' + err.message))
+          .updateClassIdMap(teacherCode, half);
+      }
+
+      function renderClassCards(map) {
+        const cont = document.getElementById('currentClassCard');
+        if (!cont) return;
+        let html = '';
+        Object.keys(map).forEach(id => {
+          const selected = id === String(selectedClassId) ? ' selected' : '';
+          html += `<div class="class-card${selected}" data-id="${id}">${map[id]}</div>`;
         });
-    }
+        cont.innerHTML = html;
+        cont.querySelectorAll('.class-card').forEach(card => {
+          const id = card.dataset.id;
+          card.addEventListener('click', () => {
+            document.querySelectorAll('#currentClassCard .class-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedClassId = id;
+            const checkbox = document.querySelector(`#taskClassButtons input[value="${id}"]`);
+            if (checkbox) checkbox.checked = true;
+            if (window.gsap) {
+              gsap.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'bounce.out' });
+            }
+          });
+        });
+      }
+
+
+      // 10) 画面初回ロード
+      loadTasks();
+      updateWidgets();
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      renderIcons(document);
+      updateToolVisibility();
+      if (window.gsap) {
+        gsap.from('main', { opacity: 0, y: 20, duration: 0.6 });
+      }
+    });
   </script>
 
+  <!-- デバッグパネル（左下） -->
+  <div id="debugPanel" class="hidden">
+    <div id="debugPanelHeader">
+      <span>デバッグログ</span>
+      <span id="debugClose">✕</span>
+    </div>
+    <div id="debugContent"></div>
+  </div>
+
+  <!-- バージョン表示 -->
+  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
 </body>
 </html>
