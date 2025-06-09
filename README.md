@@ -51,6 +51,98 @@
     * 管理画面の指示に従い、生徒の名簿（メールアドレス、名前など）を記述したCSVファイルをアップロードします。
     * これで、生徒がシステムにログインできる状態になります。
 
+以下のとおりMarkdown形式に整形しました。コピペしてお使いください。
+
+---
+
+##  画面遷移図（改訂版）
+
+アプリケーションにおけるユーザーの操作に基づいた画面（View）間の遷移フローを定義します。
+
+### 1. 設計思想の変更
+
+- **生徒のハブ画面**  
+  生徒ログイン後、在籍クラス数に関わらず、必ず `class-select.html` に遷移します。  
+  この画面は各クラスへの入り口およびランキング等の関連情報へアクセスする「ハブ」として機能します。
+
+- **回答ボード (`board.html`) の共有**  
+  この画面は教師と生徒の両方からアクセス可能な共有ページとして位置づけられます。
+
+---
+
+### 2. 全体フロー概要
+
+```mermaid
+graph TD
+    A[アプリ起動] --> B[login.html]
+
+    subgraph Teacher Flow
+        B -- 教師としてログイン --> C["manage.html\n(教師ダッシュボード)"]
+        C -- 各課題の\n[提出一覧]ボタン --> D["board.html\n(回答ボード)"]
+    end
+
+    subgraph Student Flow
+        B -- 生徒としてログイン --> E["class-select.html\n(クラス選択ハブ)"]
+        E -- クエストに挑戦 --> F["quest.html\n(クエスト画面)"]
+        E -- ランキングを見る --> G["leaderboard.html\n(ランキング)"]
+        F -- みんなの回答を見る --> D
+    end
+````
+
+---
+
+### 3. 各フロー詳細
+
+#### 3.1. ログインフロー (`login.html`)
+
+* **操作**
+  ユーザーは［教師としてログイン］または［生徒としてログイン］ボタンをクリック。
+
+* **教師の場合**
+
+  * `google.script.run.loginAsTeacher()` を実行
+  * 認証成功後、URLパラメータに `teacherCode` を付与して `manage.html` へ遷移
+
+* **生徒の場合**
+
+  * `google.script.run.loginAsStudent()` を実行
+  * 【変更点】 認証成功後、在籍クラス数に関わらず必ず `class-select.html` へ遷移
+  * 在籍クラスがない場合は `login.html` に留まり、エラーメッセージを表示
+
+#### 3.2. 生徒ハブ画面からの遷移 (`class-select.html`)
+
+* **画面概要**
+  バックエンドから取得した在籍クラスのリストをカード形式で表示。各クラスカードには以下のアクションがある。
+
+  1. **クエストに挑戦**
+     対応する `teacherCode` を URL パラメータに付与して `quest.html` へ遷移
+
+     ```text
+     quest.html?teacher=<teacherCode>
+     ```
+
+  2. **ランキングを見る**
+     対応する `teacherCode` を URL パラメータに付与して `leaderboard.html` へ遷移
+
+     ```text
+     leaderboard.html?teacher=<teacherCode>
+     ```
+
+#### 3.3. 回答ボードへの遷移 (`board.html`)
+
+* **画面概要**
+  特定の課題 (`taskId`) に対する全提出物を一覧表示する共有ページ。
+
+* **教師からの遷移**
+
+  * `manage.html` の課題リスト内［提出一覧］ボタンをクリック
+  * `board.html?teacher=<teacherCode>&task=<taskId>` へ遷移
+
+* **生徒からの遷移**
+
+  * `quest.html` の各課題［みんなの回答を見る］ボタンをクリック
+  * `board.html?teacher=<teacherCode>&task=<taskId>` へ遷移
+
 ---
 
 ## 🚧 今後の展望 (Roadmap)

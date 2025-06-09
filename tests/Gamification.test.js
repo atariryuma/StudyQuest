@@ -105,6 +105,36 @@ test('purchaseItem deducts coins and records inventory', () => {
   expect(inventory[1][3]).toBe(2);
 
 });
+function makeSheet(data) {
+  return {
+    getLastRow: jest.fn(() => data.length),
+    getLastColumn: jest.fn(() => data[0].length),
+    getRange: jest.fn((r, c, rows, cols) => ({
+      getValues: () => {
+        if (!rows || rows <= 0) return [];
+        const out = [];
+        for (let i = 0; i < rows; i++) {
+          const row = [];
+          for (let j = 0; j < (cols || 1); j++) {
+            row.push(data[r - 1 + i][c - 1 + j]);
+          }
+          out.push(row);
+        }
+        return out;
+      },
+      setValues: vals => {
+        for (let i = 0; i < vals.length; i++) {
+          for (let j = 0; j < vals[i].length; j++) {
+            data[r - 1 + i][c - 1 + j] = vals[i][j];
+          }
+        }
+      }
+    })),
+    appendRow: jest.fn(row => data.push(row))
+  };
+}
+
+});
 
 test('checkAndAwardTrophies awards trophies when conditions met', () => {
   const trophies = [
