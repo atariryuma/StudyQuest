@@ -442,3 +442,28 @@ function getLatestActiveTaskId(teacherCode) {
   }
   return null;
 }
+
+/**
+ * updateTask(teacherCode, taskId, updateData):
+ * 指定タスクの情報を更新する
+ */
+function updateTask(teacherCode, taskId, updateData) {
+  taskId = String(taskId || '').trim();
+  if (!taskId) return { status: 'error', message: 'invalid_id' };
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return { status: 'error', message: 'no_sheet' };
+  const sheet = ss.getSheetByName(SHEET_TASKS);
+  if (!sheet) return { status: 'error', message: 'no_sheet' };
+  const ids = sheet.getRange(2, 1, Math.max(0, sheet.getLastRow()-1), 1).getValues().flat();
+  const idx = ids.indexOf(taskId);
+  if (idx < 0) return { status: 'error', message: 'not_found' };
+  const row = sheet.getRange(idx+2, 1, 1, 8).getValues()[0];
+  if (updateData && typeof updateData.status !== 'undefined') {
+    row[6] = updateData.status;
+  }
+  sheet.getRange(idx+2, 1, 1, 8).setValues([row]);
+  removeCacheValue_('tasks_' + teacherCode);
+  removeCacheValue_('taskmap_' + teacherCode);
+  removeCacheValue_('stats_' + teacherCode);
+  return { status: 'ok' };
+}
