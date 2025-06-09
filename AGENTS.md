@@ -1,5 +1,37 @@
 # StudyQuest 統合システム仕様書 v4.3
 
+## Development Setup
+
+Tests require Node.js dependencies. You can install them by running the
+following script or using `npm install` directly:
+
+```bash
+./scripts/setup-codex.sh   # or: npm install
+```
+
+After the dependencies are installed, execute the test suite with:
+
+```bash
+npm test
+```
+
+## Testing
+
+Prerequisites:
+
+* **Node.js** v20 or higher
+
+Run the following commands in the project root:
+
+```bash
+npm install   # install dev dependencies
+npm test      # execute Jest test suite
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
 ---
 
 ## 1. システムアーキテクチャ仕様書
