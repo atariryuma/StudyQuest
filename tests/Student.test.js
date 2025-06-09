@@ -109,3 +109,31 @@ test('initStudent adds placeholder rows to Submissions', () => {
     0
   ]);
 });
+
+test('registerStudentsFromCsv appends unique rows', () => {
+  const data = [
+    ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID']
+  ];
+  const sheetStub = {
+    getLastRow: jest.fn(() => data.length),
+    getRange: jest.fn((r,c,rows,cols) => ({
+      setValues: values => {
+        values.forEach(v => data.push(v));
+      }
+    }))
+  };
+  const ssStub = { getSheetByName: jest.fn(() => sheetStub) };
+  const context = {
+    SHEET_STUDENTS: 'Students',
+    Utilities: { parseCsv: str => str.trim().split(/\r?\n/).map(l => l.split(',')) },
+    getSpreadsheetByTeacherCode: () => ssStub
+  };
+  loadStudent(context);
+  const csv = 'a@example.com,1,A,Alice\nb@example.com,1,A,Bob\na@example.com,1,A,Alice';
+  const res = context.registerStudentsFromCsv('T1', csv);
+  expect(res.added).toBe(2);
+  expect(data.length).toBe(3);
+  expect(data[1][0]).toBe('a@example.com');
+  expect(data[2][0]).toBe('b@example.com');
+  expect(typeof data[1][4].getTime).toBe('function');
+});

@@ -383,3 +383,35 @@ function getClassStatistics(teacherCode) {
   });
   return stats;
 }
+
+/**
+ * registerStudentsFromCsv(teacherCode, csvText):
+ * CSV(text) -> [email, grade, class, name] rows to append to Students sheet
+ */
+function registerStudentsFromCsv(teacherCode, csvText) {
+  console.time('registerStudentsFromCsv');
+  if (!csvText) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'no data' }; }
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'no sheet' }; }
+  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  if (!sheet) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'missing sheet' }; }
+
+  const rows = Utilities.parseCsv(csvText);
+  const map = getStudentRowMap_(teacherCode, sheet);
+  const now = new Date();
+  const append = [];
+  rows.forEach(r => {
+    if (r.length < 4) return;
+    const id = String(r[0] || '').trim();
+    if (!id || map[id]) return;
+    append.push([id, r[1], r[2], r[3], now, now, 1, 0, 1, '']);
+    map[id] = true;
+  });
+  bulkAppend_(sheet, append);
+  if (append.length > 0) {
+    removeCacheValue_('stats_' + teacherCode);
+    removeCacheValue_('studentRowMap_' + teacherCode);
+  }
+  console.timeEnd('registerStudentsFromCsv');
+  return { status: 'ok', added: append.length };
+}

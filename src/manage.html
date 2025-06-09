@@ -214,6 +214,10 @@
                                     <span>クラス削除</span>
                                 </button>
                             </div>
+                            <div id="csvImportArea" class="mt-2 space-y-1 hidden">
+                                <p class="text-xs text-gray-400">CSV(email, grade, class, name) を選択すると生徒を一括登録できます</p>
+                                <input type="file" id="csvInput" accept=".csv" class="w-full text-sm text-gray-200" />
+                            </div>
                         </div>
                         <div>
                             <h3 class="font-bold text-pink-400 mb-2">AIペルソナ設定</h3>
@@ -472,6 +476,24 @@
       }
       document.getElementById('openClassBtn').addEventListener('click', openClassModal);
       document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
+      const csvInput = document.getElementById('csvInput');
+      if (csvInput) {
+        csvInput.addEventListener('change', () => {
+          const file = csvInput.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = e => {
+            google.script.run
+              .withSuccessHandler(() => {
+                loadClassStats();
+                loadStudentInfo();
+              })
+              .withFailureHandler(err => alert('登録に失敗: ' + err.message))
+              .registerStudentsFromCsv(teacherCode, e.target.result);
+          };
+          reader.readAsText(file);
+        });
+      }
       const settingBtn = document.getElementById('classSettingBtn');
       if (settingBtn) {
         settingBtn.addEventListener('click', openClassSettingDialog);
@@ -1101,6 +1123,8 @@
 
       function openClassModal() {
         const modal = document.getElementById('classModal');
+        const csvArea = document.getElementById('csvImportArea');
+        if (csvArea) csvArea.classList.remove('hidden');
         document.getElementById('modalGrade').value = '';
         document.getElementById('modalClass').value = '';
         document.getElementById('classPreview').textContent = '';
@@ -1117,6 +1141,8 @@
 
       function closeClassModal() {
         const modal = document.getElementById('classModal');
+        const csvArea = document.getElementById('csvImportArea');
+        if (csvArea) csvArea.classList.add('hidden');
         if (window.gsap) {
           gsap.to(modal, {
             opacity: 0,
