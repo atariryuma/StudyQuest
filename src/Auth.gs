@@ -22,6 +22,17 @@ function setupInitialTeacher(secretKey) {
 
 // Authentication and user login helpers per StudyQuest spec v4.3
 
+function handleTeacherLogin() {
+  const email = Session.getEffectiveUser().getEmail();
+  const props = PropertiesService.getScriptProperties();
+  const code = props.getProperty('teacherCode_' + email);
+  if (code) {
+    try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
+    return { status: 'ok', teacherCode: code };
+  }
+  return { status: 'new_teacher_prompt_key' };
+}
+
 function loginAsTeacher() {
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
@@ -36,6 +47,29 @@ function loginAsTeacher() {
 function loginAsStudent(teacherCode) {
   teacherCode = String(teacherCode || '').trim();
   const email = Session.getEffectiveUser().getEmail();
+
+  if (!teacherCode) {
+    const props = PropertiesService.getScriptProperties();
+    const keys = (typeof props.getKeys === 'function') ? props.getKeys() : [];
+    const codes = keys.filter(k => k.indexOf('ssId_') === 0).map(k => k.substring(5));
+    const classes = [];
+    codes.forEach(code => {
+      const db = getTeacherDb_(code);
+      if (!db) return;
+      const sheet = db.getSheetByName('Enrollments');
+      if (!sheet) return;
+      const last = sheet.getLastRow();
+      if (last < 2) return;
+      const emails = sheet.getRange(2,1,last-1,1).getValues().flat();
+      const found = emails.some(e => String(e).trim().toLowerCase() === email.toLowerCase());
+      if (found) classes.push({ teacherCode: code, className: code });
+    });
+    if (classes.length) {
+      try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
+    }
+    return { enrolledClasses: classes };
+  }
+
   const teacherDb = getTeacherDb_(teacherCode);
   const globalDb = getGlobalDb_();
   if (!teacherDb || !globalDb) return { status: 'error', message: 'invalid_teacher' };
