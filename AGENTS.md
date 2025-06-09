@@ -67,7 +67,7 @@
 | Col | Name | Type | Constraints | Description |
 |---|---|---|---|---|
 | A | **Email** | string | Primary Key, Unique | Googleアカウントのメールアドレス |
-| B | Name | string | Not Null | ユーザーのネーム |
+| B | HandleName | string | Not Null | ユーザーのニックネーム |
 | C | Role | string | `student` or `teacher` | ユーザーの役割 |
 | D | Global_TotalXP | number | Default: 0 | 全クラスで獲得したXPの合計値 |
 | E | Global_Level | number | Default: 0 | `Global_TotalXP`から算出される永続レベル |
