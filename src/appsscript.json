@@ -15,10 +15,11 @@
     "access": "ANYONE",
     "executeAs": "USER_ACCESSING"
   },
-  "oauthScopes": [
-    "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/drive.appdata",
-    "https://www.googleapis.com/auth/spreadsheets"
-  ]
-}
+    "oauthScopes": [
+      "https://www.googleapis.com/auth/script.external_request",
+      "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/drive.appdata",
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  }
