@@ -53,12 +53,11 @@
 
 以下のとおりMarkdown形式に整形しました。コピペしてお使いください。
 
-
-## StudyQuest 画面遷移図（改訂版）
-
-本ドキュメントは、StudyQuestアプリケーションにおけるユーザーの操作に基づいた画面（View）間の遷移フローを定義します。
-
 ---
+
+##  画面遷移図（改訂版）
+
+アプリケーションにおけるユーザーの操作に基づいた画面（View）間の遷移フローを定義します。
 
 ### 1. 設計思想の変更
 
@@ -78,15 +77,15 @@ graph TD
     A[アプリ起動] --> B[login.html]
 
     subgraph Teacher Flow
-        B -- 教師としてログイン --> C[manage.html<br>(教師ダッシュボード)]
-        C -- 各課題の<br>[提出一覧]ボタン --> D[board.html<br>(回答ボード)]
+        B -- 教師としてログイン --> C["manage.html\n(教師ダッシュボード)"]
+        C -- 各課題の\n[提出一覧]ボタン --> D["board.html\n(回答ボード)"]
     end
 
     subgraph Student Flow
-        B -- 生徒としてログイン --> E[class-select.html<br>(クラス選択ハブ)]
-        E -- クラスカード内の<br>[クエストに挑戦]ボタン --> F[quest.html<br>(クエスト画面)]
-        E -- クラスカード内の<br>[ランキング]ボタン --> G[leaderboard.html<br>(ランキング)]
-        F -- 各課題の<br>[みんなの回答]ボタン --> D
+        B -- 生徒としてログイン --> E["class-select.html\n(クラス選択ハブ)"]
+        E -- クエストに挑戦 --> F["quest.html\n(クエスト画面)"]
+        E -- ランキングを見る --> G["leaderboard.html\n(ランキング)"]
+        F -- みんなの回答を見る --> D
     end
 ````
 
