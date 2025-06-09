@@ -55,93 +55,108 @@
 
 ## 画面遷移図（改訂版）
 
-アプリケーションにおけるユーザーの操作に基づいた画面（View）間の遷移フローを定義します。
+はい、承知いたしました。生徒のハブ画面 (`class-select.html`) から自身のプロフィール画面 (`profile.html`) への遷移フローを追加し、開発者がコーディングしやすいように図と定義を書き換えます。
 
-### 1. 設計思想の変更
+-----
 
-- **生徒のハブ画面**  
-  生徒ログイン後、在籍クラス数に関わらず、必ず `class-select.html` に遷移します。  
-  この画面は各クラスへの入り口およびランキング等の関連情報へアクセスする「ハブ」として機能します。
+## 1\. 設計思想
 
-- **回答ボード (`board.html`) の共有**  
-  この画面は教師と生徒の両方からアクセス可能な共有ページとして位置づけられます。
+  * **生徒のハブ画面:** 生徒ログイン後、必ず\*\*`class-select.html`\*\*に遷移します。この画面は、各クラスへの入口、およびプロフィールやランキング等の関連情報へアクセスする「ハブ」として機能します。
+  * **回答ボード (`board.html`) の共有:** この画面は、教師と生徒の両方からアクセス可能な共有ページとして位置づけられます。
 
----
+-----
 
-### 2. 全体フロー概要
+## 2\. 全体遷移図 (Overview Diagram)
 
 ```mermaid
 graph TD
-    A[アプリ起動] --> B[login.html]
+    A[アプリ起動] --> B[login.html];
 
     subgraph Teacher Flow
-        B -- 教師としてログイン --> C["manage.html\n(教師ダッシュボード)"]
-        C -- 各課題の\n[提出一覧]ボタン --> D["board.html\n(回答ボード)"]
+        B -- 教師としてログイン --> C[manage.html<br>(教師ダッシュボード)];
+        C -- 各課題の<br>[提出一覧]ボタン --> D[board.html<br>(回答ボード)];
     end
 
     subgraph Student Flow
-        B -- 生徒としてログイン --> E["class-select.html\n(クラス選択ハブ)"]
-        E -- クエストに挑戦 --> F["quest.html\n(クエスト画面)"]
-        E -- ランキングを見る --> G["leaderboard.html\n(ランキング)"]
-        F -- みんなの回答を見る --> D
+        B -- 生徒としてログイン --> E[class-select.html<br>(クラス選択ハブ)];
+        
+        E -- プロフィールを見る --> H[profile.html<br>(プロフィール)];
+        
+        subgraph Class-Specific Actions
+            E -- クラスカード内の<br>[クエストに挑戦]ボタン --> F[quest.html<br>(クエスト画面)];
+            E -- クラスカード内の<br>[ランキング]ボタン --> G[leaderboard.html<br>(ランキング)];
+            F -- 各課題の<br>[みんなの回答]ボタン --> D;
+        end
     end
-````
+```
 
----
+-----
 
-### 3. 各フロー詳細
+## 3\. 画面遷移定義テーブル (View Transition Definition Table)
 
-#### 3.1. ログインフロー (`login.html`)
+| 遷移元 View           | トリガー              | 実行関数             | 遷移先 View          | 備考 / URLパラメータ                                |
+| :-------------------- | :-------------------- | :------------------- | :------------------- | :-------------------------------------------------- |
+| `login.html`          | \[教師としてログイン] ボタン | `onclick="loginAsTeacher()"` | `manage.html`        | 認証成功時。`?teacher=<teacherCode>` を付与。       |
+| `login.html`          | \[生徒としてログイン] ボタン | `onclick="loginAsStudent()"` | `class-select.html`  | 認証成功時。在籍クラス数に関わらず必ず遷移。            |
+| `login.html`          | \[生徒としてログイン] ボタン | `onclick="loginAsStudent()"` | (遷移なし)           | 在籍クラスが0の場合。エラーモーダルを表示。         |
+| `class-select.html`   | \[プロフィール]ボタン   | `onclick="(なし)"`   | `profile.html`       | グローバルなプロフィール画面への直接遷移。          |
+| `class-select.html`   | クラスカード内の\<br\>\[クエストに挑戦]ボタン | `onclick="(なし)"`   | `quest.html`         | `?teacher=<selectedTeacherCode>` を付与。           |
+| `class-select.html`   | クラスカード内の\<br\>\[ランキングを見る]ボタン | `onclick="(なし)"`   | `leaderboard.html`   | `?teacher=<selectedTeacherCode>` を付与。           |
+| `manage.html`         | 課題リストの\<br\>\[提出一覧]ボタン | `onclick="(なし)"`   | `board.html`         | `?teacher=<teacherCode>&task=<selectedTaskId>` を付与。 |
+| `quest.html`          | 各課題の\<br\>\[みんなの回答を見る]ボタン | `onclick="(なし)"`   | `board.html`         | `?teacher=<teacherCode>&task=<selectedTaskId>` を付与。 |
 
-* **操作**
-  ユーザーは［教師としてログイン］または［生徒としてログイン］ボタンをクリック。
+-----
 
-* **教師の場合**
+### 4\. 各フロー詳細
 
-  * `google.script.run.handleTeacherLogin()` を実行
-  * 返却値 `status` が `ok` なら `manage.html?teacher=<teacherCode>` へ遷移
-  * `status` が `new_teacher_prompt_key` のときは秘密キー入力フォームを表示
+#### 4.1. ログインフロー (`login.html`)
 
-* **生徒の場合**
+  * **操作**
+    ユーザーは\*\*\[教師としてログイン]**または**\[生徒としてログイン]\*\*ボタンをクリックします。
 
-  * `google.script.run.loginAsStudent()` を実行
-  * 在籍クラス数が 1 なら `quest.html?teacher=<teacherCode>` へ直接遷移
-  * 2 以上なら `class-select.html` へ遷移（リストは `sessionStorage` に保存）
-  * 0 の場合はエラーメッセージを表示
+  * **教師の場合**
 
-#### 3.2. 生徒ハブ画面からの遷移 (`class-select.html`)
+      * `google.script.run.loginAsTeacher()` を実行します。
+      * 認証成功後、URLパラメータに `teacherCode` を付与して `manage.html` へ遷移します。
 
-* **画面概要**
-  バックエンドから取得した在籍クラスのリストをカード形式で表示。各クラスカードには以下のアクションがある。
+  * **生徒の場合**
 
-  1. **クエストに挑戦**
-     対応する `teacherCode` を URL パラメータに付与して `quest.html` へ遷移
+      * `google.script.run.loginAsStudent()` を実行します。
+      * 認証成功後、在籍クラス数に関わらず必ず `class-select.html` へ遷移します。
+      * 在籍クラスがない場合は `login.html` に留まり、エラーメッセージを表示します。
 
-     ```text
-     quest.html?teacher=<teacherCode>
-     ```
+#### 4.2. 生徒ハブ画面からの遷移 (`class-select.html`)
 
-  2. **ランキングを見る**
-     対応する `teacherCode` を URL パラメータに付与して `leaderboard.html` へ遷移
+  * **画面概要**
+    バックエンドから取得した在籍クラスのリストをカード形式で表示します。この画面は生徒の「ハブ」として機能し、以下の主要な遷移をサポートします。
 
-     ```text
-     leaderboard.html?teacher=<teacherCode>
-     ```
+    1.  **プロフィールを見る**
+        ヘッダーやフッター、または専用ボタンなど、UI上の適切な位置に配置された\*\*\[プロフィール]**ボタンをクリックすると、**`profile.html`\*\*へ直接遷移します。
 
-#### 3.3. 回答ボードへの遷移 (`board.html`)
+    2.  **クエストに挑戦**
+        クラスカード内の\*\*\[クエストに挑戦]\*\*ボタンをクリックすると、対応する `teacherCode` を URL パラメータに付与して `quest.html` へ遷移します。
 
-* **画面概要**
-  特定の課題 (`taskId`) に対する全提出物を一覧表示する共有ページ。
+        ```text
+        quest.html?teacher=<teacherCode>
+        ```
 
-* **教師からの遷移**
+    3.  **ランキングを見る**
+        クラスカード内の\*\*\[ランキングを見る]\*\*ボタンをクリックすると、対応する `teacherCode` を URL パラメータに付与して `leaderboard.html` へ遷移します。
 
-  * `manage.html` の課題リスト内［提出一覧］ボタンをクリック
-  * `board.html?teacher=<teacherCode>&task=<taskId>` へ遷移
+        ```text
+        leaderboard.html?teacher=<teacherCode>
+        ```
 
-* **生徒からの遷移**
+#### 4.3. 回答ボードへの遷移 (`board.html`)
 
-  * `quest.html` の各課題［みんなの回答を見る］ボタンをクリック
-  * `board.html?teacher=<teacherCode>&task=<taskId>` へ遷移
+  * **画面概要**
+    特定の課題 (`taskId`) に対する全提出物を一覧表示する共有ページです。
+
+  * **教師からの遷移**
+    `manage.html` の課題リスト内\*\*\[提出一覧]\*\*ボタンをクリックすると、`board.html?teacher=<teacherCode>&task=<taskId>` へ遷移します。
+
+  * **生徒からの遷移**
+    `quest.html` の各課題\*\*\[みんなの回答を見る]\*\*ボタンをクリックすると、`board.html?teacher=<teacherCode>&task=<taskId>` へ遷移します。
 
 ---
 
