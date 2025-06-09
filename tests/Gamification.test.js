@@ -66,7 +66,7 @@ test('purchaseItem deducts coins and records inventory', () => {
     LockService: { getScriptLock: () => ({ waitLock: jest.fn(), releaseLock: jest.fn() }) },
     Utilities: { getUuid: () => 'uid1' }
   };
-  loadGame(context);
+  loadGamification(context);
   const res = context.purchaseItem('user@example.com','item1',2);
   expect(res.status).toBe('ok');
   expect(users[1][5]).toBe(10);
@@ -74,7 +74,7 @@ test('purchaseItem deducts coins and records inventory', () => {
   expect(inventory[1][1]).toBe('user@example.com');
   expect(inventory[1][2]).toBe('item1');
   expect(inventory[1][3]).toBe(2);
-=======
+});
 function makeSheet(data) {
   return {
     getLastRow: jest.fn(() => data.length),
