@@ -67,3 +67,16 @@
 このプロジェクトは、教育現場での学習体験をより良くしたいという思いから生まれました。機能の提案、バグ報告、プルリクエストなど、あらゆる形でのコントリビューションを歓迎します！
 
 まずは `Issues` を確認して、気軽に参加してみてください。
+
+## Testing
+
+Prerequisites:
+
+* **Node.js** v20 or higher
+
+Run the following commands in the project root:
+
+```bash
+npm install   # install dev dependencies
+npm test      # execute Jest test suite
+```
