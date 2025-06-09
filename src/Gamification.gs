@@ -139,21 +139,37 @@ function purchaseItem(userEmail, itemId, quantity) {
   itemId = String(itemId || '').trim();
   quantity = Number(quantity) || 1;
   if (!userEmail || !itemId || quantity <= 0) return { status: 'error' };
-  const db = getGlobalDb_();
-  if (!db) return { status: 'error' };
-  const userSheet = db.getSheetByName('Global_Users');
-  const invSheet = db.getSheetByName('Global_Items_Inventory');
-  if (!userSheet || !invSheet) return { status: 'error' };
-  const emails = userSheet.getRange(2,1,userSheet.getLastRow()-1,1).getValues().flat();
-  const idx = emails.indexOf(userEmail);
-  if (idx === -1) return { status: 'error' };
-  const row = idx + 2;
-  const coins = Number(userSheet.getRange(row,6).getValue()) || 0;
-  const price = 0; // price not defined without Items sheet
-  if (coins < price * quantity) return { status: 'error' };
-  userSheet.getRange(row,6).setValue(coins - price * quantity);
-  invSheet.appendRow([Utilities.getUuid(), userEmail, itemId, quantity, new Date()]);
-  return { status: 'ok' };
+  const lock = LockService.getScriptLock();
+  try {
+    if (lock.waitLock) lock.waitLock(5000);
+    const db = getGlobalDb_();
+    if (!db) return { status: 'error' };
+    const userSheet = db.getSheetByName('Global_Users');
+    const invSheet = db.getSheetByName('Global_Items_Inventory');
+    const itemsSheet = db.getSheetByName('Items');
+    if (!userSheet || !invSheet || !itemsSheet) return { status: 'error' };
+    const rows = itemsSheet.getRange(2,1,itemsSheet.getLastRow()-1,5).getValues();
+    let price = null;
+    for (let i=0;i<rows.length;i++) {
+      if (String(rows[i][0]).trim() === itemId) {
+        price = Number(rows[i][3]) || 0;
+        break;
+      }
+    }
+    if (price === null) return { status: 'error' };
+    const emails = userSheet.getRange(2,1,userSheet.getLastRow()-1,1).getValues().flat();
+    const idx = emails.indexOf(userEmail);
+    if (idx === -1) return { status: 'error' };
+    const row = idx + 2;
+    const coins = Number(userSheet.getRange(row,6).getValue()) || 0;
+    const total = price * quantity;
+    if (coins < total) return { status: 'error' };
+    userSheet.getRange(row,6).setValue(coins - total);
+    invSheet.appendRow([Utilities.getUuid(), userEmail, itemId, quantity, new Date()]);
+    return { status: 'ok' };
+  } finally {
+    if (lock.releaseLock) lock.releaseLock();
+  }
 }
 
 function generateLeaderboard(teacherCode) {

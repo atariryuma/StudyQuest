@@ -191,6 +191,7 @@ function initTeacher(passcode) {
       columnsJa: ['ログID','提出ID','フィード内容','生成日時']
     },
     {
+
       name: SHEET_TROPHIES,
       color: "ffcc00",
       header: ['TrophyID', 'Name', 'Description', 'IconURL', 'Condition'],
