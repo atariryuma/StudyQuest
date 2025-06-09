@@ -103,9 +103,10 @@ test('purchaseItem deducts coins and records inventory', () => {
   expect(inventory[1][1]).toBe('user@example.com');
   expect(inventory[1][2]).toBe('item1');
   expect(inventory[1][3]).toBe(2);
-
 });
-function makeSheet(data) {
+
+
+function makeSheet2(data) {
   return {
     getLastRow: jest.fn(() => data.length),
     getLastColumn: jest.fn(() => data[0].length),
@@ -134,7 +135,6 @@ function makeSheet(data) {
   };
 }
 
-});
 
 test('checkAndAwardTrophies awards trophies when conditions met', () => {
   const trophies = [
@@ -142,14 +142,14 @@ test('checkAndAwardTrophies awards trophies when conditions met', () => {
     ['t1','T1','d','', JSON.stringify({ Global_TotalXP: 50 })],
     ['t2','T2','d','', JSON.stringify({ LoginStreak: 3 })]
   ];
-  const trophySheet = makeSheet(trophies);
+  const trophySheet = makeSheet2(trophies);
   const log = [['UserTrophyID','UserEmail','TrophyID','AwardedAt']];
-  const logSheet = makeSheet(log);
+  const logSheet = makeSheet2(log);
   const users = [
     ['Email','Name','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak'],
     ['u@example.com','A','student',80,2,10,'','','',2]
   ];
-  const userSheet = makeSheet(users);
+  const userSheet = makeSheet2(users);
   const teacherDb = { getSheetByName: jest.fn(name => name === 'Trophies' ? trophySheet : null) };
   const globalDb = { getSheetByName: jest.fn(name => {
     if (name === 'Global_Trophies_Log') return logSheet;
@@ -173,14 +173,14 @@ test('checkAndAwardTrophies awards trophies when conditions met', () => {
     ['TrophyID','Name','Desc','Icon','Condition'],
     ['t1','T1','d','', JSON.stringify({ Global_TotalXP: 100 })]
   ];
-  const trophySheet = makeSheet(trophies);
+  const trophySheet = makeSheet2(trophies);
   const log = [['UserTrophyID','UserEmail','TrophyID','AwardedAt']];
-  const logSheet = makeSheet(log);
+  const logSheet = makeSheet2(log);
   const users = [
     ['Email','Name','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak'],
     ['u@example.com','A','student',80,2,10,'','','',1]
   ];
-  const userSheet = makeSheet(users);
+  const userSheet = makeSheet2(users);
   const teacherDb = { getSheetByName: jest.fn(name => name === 'Trophies' ? trophySheet : null) };
   const globalDb = { getSheetByName: jest.fn(name => {
     if (name === 'Global_Trophies_Log') return logSheet;
