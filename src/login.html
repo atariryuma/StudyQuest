@@ -198,11 +198,19 @@
       const devToggleArea = document.getElementById('devToggleArea');
       if (devLoginBtn) {
         devLoginBtn.addEventListener('click', () => {
+          showLoadingOverlay();
+          devLoginBtn.disabled = true;
           google.script.run
             .withSuccessHandler(result => {
               const { teacherCode } = result;
               alert('開発モードでログインしました。');
+              hideLoadingOverlay();
               window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+            })
+            .withFailureHandler(err => {
+              hideLoadingOverlay();
+              devLoginBtn.disabled = false;
+              debug('Dev login failed: ' + err.message);
             })
             .initTeacher('dev_teacher');
         });
@@ -298,19 +306,21 @@
         const passcode = document.getElementById('passcode').value.trim();
         google.script.run
           .withSuccessHandler(res => {
-            const { status, teacherCode, message } = res;
-            if (status === 'new') {
-              document.getElementById('newCodeSpan').textContent = teacherCode;
-              document.getElementById('newCodeSpan2').textContent = teacherCode;
-              document.getElementById('firstMessage').style.display = 'flex';
-              document.getElementById('closeFirstMsg').onclick = () => {
-                document.getElementById('firstMessage').style.display = 'none';
+              const { status, teacherCode, message } = res;
+              if (status === 'new') {
+                hideLoadingOverlay();
+                document.getElementById('newCodeSpan').textContent = teacherCode;
+                document.getElementById('newCodeSpan2').textContent = teacherCode;
+                document.getElementById('firstMessage').style.display = 'flex';
+                document.getElementById('closeFirstMsg').onclick = () => {
+                  document.getElementById('firstMessage').style.display = 'none';
+                  addHistory(teacherCode);
+                  window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
+                };
+              } else if (status === 'ok') {
                 addHistory(teacherCode);
+                hideLoadingOverlay();
                 window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
-              };
-            } else if (status === 'ok') {
-              addHistory(teacherCode);
-              window.top.location.href = SCRIPT_URL + '?page=manage&teacher=' + teacherCode;
             } else {
               showError(message || 'エラーが発生しました。');
               hideLoadingOverlay(); btn.disabled = false;
@@ -328,12 +338,13 @@
           hideLoadingOverlay(); btn.disabled = false; return;
         }
         const info = { teacherCode, grade, classroom, number, studentId: `${grade}-${classroom}-${number}` };
-        google.script.run
-          .withSuccessHandler(() => {
-            addHistory(teacherCode);
-            const params = new URLSearchParams({ grade, class: classroom, number, teacher: teacherCode }).toString();
-            window.top.location.href = SCRIPT_URL + '?page=quest&' + params;
-          })
+          google.script.run
+            .withSuccessHandler(() => {
+              addHistory(teacherCode);
+              hideLoadingOverlay();
+              const params = new URLSearchParams({ grade, class: classroom, number, teacher: teacherCode }).toString();
+              window.top.location.href = SCRIPT_URL + '?page=quest&' + params;
+            })
           .withFailureHandler(err => { showError('生徒登録エラー: ' + err.message); hideLoadingOverlay(); btn.disabled = false; })
           .registerStudentToClass(info);
       }
