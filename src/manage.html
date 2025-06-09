@@ -176,10 +176,10 @@
     </div>
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
-    window.teacherCode = '<?!= teacher ?>';
-    if (!window.teacherCode || window.teacherCode === '----') {
+    let teacherCode = '<?!= teacher ?>';
+    if (!teacherCode || teacherCode === '----') {
       const p = new URLSearchParams(window.location.search);
-      window.teacherCode = p.get('teacher') || '';
+      teacherCode = p.get('teacher') || '';
     }
   </script>
 
@@ -217,9 +217,9 @@
         if(debugCloseBtn) debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
 
         debug('🔄 ページ読み込み完了');
-        debug(`▶ teacherCode="${window.teacherCode}"`);
+        debug(`▶ teacherCode="${teacherCode}"`);
         
-        if (!window.teacherCode) {
+        if (!teacherCode) {
             alert('不正なアクセスです。');
             window.top.location.href = SCRIPT_URL + '?page=login';
             return;
@@ -240,9 +240,9 @@
                 window.top.location.href = backLink.href;
             });
         }
-        document.getElementById('codeBadge').textContent = window.teacherCode;
+        document.getElementById('codeBadge').textContent = teacherCode;
         document.getElementById('codeBadge').addEventListener('click', () => {
-            document.getElementById('teacherCodeModalText').textContent = window.teacherCode;
+            document.getElementById('teacherCodeModalText').textContent = teacherCode;
             document.getElementById('teacherCodeModal').classList.remove('hidden');
         });
         document.getElementById('teacherCodeModal').addEventListener('click', () => {
@@ -253,9 +253,9 @@
         loadClassOptions();
         loadSubjectHistory();
         loadDraft();
-        google.script.run.withSuccessHandler(renderClassStats).getClassStatistics(window.teacherCode);
-        google.script.run.withSuccessHandler(renderStudentTable).listStudents(window.teacherCode);
-        google.script.run.withSuccessHandler(renderLogList).listBoard(window.teacherCode);
+        google.script.run.withSuccessHandler(renderClassStats).getClassStatistics(teacherCode);
+        google.script.run.withSuccessHandler(renderStudentTable).listStudents(teacherCode);
+        google.script.run.withSuccessHandler(renderLogList).listBoard(teacherCode);
         
         document.getElementById('subject').addEventListener('input', saveDraft);
         document.getElementById('question').addEventListener('input', saveDraft);
@@ -289,7 +289,7 @@
             google.script.run
                 .withSuccessHandler(() => { resetForm(); draftTaskId = null; })
                 .withFailureHandler(err => alert('削除に失敗しました: ' + err.message))
-                .deleteDraftTask(window.teacherCode, draftTaskId);
+                .deleteDraftTask(teacherCode, draftTaskId);
         });
 
         Array.from(document.getElementsByName('ansType')).forEach(radio => {
@@ -371,14 +371,14 @@
                 google.script.run
                     .withSuccessHandler(task => { loadTaskIntoForm(task); window.scrollTo({ top: 0, behavior: 'smooth' }); })
                     .withFailureHandler(err => alert('取得に失敗しました: ' + err.message))
-                    .getTask(window.teacherCode, id);
+                    .getTask(teacherCode, id);
             } else if (e.target.closest('.deleteBtn')) {
                 const id = e.target.closest('.deleteBtn').dataset.id;
                 if (confirm('この課題を削除しますか？')) {
                     google.script.run
                         .withSuccessHandler(() => { loadTasks(); updateWidgets(); })
                         .withFailureHandler(err => alert('削除中にエラーが発生しました: ' + err.message))
-                        .deleteTask(window.teacherCode, id);
+                        .deleteTask(teacherCode, id);
                 }
             }
         });
@@ -440,7 +440,7 @@
                     }
                 })
                 .withFailureHandler(err => alert('課題作成エラー: ' + err.message))
-                .createTask(window.teacherCode, payload, self, persona);
+                .createTask(teacherCode, payload, self, persona);
         });
     }
 
@@ -450,7 +450,7 @@
             document.getElementById('totalTasks').textContent = data.taskCount || 0;
             document.getElementById('totalStudents').textContent = data.studentCount || 0;
           })
-          .getStatistics(window.teacherCode);
+          .getStatistics(teacherCode);
     }
 
     function updateDateTime() {
@@ -463,7 +463,7 @@
     function loadGeminiSettings() {
         google.script.run
             .withSuccessHandler(res => { if(res && res.persona) document.getElementById('personaInput').value = res.persona; })
-            .getGeminiSettings(window.teacherCode);
+            .getGeminiSettings(teacherCode);
     }
 
     function saveGeminiSettings() {
@@ -474,7 +474,7 @@
                 statusEl.textContent = '保存しました';
                 statusEl.classList.remove('hidden');
             })
-            .setGeminiSettings(window.teacherCode, undefined, persona);
+            .setGeminiSettings(teacherCode, undefined, persona);
     }
     
     function loadClassOptions() {
@@ -489,7 +489,7 @@
               area.innerHTML = html;
             }
             renderClassCards(map || {});
-        }).getClassIdMap(window.teacherCode);
+        }).getClassIdMap(teacherCode);
     }
 
     function loadSubjectHistory() {
@@ -605,7 +605,7 @@
             .withFailureHandler(err => {
                 document.getElementById('tasksContainer').innerHTML = '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
             })
-            .listTasks(window.teacherCode);
+            .listTasks(teacherCode);
     }
     
     function renderTasks(rows) {
@@ -642,7 +642,7 @@
         container.querySelectorAll('.task-card').forEach(card => {
             card.addEventListener('click', e => {
                 if (!e.target.closest('.deleteBtn') && !e.target.closest('.copyBtn')) {
-                    location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(window.teacherCode)}&task=${card.dataset.id}`;
+                    location.href = `${SCRIPT_URL}?page=board&teacher=${encodeURIComponent(teacherCode)}&task=${card.dataset.id}`;
                 }
             });
         });
