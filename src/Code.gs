@@ -17,6 +17,10 @@ const SHEET_ITEMS     = 'Items';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
 const SQ_VERSION           = 'v1.0.170';
+// Global DB sheet names
+const SHEET_GLOBAL_USERS        = 'Global_Users';
+const SHEET_GLOBAL_TROPHIES_LOG = 'Global_Trophies_Log';
+const SHEET_GLOBAL_ITEMS        = 'Global_Items_Inventory';
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */
