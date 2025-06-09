@@ -158,6 +158,21 @@ graph TD
 
 まずは `Issues` を確認して、気軽に参加してみてください。
 
+## Development Setup
+
+Tests require Node.js dependencies. You can install them by running the
+following script or using `npm install` directly:
+
+```bash
+./scripts/setup-codex.sh   # or: npm install
+```
+
+After the dependencies are installed, execute the test suite with:
+
+```bash
+npm test
+```
+
 ## Testing
 
 Prerequisites:
