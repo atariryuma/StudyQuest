@@ -68,6 +68,7 @@
 
 ## 2\. 全体遷移図 (Overview Diagram)
 
+```mermaid
 graph TD
     A[アプリ起動] --> B[login.html]
     
@@ -86,6 +87,7 @@ graph TD
             F -- 各課題のみんなの回答ボタン --> D
         end
     end
+```
 -----
 
 ## 3\. 画面遷移定義テーブル (View Transition Definition Table)
