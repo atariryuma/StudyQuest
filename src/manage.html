@@ -30,10 +30,6 @@
         input:focus, textarea:focus, select:focus { outline: none; --tw-ring-color: #f472b6; box-shadow: 0 0 0 2px var(--tw-ring-color); }
         #debugPanel { position: fixed; bottom: 2.75rem; right: 0.5rem; width: 320px; max-height: 200px; background: rgba(31, 41, 55, 0.9); border: 1px solid #4b5563; border-radius: 0.5rem; overflow-y: auto; padding: 0.75rem; font-size: 0.75rem; line-height: 1.2; color: #d1d5db; z-index: 50; }
         #debugPanelHeader { font-weight: bold; margin-bottom: 0.5rem; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
-        #debugClose { cursor: pointer; color: #f87171; }
-        #versionInfo { cursor: pointer; }
-        #aiAssistantBtn { transition: opacity 0.2s ease; }
-        #aiAssistantBtn:hover { opacity: 0.8; }
     </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 pixel-bg">
@@ -178,12 +174,6 @@
             </div>
         </main>
     </div>
-
-    <button id="aiAssistantBtn" class="fixed bottom-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg z-40">AIツール</button>
-    <div id="aiAssistantPanel" class="fixed bottom-16 right-4 w-80 max-h-[80vh] overflow-y-auto glass-panel p-4 rounded-xl shadow-lg hidden z-40">
-        <div id="aiAssistantContent"></div>
-    </div>
-
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
     window.teacherCode = '<?!= teacher ?>';
@@ -242,18 +232,14 @@
         let draftTaskId = null;
         updateAiCreditDisplay();
 
-        const aiBtn = document.getElementById('aiAssistantBtn');
-        const aiPanel = document.getElementById('aiAssistantPanel');
-        const aiContent = document.getElementById('aiAssistantContent');
-        if (aiContent) {
-            const tools = document.getElementById('aiToolsSection');
-            if (tools) aiContent.appendChild(tools);
+        const backLink = document.getElementById('backToLogin');
+        if (backLink) {
+            backLink.href = SCRIPT_URL + '?page=login';
+            backLink.addEventListener('click', e => {
+                e.preventDefault();
+                window.top.location.href = backLink.href;
+            });
         }
-        if (aiBtn && aiPanel) {
-            aiBtn.addEventListener('click', () => aiPanel.classList.toggle('hidden'));
-        }
-        
-        document.getElementById('backToLogin').href = SCRIPT_URL + '?page=login';
         document.getElementById('codeBadge').textContent = window.teacherCode;
         document.getElementById('codeBadge').addEventListener('click', () => {
             document.getElementById('teacherCodeModalText').textContent = window.teacherCode;
