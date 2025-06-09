@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyQuest 管理ダッシュボード</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-gray-100 text-gray-800">
+  <header class="mb-4">
+    <h1 class="text-2xl font-bold">管理ダッシュボード</h1>
+  </header>
+  <section id="stats" class="mb-4"></section>
+  <section class="mb-6">
+    <h2 class="font-bold mb-2">クラス情報</h2>
+    <table class="min-w-full border text-sm" id="classTable">
+      <thead>
+        <tr><th class="border px-2">クラス</th><th class="border px-2">人数</th><th class="border px-2">平均レベル</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+  <section class="mb-6">
+    <h2 class="font-bold mb-2">児童情報</h2>
+    <table class="min-w-full border text-sm" id="studentTable">
+      <thead>
+        <tr><th class="border px-2">ID</th><th class="border px-2">クラス</th><th class="border px-2">XP</th><th class="border px-2">Lv</th><th class="border px-2">最終ログイン</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+  <section class="mb-6">
+    <h2 class="font-bold mb-2">課題情報</h2>
+    <ul id="taskList" class="list-disc pl-4 text-sm"></ul>
+  </section>
+  <section>
+    <h2 class="font-bold mb-2">最近の提出</h2>
+    <ul id="logList" class="list-disc pl-4 text-sm"></ul>
+  </section>
+
+  <script>
+    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
+    const teacherCode = '<?!= teacher ?>';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboard();
+    });
+
+    function loadDashboard() {
+      google.script.run.withSuccessHandler(renderStats).getStatistics(teacherCode);
+      google.script.run.withSuccessHandler(renderClassTable).getClassStatistics(teacherCode);
+      google.script.run.withSuccessHandler(renderStudentTable).listStudents(teacherCode);
+      google.script.run.withSuccessHandler(renderTaskList).listTasks(teacherCode);
+      google.script.run.withSuccessHandler(renderLogList).listBoard(teacherCode);
+    }
+
+    function renderStats(data) {
+      const el = document.getElementById('stats');
+      el.textContent = `公開クエスト: ${data.taskCount || 0} / 登録生徒数: ${data.studentCount || 0}`;
+    }
+
+    function renderClassTable(stats) {
+      const tbody = document.querySelector('#classTable tbody');
+      tbody.innerHTML = Object.keys(stats).map(key => {
+        const s = stats[key];
+        return `<tr><td class="border px-2">${key}</td><td class="border px-2 text-right">${s.count}</td><td class="border px-2 text-right">${s.avgLevel.toFixed(1)}</td></tr>`;
+      }).join('');
+    }
+
+    function renderStudentTable(students) {
+      const tbody = document.querySelector('#studentTable tbody');
+      tbody.innerHTML = students.map(st => {
+        const date = st.lastLogin ? new Date(st.lastLogin).toLocaleDateString('ja-JP') : '';
+        return `<tr><td class="border px-2">${st.id}</td><td class="border px-2">${st.grade}-${st.class}</td><td class="border px-2 text-right">${st.totalXp}</td><td class="border px-2 text-right">${st.level}</td><td class="border px-2">${date}</td></tr>`;
+      }).join('');
+    }
+
+    function renderTaskList(tasks) {
+      const list = document.getElementById('taskList');
+      list.innerHTML = (tasks || []).map(t => {
+        let q = '';
+        try { q = JSON.parse(t.q).question || ''; } catch(e) { q = t.q; }
+        return `<li>${q}</li>`;
+      }).join('');
+    }
+
+    function renderLogList(logs) {
+      const list = document.getElementById('logList');
+      list.innerHTML = (logs || []).map(l => `<li>${l.studentId}: ${escapeHtml(String(l.answer || ''))}</li>`).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&"'<>]/g, c => ({'&':'&amp;','"':'&quot;','\'':'&#39;','<':'&lt;','>':'&gt;'}[c]));
+    }
+  </script>
+</body>
+</html>

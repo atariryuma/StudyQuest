@@ -146,6 +146,32 @@
                         <button type="button" id="deleteDraftBtn" class="w-full game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 text-base mt-2 flex items-center justify-center gap-2"><i data-lucide="trash-2" class="w-5 h-5"></i><span>下書きを削除</span></button>
                     </form>
                 </section>
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="bar-chart-3" class="w-6 h-6 text-cyan-400"></i><span>クラス統計</span></h2>
+                    <div class="overflow-x-auto">
+                        <table id="classStatsTable" class="min-w-full text-xs text-left">
+                            <thead>
+                                <tr><th class="border px-2">クラス</th><th class="border px-2">人数</th><th class="border px-2">平均レベル</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="users" class="w-6 h-6 text-cyan-400"></i><span>児童一覧</span></h2>
+                    <div class="overflow-x-auto">
+                        <table id="studentTable" class="min-w-full text-xs text-left">
+                            <thead>
+                                <tr><th class="border px-2">ID</th><th class="border px-2">クラス</th><th class="border px-2">XP</th><th class="border px-2">Lv</th><th class="border px-2">最終ログイン</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="history" class="w-6 h-6 text-cyan-400"></i><span>最近の提出</span></h2>
+                    <ul id="logList" class="list-disc pl-5 space-y-1 text-sm"></ul>
+                </section>
             </div>
         </main>
     </div>
@@ -218,6 +244,9 @@
         loadClassOptions();
         loadSubjectHistory();
         loadDraft();
+        google.script.run.withSuccessHandler(renderClassStats).getClassStatistics(window.teacherCode);
+        google.script.run.withSuccessHandler(renderStudentTable).listStudents(window.teacherCode);
+        google.script.run.withSuccessHandler(renderLogList).listBoard(window.teacherCode);
         
         document.getElementById('subject').addEventListener('input', saveDraft);
         document.getElementById('question').addEventListener('input', saveDraft);
@@ -609,6 +638,30 @@
             });
         });
         renderIcons();
+    }
+
+    function renderClassStats(stats) {
+        const tbody = document.querySelector('#classStatsTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = Object.keys(stats || {}).map(key => {
+            const s = stats[key];
+            return `<tr><td class="border px-2">${key}</td><td class="border px-2 text-right">${s.count}</td><td class="border px-2 text-right">${s.avgLevel.toFixed(1)}</td></tr>`;
+        }).join('');
+    }
+
+    function renderStudentTable(students) {
+        const tbody = document.querySelector('#studentTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = (students || []).map(st => {
+            const date = st.lastLogin ? new Date(st.lastLogin).toLocaleDateString('ja-JP') : '';
+            return `<tr><td class="border px-2">${st.id}</td><td class="border px-2">${st.grade}-${st.class}</td><td class="border px-2 text-right">${st.totalXp}</td><td class="border px-2 text-right">${st.level}</td><td class="border px-2">${date}</td></tr>`;
+        }).join('');
+    }
+
+    function renderLogList(logs) {
+        const list = document.getElementById('logList');
+        if (!list) return;
+        list.innerHTML = (logs || []).map(l => `<li>${l.studentId}: ${escapeHtml(String(l.answer || ''))}</li>`).join('');
     }
 
     function renderTypeLabel(type) {

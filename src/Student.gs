@@ -340,3 +340,46 @@ function getStudentHistory(teacherCode, studentId) {
   console.timeEnd('getStudentHistory');
   return rows;
 }
+function listStudents(teacherCode) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return [];
+  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  return rows.map(r => ({
+    id: r[0],
+    grade: r[1],
+    class: r[2],
+    number: r[3],
+    firstLogin: r[4],
+    lastLogin: r[5],
+    loginCount: r[6],
+    totalXp: r[7],
+    level: r[8]
+  }));
+}
+
+function getClassStatistics(teacherCode) {
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return {};
+  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  if (!sheet) return {};
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return {};
+  const rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  const stats = {};
+  rows.forEach(r => {
+    const key = `${r[1]}-${r[2]}`;
+    if (!stats[key]) stats[key] = { count: 0, totalXp: 0, avgLevel: 0 };
+    stats[key].count++;
+    stats[key].totalXp += Number(r[7] || 0);
+    stats[key].avgLevel += Number(r[8] || 0);
+  });
+  Object.keys(stats).forEach(k => {
+    const s = stats[k];
+    s.avgLevel = s.count > 0 ? s.avgLevel / s.count : 0;
+  });
+  return stats;
+}
