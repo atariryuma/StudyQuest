@@ -186,7 +186,7 @@
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
     window.teacherCode = '<?!= teacher ?>';
-    if (!window.teacherCode) {
+    if (!window.teacherCode || window.teacherCode === '----') {
       const p = new URLSearchParams(window.location.search);
       window.teacherCode = p.get('teacher') || '';
     }
