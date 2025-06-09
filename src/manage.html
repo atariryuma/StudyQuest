@@ -118,16 +118,50 @@
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                     <span>ログインへ戻る</span>
                 </a>
-                <button id="classSettingBtn" class="game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 text-sm flex items-center gap-2">
+                <button id="bulk-register-btn" class="game-btn bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 text-sm flex items-center gap-2">
                     <i data-lucide="settings" class="w-4 h-4"></i>
-                    <span>クラス設定</span>
+                    <span>クラスを一括登録</span>
                 </button>
             </div>
         </header>
 
+        <div id="loadingOverlay" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 text-white z-50">ロード中...</div>
+
         <!-- Modals -->
         <div id="teacherCodeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 rounded-2xl shadow-2xl">
             <div id="teacherCodeModalText" class="bg-white text-black p-8 rounded-2xl shadow-2xl text-6xl font-bold text-center tracking-widest"></div>
+        </div>
+        <div id="csv-upload-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+            <div class="bg-gray-800 p-6 rounded-xl space-y-4 w-80 modal-content">
+                <input type="file" id="csv-file-input" accept=".csv" class="w-full text-sm text-gray-200" />
+                <a href="/path/to/template.csv" download="student_template.csv" id="download-template-btn" class="text-blue-400 underline text-sm">テンプレートをダウンロード</a>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="close-csv-modal" class="px-3 py-1 bg-gray-600 rounded">閉じる</button>
+                    <button id="upload-csv-btn" class="px-3 py-1 bg-pink-600 rounded">アップロード</button>
+                </div>
+            </div>
+        </div>
+        <div id="single-register-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+            <form id="single-register-form" class="bg-gray-800 p-6 rounded-xl space-y-3 w-80 modal-content">
+                <input type="email" id="reg-email" placeholder="Googleアカウント" class="w-full p-2 rounded bg-gray-700 text-sm" />
+                <input type="number" id="reg-grade" placeholder="学年" class="w-full p-2 rounded bg-gray-700 text-sm" />
+                <input type="number" id="reg-class" placeholder="組" class="w-full p-2 rounded bg-gray-700 text-sm" />
+                <input type="number" id="reg-number" placeholder="番号" class="w-full p-2 rounded bg-gray-700 text-sm" />
+                <input type="text" id="reg-name" placeholder="名前/ニックネーム" class="w-full p-2 rounded bg-gray-700 text-sm" />
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="close-single-register" class="px-3 py-1 bg-gray-600 rounded">閉じる</button>
+                    <button type="submit" class="px-3 py-1 bg-pink-600 rounded">登録</button>
+                </div>
+            </form>
+        </div>
+        <div id="delete-student-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+            <div class="bg-gray-800 p-6 rounded-xl space-y-4 w-96 modal-content">
+                <div id="delete-student-list" class="max-h-60 overflow-y-auto"></div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="close-delete-modal" class="px-3 py-1 bg-gray-600 rounded">閉じる</button>
+                    <button id="execute-delete-btn" class="px-3 py-1 bg-red-600 rounded">選択した生徒を削除</button>
+                </div>
+            </div>
         </div>
         <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
             <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl space-y-4 w-80 modal-content">
@@ -205,13 +239,13 @@
                             <h3 class="font-bold text-pink-400 mb-2">クラス管理</h3>
                             <div id="currentClassCard" class="flex flex-wrap gap-2 mb-2"></div>
                             <div class="flex gap-2">
-                                <button id="openClassBtn" class="w-1/2 game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2">
+                                <button id="single-register-btn" class="w-1/2 game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center justify-center gap-2">
                                     <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                                    <span>クラスを登録</span>
+                                    <span>生徒を個別登録</span>
                                 </button>
-                                <button id="deleteClassBtn" class="w-1/2 game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center justify-center gap-2">
+                                <button id="delete-student-btn" class="w-1/2 game-btn bg-red-600 text-white px-4 py-2 rounded-lg font-bold border-red-800 hover:bg-red-500 text-sm flex items-center justify-center gap-2">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    <span>クラス削除</span>
+                                    <span>生徒を削除</span>
                                 </button>
                             </div>
                             <div id="csvImportArea" class="mt-2 space-y-1 hidden">
@@ -400,6 +434,7 @@
     let debugContentElem;
     let registeredClasses = [];
     let selectedClassId = null;
+    let studentsData = [];
     function debug(msg) {
       if (!debugContentElem) return;
       const t = new Date().toLocaleTimeString();
@@ -428,6 +463,25 @@
       google.script.run.withSuccessHandler(rows => {
         storePrefetchData(code, taskId, rows);
       })[fn](code, taskId);
+    }
+
+    function showLoadingOverlay() {
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+    }
+    function hideLoadingOverlay() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 opacity-90';
+      document.body.appendChild(t);
+      setTimeout(() => {
+        t.style.transition = 'opacity 0.5s';
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 500);
+      }, 3000);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -485,29 +539,58 @@
             .callGeminiAPI_GAS(prompt, persona);
         });
       }
-      document.getElementById('openClassBtn').addEventListener('click', openClassModal);
-      document.getElementById('deleteClassBtn').addEventListener('click', deleteSelectedClass);
-      const csvInput = document.getElementById('csvInput');
-      if (csvInput) {
-        csvInput.addEventListener('change', () => {
-          const file = csvInput.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = e => {
-            google.script.run
-              .withSuccessHandler(() => {
-                loadDashboardData(teacherCode);
-              })
-              .withFailureHandler(err => alert('登録に失敗: ' + err.message))
-              .registerUsersFromCsv(teacherCode, e.target.result);
-          };
-          reader.readAsText(file);
-        });
-      }
-      const settingBtn = document.getElementById('classSettingBtn');
-      if (settingBtn) {
-        settingBtn.addEventListener('click', openClassSettingDialog);
-      }
+      document.getElementById('single-register-btn').addEventListener('click', openSingleRegisterModal);
+      document.getElementById('delete-student-btn').addEventListener('click', openDeleteStudentModal);
+      const bulkBtn = document.getElementById('bulk-register-btn');
+      if (bulkBtn) bulkBtn.addEventListener('click', openCsvUploadModal);
+      document.getElementById('close-csv-modal').addEventListener('click', closeCsvUploadModal);
+      document.getElementById('close-single-register').addEventListener('click', closeSingleRegisterModal);
+      document.getElementById('close-delete-modal').addEventListener('click', closeDeleteStudentModal);
+
+      document.getElementById('upload-csv-btn').addEventListener('click', () => {
+        const file = document.getElementById('csv-file-input').files[0];
+        if (!file) return;
+        showLoadingOverlay();
+        const reader = new FileReader();
+        reader.onload = e => {
+          google.script.run
+            .withSuccessHandler(onBulkRegisterSuccess)
+            .withFailureHandler(err => { hideLoadingOverlay(); alert('登録に失敗: ' + err.message); })
+            .registerUsersFromCsv(teacherCode, e.target.result);
+        };
+        reader.readAsText(file);
+      });
+
+      document.getElementById('single-register-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const studentData = {
+          email: document.getElementById('reg-email').value.trim(),
+          grade: document.getElementById('reg-grade').value,
+          class: document.getElementById('reg-class').value,
+          number: document.getElementById('reg-number').value,
+          name: document.getElementById('reg-name').value.trim()
+        };
+        showLoadingOverlay();
+        google.script.run
+          .withSuccessHandler(onSingleRegisterSuccess)
+          .withFailureHandler(err => { hideLoadingOverlay(); alert('登録に失敗: ' + err.message); })
+          .registerSingleStudent(teacherCode, studentData);
+      });
+
+      document.getElementById('execute-delete-btn').addEventListener('click', () => {
+        const emails = Array.from(document.querySelectorAll('.delete-checkbox:checked')).map(cb => cb.value);
+        if (emails.length === 0) return;
+        if (!confirm(`選択した${emails.length}名の生徒をクラスから削除します。この操作は取り消せません。よろしいですか？`)) return;
+        showLoadingOverlay();
+        google.script.run
+          .withSuccessHandler(onDeleteSuccess)
+          .withFailureHandler(err => { hideLoadingOverlay(); alert('削除に失敗: ' + err.message); })
+          .deleteStudentsFromClass(teacherCode, emails);
+      });
+
+      document.getElementById('csv-upload-modal').addEventListener('click', e => { if (e.target.id === 'csv-upload-modal') closeCsvUploadModal(); });
+      document.getElementById('single-register-modal').addEventListener('click', e => { if (e.target.id === 'single-register-modal') closeSingleRegisterModal(); });
+      document.getElementById('delete-student-modal').addEventListener('click', e => { if (e.target.id === 'delete-student-modal') closeDeleteStudentModal(); });
       document.getElementById('deleteDraftBtn').addEventListener('click', () => {
         if (!draftTaskId) {
           resetForm();
@@ -809,7 +892,8 @@
         google.script.run
           .withSuccessHandler(data => {
             renderTasks(data.tasks || []);
-            renderStudentTable(data.students || []);
+            studentsData = data.students || [];
+            renderStudentTable(studentsData);
           })
           .withFailureHandler(err => alert('データ取得に失敗しました: ' + err.message))
           .loadDashboardData(code);
@@ -1230,7 +1314,63 @@
         google.script.run
           .withSuccessHandler(() => loadClassOptions())
           .withFailureHandler(err => alert('更新に失敗: ' + err.message))
-          .updateClassIdMap(teacherCode, half);
+        .updateClassIdMap(teacherCode, half);
+      }
+
+      function openCsvUploadModal() {
+        document.getElementById('csv-file-input').value = '';
+        document.getElementById('csv-upload-modal').classList.remove('hidden');
+      }
+      function closeCsvUploadModal() {
+        document.getElementById('csv-upload-modal').classList.add('hidden');
+      }
+
+      function openSingleRegisterModal() {
+        document.getElementById('single-register-form').reset();
+        document.getElementById('single-register-modal').classList.remove('hidden');
+      }
+      function closeSingleRegisterModal() {
+        document.getElementById('single-register-modal').classList.add('hidden');
+      }
+
+      function openDeleteStudentModal() {
+        renderDeleteStudentList();
+        document.getElementById('delete-student-modal').classList.remove('hidden');
+      }
+      function closeDeleteStudentModal() {
+        document.getElementById('delete-student-modal').classList.add('hidden');
+      }
+
+      function renderDeleteStudentList() {
+        const list = document.getElementById('delete-student-list');
+        if (!list) return;
+        let html = '<table class="min-w-full text-sm"><thead><tr><th></th><th>Email</th><th>クラス</th></tr></thead><tbody>';
+        (studentsData || []).forEach(st => {
+          html += `<tr><td><input type="checkbox" class="delete-checkbox" value="${st.id}"></td><td>${escapeHtml(st.id)}</td><td>${st.grade}-${st.class}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        list.innerHTML = html;
+      }
+
+      function onBulkRegisterSuccess(res) {
+        hideLoadingOverlay();
+        closeCsvUploadModal();
+        showToast(`新規${res.created}名、クラスへ${res.enrolled}名を登録しました`);
+        loadDashboardData(teacherCode);
+      }
+
+      function onSingleRegisterSuccess() {
+        hideLoadingOverlay();
+        closeSingleRegisterModal();
+        showToast('生徒を登録しました');
+        loadDashboardData(teacherCode);
+      }
+
+      function onDeleteSuccess(res) {
+        hideLoadingOverlay();
+        closeDeleteStudentModal();
+        showToast(`${res.deletedCount}名を削除しました`);
+        loadDashboardData(teacherCode);
       }
 
       function renderClassCards(map) {
