@@ -102,14 +102,32 @@
                         </div>
                     </div>
                 </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i><span>公開中のクエスト一覧</span></h2>
-                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="bar-chart-3" class="w-6 h-6 text-cyan-400"></i><span>クラス統計</span></h2>
+                    <div class="overflow-x-auto">
+                        <table id="classStatsTable" class="min-w-full text-xs text-left">
+                            <thead>
+                                <tr><th class="border px-2">クラス</th><th class="border px-2">人数</th><th class="border px-2">平均レベル</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section class="glass-panel rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="users" class="w-6 h-6 text-cyan-400"></i><span>児童一覧</span></h2>
+                    <div class="overflow-x-auto">
+                        <table id="studentTable" class="min-w-full text-xs text-left">
+                            <thead>
+                                <tr><th class="border px-2">ID</th><th class="border px-2">クラス</th><th class="border px-2">XP</th><th class="border px-2">Lv</th><th class="border px-2">最終ログイン</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </section>
             </div>
             <div class="lg:col-span-2 flex flex-col gap-6">
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="plus-square" class="w-6 h-6 text-amber-400"></i><span>新しいクエストを作成</span></h2>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="plus-square" class="w-6 h-6 text-amber-400"></i><span>生成AIサポートで課題作成</span></h2>
                     <form id="taskForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label class="block text-sm mb-1 text-gray-400">教科</label><input id="subject" type="text" list="subjectHistory" placeholder="例: 算数, 国語..." class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"><datalist id="subjectHistory"></datalist></div>
@@ -146,30 +164,12 @@
                         <button type="button" id="deleteDraftBtn" class="w-full game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 text-base mt-2 flex items-center justify-center gap-2"><i data-lucide="trash-2" class="w-5 h-5"></i><span>下書きを削除</span></button>
                     </form>
                 </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="bar-chart-3" class="w-6 h-6 text-cyan-400"></i><span>クラス統計</span></h2>
-                    <div class="overflow-x-auto">
-                        <table id="classStatsTable" class="min-w-full text-xs text-left">
-                            <thead>
-                                <tr><th class="border px-2">クラス</th><th class="border px-2">人数</th><th class="border px-2">平均レベル</th></tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                <section class="glass-panel rounded-xl p-4 shadow-lg flex-grow flex flex-col">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="scroll-text" class="w-6 h-6 text-green-400"></i><span>課題履歴</span></h2>
+                    <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
                 </section>
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="users" class="w-6 h-6 text-cyan-400"></i><span>児童一覧</span></h2>
-                    <div class="overflow-x-auto">
-                        <table id="studentTable" class="min-w-full text-xs text-left">
-                            <thead>
-                                <tr><th class="border px-2">ID</th><th class="border px-2">クラス</th><th class="border px-2">XP</th><th class="border px-2">Lv</th><th class="border px-2">最終ログイン</th></tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </section>
-                <section class="glass-panel rounded-xl p-4 shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="history" class="w-6 h-6 text-cyan-400"></i><span>最近の提出</span></h2>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2"><i data-lucide="history" class="w-6 h-6 text-cyan-400"></i><span>課題情報</span></h2>
                     <ul id="logList" class="list-disc pl-5 space-y-1 text-sm"></ul>
                 </section>
             </div>
