@@ -68,28 +68,24 @@
 
 ## 2\. 全体遷移図 (Overview Diagram)
 
-```mermaid
 graph TD
-    A[アプリ起動] --> B[login.html];
-
-    subgraph Teacher Flow
-        B -- 教師としてログイン --> C[manage.html<br>(教師ダッシュボード)];
-        C -- 各課題の<br>[提出一覧]ボタン --> D[board.html<br>(回答ボード)];
+    A[アプリ起動] --> B[login.html]
+    
+    subgraph TeacherFlow [Teacher Flow]
+        B -- 教師としてログイン --> C[manage.html<br/>教師ダッシュボード]
+        C -- 各課題の提出一覧ボタン --> D[board.html<br/>回答ボード]
     end
-
-    subgraph Student Flow
-        B -- 生徒としてログイン --> E[class-select.html<br>(クラス選択ハブ)];
+    
+    subgraph StudentFlow [Student Flow]
+        B -- 生徒としてログイン --> E[class-select.html<br/>クラス選択ハブ]
+        E -- プロフィールを見る --> H[profile.html<br/>プロフィール]
         
-        E -- プロフィールを見る --> H[profile.html<br>(プロフィール)];
-        
-        subgraph Class-Specific Actions
-            E -- クラスカード内の<br>[クエストに挑戦]ボタン --> F[quest.html<br>(クエスト画面)];
-            E -- クラスカード内の<br>[ランキング]ボタン --> G[leaderboard.html<br>(ランキング)];
-            F -- 各課題の<br>[みんなの回答]ボタン --> D;
+        subgraph ClassSpecificActions [Class-Specific Actions]
+            E -- クラスカード内のクエストに挑戦ボタン --> F[quest.html<br/>クエスト画面]
+            E -- クラスカード内のランキングボタン --> G[leaderboard.html<br/>ランキング]
+            F -- 各課題のみんなの回答ボタン --> D
         end
     end
-```
-
 -----
 
 ## 3\. 画面遷移定義テーブル (View Transition Definition Table)
