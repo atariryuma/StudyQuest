@@ -5,7 +5,10 @@ function getGlobalDb_() {
   const cached = typeof getCacheValue_ === 'function' ? getCacheValue_(cacheKey) : null;
   if (cached) return cached;
   const props = PropertiesService.getScriptProperties();
-  const id = props.getProperty('GLOBAL_DB_ID');
+  const propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined')
+    ? PROP_GLOBAL_MASTER_DB
+    : 'Global_Master_DB';
+  const id = props.getProperty(propName);
   if (!id) return null;
   try {
     const ss = SpreadsheetApp.openById(id);

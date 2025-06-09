@@ -79,15 +79,19 @@ function checkAndAwardTrophies(userEmail, context) {
     LoginStreak: Number(userRow[9]) || 0
   };
 
-  const logs = logSheet.getRange(2, 1, Math.max(0, logSheet.getLastRow() - 1), 3)
-                        .getValues();
+  let logs = [];
+  if (logSheet.getLastRow() > 1) {
+    logs = logSheet.getRange(2, 1, logSheet.getLastRow() - 1, 3).getValues();
+  }
   const earned = new Set();
   logs.forEach(r => {
     if (r[1] === userEmail) earned.add(r[2]);
   });
 
-  const trophies = trophySheet.getRange(2, 1, Math.max(0, trophySheet.getLastRow() - 1), 5)
-                               .getValues();
+  let trophies = [];
+  if (trophySheet.getLastRow() > 1) {
+    trophies = trophySheet.getRange(2, 1, trophySheet.getLastRow() - 1, 5).getValues();
+  }
   const awarded = [];
 
   trophies.forEach(row => {

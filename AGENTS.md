@@ -259,7 +259,7 @@
     * **Process:** `Session.getEffectiveUser().getEmail()`を実行する。
     * **Output:** (string) ユーザーのメールアドレス。
 * **`getGlobalDb_()`**
-    * **Process:** `PropertiesService`から`GLOBAL_DB_ID`をキーにスプレッドシートIDを取得し、`SpreadsheetApp.openById()`で開く。IDは`CacheService`でキャッシュする。
+    * **Process:** `PropertiesService`から`Global_Master_DB`をキーにスプレッドシートIDを取得し、`SpreadsheetApp.openById()`で開く。IDは`CacheService`でキャッシュする。
     * **Output:** `Spreadsheet` object
 * **`getTeacherDb_(teacherCode)`**
     * **Process:** `PropertiesService`から`ssId_<teacherCode>`をキーにスプレッドシートIDを取得し、`SpreadsheetApp.openById()`で開く。IDは`CacheService`でキャッシュする。
