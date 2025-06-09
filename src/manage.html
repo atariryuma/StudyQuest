@@ -275,8 +275,7 @@
             </div>
 
             <!-- Right Column: Quest Management -->
-            <div class="lg:col-span-2 flex gap-6">
-                <div class="flex flex-col gap-6 h-full w-full">
+            <div class="lg:col-span-2 flex flex-col gap-6">
 
                 <!-- New Quest Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
@@ -358,8 +357,6 @@
                     </h2>
                     <div id="tasksContainer" class="space-y-3 overflow-y-auto flex-grow"></div>
                 </section>
-
-                </div>
             </div>
         </main>
       </div>
@@ -808,12 +805,6 @@
         tbody.innerHTML = html;
       }
 
-      function loadStudentInfo() {
-        google.script.run
-          .withSuccessHandler(renderStudentTable)
-          .listStudents(teacherCode);
-      }
-
       function loadDashboardData(code) {
         google.script.run
           .withSuccessHandler(data => {
@@ -1065,19 +1056,6 @@
       /**
        * 画面下部の「課題一覧」を取得して表示する
       */
-      function loadTasks() {
-        debug('loadTasks');
-        google.script.run
-          .withSuccessHandler(renderTasks)
-          .withFailureHandler(err => {
-            console.error('listTasks エラー:', err);
-            document.getElementById('tasksContainer').innerHTML =
-              '<p class="text-red-500 text-center">課題一覧の取得に失敗しました。</p>';
-            debug('loadTasks failed: ' + err.message);
-          })
-          .listTasks(teacherCode);
-      }
-
       /**
        * 取得した rows をカードで描画する
        * rows は [{ id, q, selfEval, date }, …] の配列
@@ -1119,7 +1097,7 @@
                   <i data-icon="Trash2" class="w-6 h-6 text-red-400"></i>
                 </button>
                 <button class="closeBtn p-1" data-id="${x.id}" title="この課題を終了">
-                  <i data-icon="CheckSquare" class="w-6 h-6 text-green-400"></i>
+                  <i data-icon="Archive" class="w-6 h-6 text-green-400"></i>
                 </button>
               </div>
             </div>`;
@@ -1228,12 +1206,10 @@
         }
         if (!confirm('選択中のクラスを削除しますか？')) return;
         const idx = parseInt(selectedClassId, 10) - 1;
-        if (idx >= 0 && idx < registeredClasses.length) {
-          registeredClasses.splice(idx, 1);
-        }
-        const idsString = registeredClasses.map(x => x.join(',')).join(';');
+        const updated = registeredClasses.filter((_, i) => i !== idx);
+        const idsString = updated.map(x => x.join(',')).join(';');
         google.script.run
-          .withSuccessHandler(map => {
+          .withSuccessHandler(() => {
             selectedClassId = null;
             loadClassOptions();
           })
@@ -1281,8 +1257,6 @@
 
 
       // 10) 画面初回ロード
-      const params = new URLSearchParams(location.search);
-      teacherCode = params.get('teacher') || teacherCode;
       loadDashboardData(teacherCode);
       updateWidgets();
       loadClassStats();
