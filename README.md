@@ -112,16 +112,20 @@ graph TD
   * **操作**
     ユーザーは\*\*\[教師としてログイン]**または**\[生徒としてログイン]\*\*ボタンをクリックします。
 
-  * **教師の場合**
+* **教師の場合**
+  * 画面上に「私は教師です」チェックボックスがあり、オンにすると `kyoushi` を入力するテキストボックスが表示される
+  * `google.script.run.handleTeacherLogin()` を実行
+  * 返却値 `status` が `ok` なら `manage.html?teacher=<teacherCode>` へ遷移
+  * `status` が `new_teacher_prompt_key` のときは秘密キー入力フォームを表示
 
-      * `google.script.run.loginAsTeacher()` を実行します。
-      * 認証成功後、URLパラメータに `teacherCode` を付与して `manage.html` へ遷移します。
-
-  * **生徒の場合**
-
-      * `google.script.run.loginAsStudent()` を実行します。
-      * 認証成功後、在籍クラス数に関わらず必ず `class-select.html` へ遷移します。
-      * 在籍クラスがない場合は `login.html` に留まり、エラーメッセージを表示します。
+* **生徒の場合**
+  * `google.script.run.loginAsStudent()` を実行
+  * 在籍クラス数が 1 なら `quest.html?teacher=<teacherCode>` へ直接遷移
+  * 2 以上なら `class-select.html` へ遷移（リストは `sessionStorage` に保存）
+  * 0 の場合はエラーメッセージを表示
+  * `google.script.run.loginAsStudent()` を実行します。
+  * 認証成功後、在籍クラス数に関わらず必ず `class-select.html` へ遷移します。
+  * 在籍クラスがない場合は `login.html` に留まり、エラーメッセージを表示します。
 
 #### 4.2. 生徒ハブ画面からの遷移 (`class-select.html`)
 
