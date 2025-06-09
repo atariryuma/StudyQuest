@@ -10,15 +10,30 @@
 <body class="min-h-screen flex items-center justify-center p-4 text-gray-200">
   <main class="w-full max-w-xl space-y-4">
     <h1 class="text-xl font-bold text-center mb-2">クラスを選択</h1>
-    <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    <div id="class-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
   </main>
   <script>
-    const classes = JSON.parse(sessionStorage.getItem('enrolledClasses') || '[]');
-    function renderClassCards(){
-      const grid=document.getElementById('cardGrid');
-      grid.innerHTML=classes.map(c=>`<a href="quest.html?teacher=${c.teacherCode}" class="block p-4 bg-gray-800 rounded-lg shadow hover:bg-gray-700"><p class="font-bold">${c.className}</p></a>`).join('');
+    <?!= include('shared/escapeHtml'); ?>
+    const enrolledClasses = JSON.parse(sessionStorage.getItem('enrolledClasses') || '[]');
+
+    function renderClassCards() {
+      const grid = document.getElementById('class-grid');
+      grid.innerHTML = enrolledClasses
+        .map(c => {
+          const code = encodeURIComponent(c.teacherCode);
+          return `
+            <div class="p-4 bg-gray-800 rounded-lg shadow space-y-2">
+              <p class="font-bold">${escapeHtml(c.className)}</p>
+              <div class="flex gap-2 text-sm">
+                <a href="quest.html?teacher=${code}" class="flex-1 px-2 py-1 text-center bg-blue-600 rounded hover:bg-blue-500">クエストに挑戦</a>
+                <a href="leaderboard.html?teacher=${code}" class="flex-1 px-2 py-1 text-center bg-purple-600 rounded hover:bg-purple-500">ランキング</a>
+              </div>
+            </div>`;
+        })
+        .join('');
     }
-    document.addEventListener('DOMContentLoaded',renderClassCards);
+
+    document.addEventListener('DOMContentLoaded', renderClassCards);
   </script>
 </body>
 </html>
