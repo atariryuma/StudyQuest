@@ -69,7 +69,7 @@
     function onTeacherLoginSuccess(res) {
       hideLoadingOverlay();
       if (res && res.teacherCode) {
-        window.top.location.href = `manage.html?teacher=${res.teacherCode}`;
+        window.top.location.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(res.teacherCode)}`;
       } else {
         showError('ログインに失敗しました。');
       }
@@ -83,10 +83,10 @@
       }
       const classes = res.enrolledClasses;
       if (classes.length === 1) {
-        window.top.location.href = `quest.html?teacher=${classes[0].teacherCode}`;
+        window.top.location.href = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(classes[0].teacherCode)}`;
       } else if (classes.length > 1) {
         sessionStorage.setItem('enrolledClasses', JSON.stringify(classes));
-        window.top.location.href = 'class-select.html';
+        window.top.location.href = `${SCRIPT_URL}?page=class-select`;
       } else {
         showError('どのクラスにも登録されていません');
       }
