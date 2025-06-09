@@ -16,7 +16,7 @@ const SHEET_SETTINGS  = 'Settings';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
 const PROP_GLOBAL_MASTER_DB = 'Global_Master_DB';
-const SQ_VERSION           = 'v1.0.171';
+const SQ_VERSION           = 'v1.0.172';
 // Global DB sheet names
 const SHEET_GLOBAL_USERS        = 'Global_Users';
 const SHEET_GLOBAL_TROPHIES_LOG = 'Global_Trophies_Log';
