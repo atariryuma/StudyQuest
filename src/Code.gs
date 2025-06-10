@@ -2,25 +2,8 @@
 // StudyQuest – バックエンド全コード（最終版）
 // ================================================
 
-// シート名定数
-const SHEET_TOC        = '📜 目次';
-const SHEET_TASKS      = 'Tasks';
-const SHEET_SUBMISSIONS = 'Submissions';
-const SHEET_STUDENTS   = 'Students';
-const SHEET_TROPHIES   = 'Trophies';
-const SHEET_ITEMS      = 'Items';
-// 以前は日本語名 "AIフィードバックログ" を使用していましたが、
-// README の表記に合わせて英語名に変更
-const SHEET_AI_FEEDBACK = 'AI_Log';
-const SHEET_SETTINGS  = 'Settings';
-const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
-const FOLDER_NAME_PREFIX    = 'StudyQuest_';
-const PROP_GLOBAL_MASTER_DB = 'Global_Master_DB';
-const SQ_VERSION           = 'v1.0.213';
-// Global DB sheet names
-const SHEET_GLOBAL_USERS        = 'Global_Users';
-const SHEET_GLOBAL_TROPHIES_LOG = 'Global_Trophies_Log';
-const SHEET_GLOBAL_ITEMS        = 'Global_Items_Inventory';
+// 共通定数は consts.gs に移動
+const SQ_VERSION = 'v1.0.213';
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
  */

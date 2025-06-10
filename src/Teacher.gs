@@ -62,13 +62,13 @@ function detectTeacherFolderOnDrive_() {
   const cached = getCacheValue_(cacheKey);
   if (cached) return cached;
   const q = `mimeType='application/vnd.google-apps.folder' ` +
-            `and title contains '${FOLDER_NAME_PREFIX}' and trashed=false`;
+            `and title contains '${CONSTS.FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
     const res = Drive.Files.list({ q, orderBy: 'createdDate desc' });
     const items = res.items || [];
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const m = item.title.match(new RegExp('^' + FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
+      const m = item.title.match(new RegExp('^' + CONSTS.FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
       if (m) {
         const info = { code: m[1], id: item.id };
         putCacheValue_(cacheKey, info, 300);
@@ -96,16 +96,16 @@ function initTeacher(passcode) {
   }
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
-  const storedPass = props.getProperty('teacherPasscode');
+  const storedPass = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
   if (storedPass) {
     if (storedPass !== passcode) {
       return { status: 'error', message: 'パスコードが違います。' };
     }
   } else {
-    props.setProperty('teacherPasscode', passcode);
+    props.setProperty(CONSTS.PROP_TEACHER_PASSCODE, passcode);
   }
 
-  const stored = props.getProperty('teacherCode_' + email);
+  const stored = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (stored) {
     return { status: 'ok', teacherCode: stored };
   }
@@ -113,14 +113,14 @@ function initTeacher(passcode) {
   const info = detectTeacherFolderOnDrive_();
   if (info) {
     props.setProperty(info.code, info.id);
-    props.setProperty('teacherCode_' + email, info.code);
+    props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, info.code);
     return { status: 'ok', teacherCode: info.code };
   }
   const existingCodes = props.getKeys().filter(key => key.match(/^[A-Z0-9]{6}$/));
   let foundCode = null;
   let foundDate = null;
   existingCodes.forEach(code => {
-    const folder = findLatestFolderByName_(FOLDER_NAME_PREFIX + code);
+    const folder = findLatestFolderByName_(CONSTS.FOLDER_NAME_PREFIX + code);
     if (folder) {
       const d = folder.getDateCreated();
       if (!foundDate || d > foundDate) {
@@ -130,24 +130,24 @@ function initTeacher(passcode) {
     }
   });
   if (foundCode) {
-    props.setProperty('teacherCode_' + email, foundCode);
+    props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, foundCode);
     return { status: 'ok', teacherCode: foundCode };
   }
   // 新規作成
   const newCode    = generateTeacherCode();
-  const folderName = FOLDER_NAME_PREFIX + newCode;
+  const folderName = CONSTS.FOLDER_NAME_PREFIX + newCode;
   const folderInstance = DriveApp.createFolder(folderName);
   props.setProperty(newCode, folderInstance.getId());
-  props.setProperty('teacherCode_' + email, newCode);
+  props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, newCode);
   initializeFolders(newCode, [], folderInstance);
 
   const ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
-  props.setProperty('ssId_' + newCode, ss.getId());
+  props.setProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + newCode, ss.getId());
   DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
   // 目次シート作成
   const tocSheet = ss.getSheets()[0];
-  tocSheet.setName(SHEET_TOC);
+  tocSheet.setName(CONSTS.SHEET_TOC);
   tocSheet.clear();
   tocSheet.appendRow(['StudyQuest データシート']);
   tocSheet.getRange('A1').setFontWeight('bold').setFontSize(14).setHorizontalAlignment('center');
@@ -157,21 +157,21 @@ function initTeacher(passcode) {
   // 各シートの初期化
   const sheetInfos = [
     {
-      name: SHEET_TASKS,
+      name: CONSTS.SHEET_TASKS,
       color: "ff9900",
       header: ['TaskID', 'ClassID', 'Payload(JSON)', 'AllowSelfEval', 'CreatedAt', 'Persona', 'Status', 'draft'],
       description: "作成された課題の一覧です。",
       columnsJa: ['課題ID','クラスID','課題内容(JSON)','自己評価許可','作成日時','ペルソナ','状態','下書きフラグ']
     },
     {
-      name: SHEET_STUDENTS,
+      name: CONSTS.SHEET_STUDENTS,
       color: "4285f4",
       header: ['StudentID', 'Grade', 'Class', 'Number', 'FirstLogin', 'LastLogin', 'LoginCount', 'TotalXP', 'Level', 'LastTrophyID'],
       description: "ログインした生徒の情報が記録されます。",
       columnsJa: ['生徒ID','学年','組','番号','初回ログイン','最終ログイン','ログイン回数','累積XP','レベル','最終トロフィーID']
     },
     {
-      name: SHEET_SUBMISSIONS,
+      name: CONSTS.SHEET_SUBMISSIONS,
       color: "008080",
       header: ['StudentID', 'TaskID', 'Question', 'StartedAt', 'SubmittedAt', 'ProductURL',
                'QuestionSummary', 'AnswerSummary', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Status'],
@@ -179,7 +179,7 @@ function initTeacher(passcode) {
       columnsJa: ['生徒ID','課題ID','問題文','開始日時','提出日時','成果物URL','問題概要','回答概要','付与XP','累積XP','レベル','トロフィー','ステータス']
     },
     {
-      name: SHEET_AI_FEEDBACK,
+      name: CONSTS.SHEET_AI_FEEDBACK,
       color: "ff4444",
       header: ['LogID', 'SubmissionID', 'Content', 'CreatedAt'],
       description: "Gemini API からのフィードバックログです。",
@@ -187,21 +187,21 @@ function initTeacher(passcode) {
     },
     {
 
-      name: SHEET_TROPHIES,
+      name: CONSTS.SHEET_TROPHIES,
       color: "ffcc00",
       header: ['TrophyID', 'Name', 'Description', 'IconURL', 'Condition'],
       description: "獲得可能なトロフィーを定義します。",
       columnsJa: ['トロフィーID','名称','説明','アイコンURL','条件(JSON)']
     },
     {
-      name: SHEET_ITEMS,
+      name: CONSTS.SHEET_ITEMS,
       color: "00c851",
       header: ['ItemID', 'Name', 'Type', 'Price', 'Effect'],
       description: "購入可能なアイテムを定義します。",
       columnsJa: ['アイテムID','名称','種別','価格','効果(JSON)']
     },
     {
-      name: SHEET_SETTINGS,
+      name: CONSTS.SHEET_SETTINGS,
       color: "aaaaaa",
       header: ['type', 'value1', 'value2'],
       description: "各種設定 (APIキー・クラス等) を保存します。",
@@ -254,7 +254,7 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   if (_ssCache[teacherCode]) { console.timeEnd('getSpreadsheetByTeacherCode'); return _ssCache[teacherCode]; }
 
   const props = PropertiesService.getScriptProperties();
-  const idKey = 'ssId_' + teacherCode;
+  const idKey = CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode;
 
   let cachedId = getCacheValue_('ssid_' + teacherCode);
   if (!cachedId) {
@@ -297,9 +297,9 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   }
 }
 function ensureSettingsSheet_(ss) {
-  let sheet = ss.getSheetByName(SHEET_SETTINGS);
+  let sheet = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
   if (!sheet) {
-    sheet = ss.insertSheet(SHEET_SETTINGS);
+    sheet = ss.insertSheet(CONSTS.SHEET_SETTINGS);
     sheet.appendRow(['type', 'value1', 'value2']);
   }
   return sheet;
@@ -326,7 +326,7 @@ function loadTeacherSettings_(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   const data = { persona: '', classes: [] };
   if (ss) {
-    const sheet = ss.getSheetByName(SHEET_SETTINGS);
+    const sheet = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
     if (sheet) {
       const values = sheet.getDataRange().getValues();
       for (let i = 1; i < values.length; i++) {
@@ -369,7 +369,7 @@ function getTeacherRootFolder(teacherCode) {
     }
   }
 
-  const name = FOLDER_NAME_PREFIX + teacherCode;
+  const name = CONSTS.FOLDER_NAME_PREFIX + teacherCode;
   const q = `title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   let items = [];
   try {

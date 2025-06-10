@@ -2,7 +2,7 @@ function loadProfileData(teacherCode) {
   const email = Session.getEffectiveUser().getEmail();
   const db = getGlobalDb_();
   if (!db) return null;
-  const userSheet = db.getSheetByName(SHEET_GLOBAL_USERS);
+  const userSheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!userSheet) return null;
   const last = userSheet.getLastRow();
   if (last < 2) return null;
@@ -15,8 +15,8 @@ function loadProfileData(teacherCode) {
     }
   }
   if (!row) return null;
-  const trophySheet = db.getSheetByName(SHEET_GLOBAL_TROPHIES_LOG);
-  const itemSheet = db.getSheetByName(SHEET_GLOBAL_ITEMS);
+  const trophySheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_TROPHIES_LOG);
+  const itemSheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_ITEMS);
   let trophies = [];
   if (trophySheet && trophySheet.getLastRow() > 1) {
     const tRows = trophySheet.getRange(2, 1, trophySheet.getLastRow() - 1, 3).getValues();

@@ -4,7 +4,7 @@ function registerUsersFromCsv(teacherCode, csvData) {
   const teacherDb = getTeacherDb_(teacherCode);
   const globalDb = getGlobalDb_();
   if (!teacherDb || !globalDb) return { status: 'error', message: 'db_not_found' };
-  const userSheet = globalDb.getSheetByName('Global_Users');
+  const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   const enrollSheet = teacherDb.getSheetByName('Enrollments');
   if (!userSheet || !enrollSheet) return { status: 'error', message: 'missing_sheet' };
   const rows = Utilities.parseCsv(csvData).slice(1); // skip header row
@@ -81,7 +81,7 @@ function registerSingleStudent(teacherCode, studentData) {
   const teacherDb = getTeacherDb_(teacherCode);
   const globalDb = getGlobalDb_();
   if (!teacherDb || !globalDb) return { status: 'error', message: 'db_not_found' };
-  const userSheet = globalDb.getSheetByName('Global_Users');
+  const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   const enrollSheet = teacherDb.getSheetByName('Enrollments');
   if (!userSheet || !enrollSheet) return { status: 'error', message: 'missing_sheet' };
   const email = String(studentData.email).trim();

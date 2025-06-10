@@ -20,7 +20,7 @@ function getStudentRowMap_(teacherCode, sheet) {
   if (!sheet) {
     const ss = getSpreadsheetByTeacherCode(teacherCode);
     if (!ss) return {};
-    sheet = ss.getSheetByName(SHEET_STUDENTS);
+    sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
     if (!sheet) return {};
   }
   const lastRow = sheet.getLastRow();
@@ -56,7 +56,7 @@ function findStudentSheet_(ss, studentId) {
   };
 
   const target = normalize(studentId);
-  const direct = ss.getSheetByName(STUDENT_SHEET_PREFIX + target);
+  const direct = ss.getSheetByName(CONSTS.STUDENT_SHEET_PREFIX + target);
   if (direct) return direct;
 
   const parts = target.split('-');
@@ -67,8 +67,8 @@ function findStudentSheet_(ss, studentId) {
   let maxRows = -1;
   ss.getSheets().forEach(sh => {
     const name = sh.getName();
-    if (!name.startsWith(STUDENT_SHEET_PREFIX)) return;
-    let idPart = name.substring(STUDENT_SHEET_PREFIX.length);
+    if (!name.startsWith(CONSTS.STUDENT_SHEET_PREFIX)) return;
+    let idPart = name.substring(CONSTS.STUDENT_SHEET_PREFIX.length);
     idPart = normalize(idPart);
     const ps = idPart.split('-');
     if (ps.length !== 3) return;
@@ -82,7 +82,7 @@ function findStudentSheet_(ss, studentId) {
   });
 
   if (candidate) {
-    const newName = STUDENT_SHEET_PREFIX + target;
+    const newName = CONSTS.STUDENT_SHEET_PREFIX + target;
     if (candidate.getName() !== newName) {
       const existing = ss.getSheetByName(newName);
       if (existing && existing !== candidate) {
@@ -115,9 +115,9 @@ function initStudent(teacherCode, grade, classroom, number) {
   if (!ss) {
     throw new Error('教師コードが正しくありません。');
   }
-  const studentListSheet = ss.getSheetByName(SHEET_STUDENTS);
+  const studentListSheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!studentListSheet) {
-    throw new Error(`システムエラー: 「${SHEET_STUDENTS}」シートが見つかりません。`);
+    throw new Error(`システムエラー: 「${CONSTS.SHEET_STUDENTS}」シートが見つかりません。`);
   }
 
   const studentId = `${grade}-${classroom}-${number}`; // e.g. "6-1-1"
@@ -150,14 +150,14 @@ function initStudent(teacherCode, grade, classroom, number) {
     recordStudentLogin_(studentListSheet, studentRowIndex, current);
   }
 
-  const studentSheetName = STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
+  const studentSheetName = CONSTS.STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
   let studentSheet = null;
   let maxRows = -1;
   const allSheets = ss.getSheets();
   for (const sh of allSheets) {
     const name = sh.getName();
-    if (!name.startsWith(STUDENT_SHEET_PREFIX)) continue;
-    const idPart = name.substring(STUDENT_SHEET_PREFIX.length);
+    if (!name.startsWith(CONSTS.STUDENT_SHEET_PREFIX)) continue;
+    const idPart = name.substring(CONSTS.STUDENT_SHEET_PREFIX.length);
     const parts = idPart.split('-');
     if (parts.length !== 3) continue;
     if (parts[0].trim() === grade && parts[1].trim() === classroom && parts[2].trim() === number) {
@@ -193,8 +193,8 @@ function initStudent(teacherCode, grade, classroom, number) {
     putCacheValue_('studentSheet_' + pre + '_' + studentId, studentSheetName, 3600);
 
   // 既存タスクを Submissions シートにも空行として登録
-  const subsSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
-  const tasksSheet = ss.getSheetByName(SHEET_TASKS);
+  const subsSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  const tasksSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (subsSheet && tasksSheet) {
     const last = tasksSheet.getLastRow();
     if (last >= 2) {
@@ -229,7 +229,7 @@ function initStudent(teacherCode, grade, classroom, number) {
   }
 
     // 目次シートにリンクを追加
-    const tocSheet = ss.getSheetByName(SHEET_TOC);
+    const tocSheet = ss.getSheetByName(CONSTS.SHEET_TOC);
     if (tocSheet) {
       const spreadsheetUrl = ss.getUrl();
       const linkFormula   = `=HYPERLINK("${spreadsheetUrl}#gid=${studentSheet.getSheetId()}","${studentSheetName}")`;
@@ -241,7 +241,7 @@ function initStudent(teacherCode, grade, classroom, number) {
     }
 
     // 課題一覧シートから全タスクをインポート（作成日時含む）
-    const taskSheet = ss.getSheetByName(SHEET_TASKS);
+    const taskSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
     if (taskSheet) {
       const lastRow = taskSheet.getLastRow();
       if (lastRow >= 2) {
@@ -307,7 +307,7 @@ function updateStudentLogin(teacherCode, studentId) {
   studentId = String(studentId || '').trim();
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return false;
-  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return false;
   const rowMap = getStudentRowMap_(teacherCode, sheet);
   const row = rowMap[studentId];
@@ -338,7 +338,7 @@ function getStudentHistory(teacherCode, studentId) {
 function listStudents(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
-  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
@@ -359,7 +359,7 @@ function listStudents(teacherCode) {
 function getClassStatistics(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return {};
-  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return {};
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
@@ -388,7 +388,7 @@ function registerStudentsFromCsv(teacherCode, csvText) {
   if (!csvText) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'no data' }; }
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'no sheet' }; }
-  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'missing sheet' }; }
 
   const rows = Utilities.parseCsv(csvText);
