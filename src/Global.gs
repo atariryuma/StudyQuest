@@ -1,7 +1,7 @@
 function initGlobalDb() {
-  const props = PropertiesService.getScriptProperties();
-  const propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
-  const existing = props.getProperty(propName);
+  var props = PropertiesService.getScriptProperties();
+  var propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
+  var existing = props.getProperty(propName);
   if (existing) {
     try {
       const existingSs = SpreadsheetApp.openById(existing);
@@ -11,7 +11,7 @@ function initGlobalDb() {
       props.deleteProperty(propName);
     }
   }
-  const ss = SpreadsheetApp.create('StudyQuest_Global_Master_DB');
+  var ss = SpreadsheetApp.create('StudyQuest_Global_Master_DB');
   if (typeof props.setProperty === 'function') {
     props.setProperty(propName, ss.getId());
   }
@@ -20,16 +20,16 @@ function initGlobalDb() {
     ss.addEditor(email);
   }
 
-  const sheets = ss.getSheets();
+  var sheets = ss.getSheets();
   if (sheets && sheets[0]) {
     sheets[0].setName(CONSTS.SHEET_GLOBAL_USERS);
     sheets[0].appendRow(['Email','HandleName','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak']);
     sheets[0].setTabColor && sheets[0].setTabColor('4285f4');
   }
-  const trophy = ss.insertSheet(CONSTS.SHEET_GLOBAL_TROPHIES_LOG);
+  var trophy = ss.insertSheet(CONSTS.SHEET_GLOBAL_TROPHIES_LOG);
   trophy.appendRow(['UserTrophyID','UserEmail','TrophyID','AwardedAt']);
   trophy.setTabColor && trophy.setTabColor('ffcc00');
-  const inv = ss.insertSheet(CONSTS.SHEET_GLOBAL_ITEMS);
+  var inv = ss.insertSheet(CONSTS.SHEET_GLOBAL_ITEMS);
   inv.appendRow(['UserItemID','UserEmail','ItemID','Quantity','AcquiredAt']);
   inv.setTabColor && inv.setTabColor('00c851');
 

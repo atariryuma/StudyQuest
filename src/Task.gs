@@ -5,18 +5,18 @@
 
 function createTask(teacherCode, taskObj, selfEval) {
   console.time('createTask');
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error("課題作成失敗: 教師のスプレッドシートが見つかりません。");
   }
-  const taskSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var taskSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!taskSheet) {
     throw new Error(`システムエラー: 「${CONSTS.SHEET_TASKS}」シートが見つかりません。`);
   }
   var parsed = taskObj || null;
 
   if (parsed && Array.isArray(parsed.classIds)) {
-    const rows = parsed.classIds.map(function(cid) {
+    var rows = parsed.classIds.map(function(cid) {
       var choices = Array.isArray(parsed.choices) ? JSON.stringify(parsed.choices) : '';
       return [
         Utilities.getUuid(),
@@ -44,8 +44,8 @@ function createTask(teacherCode, taskObj, selfEval) {
     return;
   }
 
-  const taskId = Utilities.getUuid();
-  const classId = parsed && parsed.classId ? parsed.classId : '';
+  var taskId = Utilities.getUuid();
+  var classId = parsed && parsed.classId ? parsed.classId : '';
   var choices = Array.isArray(parsed && parsed.choices) ?
                 JSON.stringify(parsed.choices) : '';
   taskSheet.appendRow([
@@ -77,20 +77,20 @@ function createTask(teacherCode, taskObj, selfEval) {
  */
 function listTasks(teacherCode) {
   console.time('listTasks');
-  const cacheKey = 'tasks_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'tasks_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) { console.timeEnd('listTasks'); return cached; }
 
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('listTasks'); return []; }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) { console.timeEnd('listTasks'); return []; }
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listTasks'); return []; }
-  const data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
-  const result = data.filter(function(r){ return String(r[10] || '') !== '1'; })
+  var data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+  var result = data.filter(function(r){ return String(r[10] || '') !== '1'; })
                      .reverse()
-                     .map(row => ({
+                     .map(function(row){ return {
     id: row[0],
     classId: row[1],
     q: JSON.stringify({
@@ -107,27 +107,27 @@ function listTasks(teacherCode) {
     date: Utilities.formatDate(new Date(row[7]), 'JST', 'yyyy/MM/dd HH:mm'),
     persona: row[8] || '',
     closed: String(row[9] || '').toLowerCase() === 'closed'
-  }));
+  }; });
   putCacheValue_(cacheKey, result, 300);
   console.timeEnd('listTasks');
   return result;
 }
 
 function getTaskMap_(teacherCode) {
-  const cacheKey = 'taskmap_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'taskmap_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) return cached;
 
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return {};
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return {};
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
 
-  const rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
-  const map = {};
-  rows.forEach(row => {
+  var rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+  var map = {};
+  rows.forEach(function(row) {
     if (String(row[10] || '') === '1') return; // skip draft rows
     var qText = row[3] || '';
     var qObj = { subject: row[2], question: row[3], type: row[4], choices: [] };
@@ -154,13 +154,13 @@ function getTaskMap_(teacherCode) {
 function listTasksForClass(teacherCode, grade, classroom) {
   grade = String(grade || '').trim();
   classroom = String(classroom || '').trim();
-  const map = getClassIdMap(teacherCode);
-  let classId = null;
-  Object.keys(map).forEach(id => {
-    if (map[id] === `${grade}-${classroom}`) classId = id;
+  var map = getClassIdMap(teacherCode);
+  var classId = null;
+  Object.keys(map).forEach(function(id) {
+    if (map[id] === grade + '-' + classroom) classId = id;
   });
   if (!classId) return [];
-  return listTasks(teacherCode).filter(t => String(t.classId) === String(classId));
+  return listTasks(teacherCode).filter(function(t){ return String(t.classId) === String(classId); });
 }
 
 /**
@@ -168,12 +168,12 @@ function listTasksForClass(teacherCode, grade, classroom) {
  * 課題一覧シートから指定の行を削除
  */
 function deleteTask(teacherCode, taskId) {
-  const ss   = getSpreadsheetByTeacherCode(teacherCode);
+  var ss   = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return;
-  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
-  const idx  = data.indexOf(taskId);
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
+  var idx  = data.indexOf(taskId);
   if (idx >= 0) {
     sheet.deleteRow(idx + 2);
   }
@@ -187,28 +187,28 @@ function deleteTask(teacherCode, taskId) {
  * 指定した課題を複製して新しいIDで追加
  */
 function duplicateTask(teacherCode, taskId) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return;
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
-  const data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
-  for (let i = 0; i < data.length; i++) {
+  var data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+  for (var i = 0; i < data.length; i++) {
     if (data[i][0] === taskId) {
-      const newId = Utilities.getUuid();
-      const classId = data[i][1];
-      const subject = data[i][2];
-      const question = data[i][3];
-      const type = data[i][4];
-      const choices = data[i][5];
-      const selfEval = data[i][6];
-      const persona = data[i][8] || '';
-      const status = data[i][9] || '';
-      const difficulty = data[i][11] || '';
-      const timeLimit = data[i][12] || '';
-      const xpBase = data[i][13] || '';
-      const correctAnswer = data[i][14] || '';
+      var newId = Utilities.getUuid();
+      var classId = data[i][1];
+      var subject = data[i][2];
+      var question = data[i][3];
+      var type = data[i][4];
+      var choices = data[i][5];
+      var selfEval = data[i][6];
+      var persona = data[i][8] || '';
+      var status = data[i][9] || '';
+      var difficulty = data[i][11] || '';
+      var timeLimit = data[i][12] || '';
+      var xpBase = data[i][13] || '';
+      var correctAnswer = data[i][14] || '';
       sheet.appendRow([newId, classId, subject, question, type, choices, selfEval, new Date(), persona, status, '', difficulty, timeLimit, xpBase, correctAnswer]);
       removeCacheValue_('tasks_' + teacherCode);
       removeCacheValue_('taskmap_' + teacherCode);
@@ -223,8 +223,8 @@ function duplicateTask(teacherCode, taskId) {
  * 指定した課題オブジェクトを返す
  */
 function getTask(teacherCode, taskId) {
-  const map = getTaskMap_(teacherCode);
-  const data = map[taskId];
+  var map = getTaskMap_(teacherCode);
+  var data = map[taskId];
   if (!data) return null;
   return {
     id: taskId,
@@ -243,25 +243,25 @@ function getTask(teacherCode, taskId) {
  */
 function closeTask(teacherCode, taskId) {
   console.time('closeTask');
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('closeTask'); return; }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) { console.timeEnd('closeTask'); return; }
-  const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
-  const idx = ids.indexOf(taskId);
+  var ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
+  var idx = ids.indexOf(taskId);
   if (idx >= 0) {
     sheet.getRange(idx + 2, 10).setValue('closed');
   }
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
-  const subs = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  var subs = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (subs && subs.getLastRow() > 1) {
-    const range = subs.getRange(2, 1, subs.getLastRow() - 1, 13);
-    const data = range.getValues();
-    const bonusMap = {};
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
+    var range = subs.getRange(2, 1, subs.getLastRow() - 1, 13);
+    var data = range.getValues();
+    var bonusMap = {};
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
       if (row[1] === taskId) {
         if (Number(row[12]) === 1) {
           bonusMap[row[0]] = true;
@@ -277,27 +277,27 @@ function closeTask(teacherCode, taskId) {
 
 function applyBonusXp_(ss, teacherCode, ids, amount) {
   if (!ids || ids.length === 0) return;
-  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return;
 
-  const lastRow = (typeof sheet.getLastRow === 'function') ?
+  var lastRow = (typeof sheet.getLastRow === 'function') ?
                    sheet.getLastRow() :
                    (sheet.getDataRange().getValues().length);
   if (lastRow < 2) return;
 
-  const range = sheet.getRange(2, 1, lastRow - 1, 9);
-  const data = range.getValues();
-  const rowMap = {};
-  for (let i = 0; i < data.length; i++) {
-    const id = String(data[i][0] || '').trim();
+  var range = sheet.getRange(2, 1, lastRow - 1, 9);
+  var data = range.getValues();
+  var rowMap = {};
+  for (var i = 0; i < data.length; i++) {
+    var id = String(data[i][0] || '').trim();
     if (id) rowMap[id] = i;
   }
 
-  ids.forEach(id => {
-    const idx = rowMap[id];
+  ids.forEach(function(id) {
+    var idx = rowMap[id];
     if (idx !== undefined) {
-      const row = data[idx];
-      const total = Number(row[7] || 0) + amount;
+      var row = data[idx];
+      var total = Number(row[7] || 0) + amount;
       row[7] = total;
       row[8] = calcLevelFromXp_(total);
     }
@@ -307,8 +307,8 @@ function applyBonusXp_(ss, teacherCode, ids, amount) {
 }
 
 function calcLevelFromXp_(totalXp) {
-  let level = 1;
-  let xp = totalXp;
+  var level = 1;
+  var xp = totalXp;
   while (xp >= level * 100) {
     xp -= level * 100;
     level++;
@@ -322,24 +322,24 @@ function calcLevelFromXp_(totalXp) {
  */
 function getRecommendedTask(teacherCode, studentId) {
   studentId = String(studentId || '').trim();
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return null;
-  const tasks = listTasks(teacherCode);
+  var tasks = listTasks(teacherCode);
   if (!tasks || tasks.length === 0) return null;
 
-  const parts = studentId.split('-');
-  let classId = null;
+  var parts = studentId.split('-');
+  var classId = null;
   if (parts.length >= 2) {
-    const map = getClassIdMap(teacherCode);
-    Object.keys(map).forEach(id => {
-      if (map[id] === `${parts[0]}-${parts[1]}`) classId = id;
+    var map = getClassIdMap(teacherCode);
+    Object.keys(map).forEach(function(id) {
+      if (map[id] === parts[0] + '-' + parts[1]) classId = id;
     });
   }
 
-  const answeredIds = [];
-  const subsSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  var answeredIds = [];
+  var subsSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (subsSheet && subsSheet.getLastRow() > 1) {
-    const data = subsSheet.getRange(2, 1, subsSheet.getLastRow() - 1, 13).getValues();
+    var data = subsSheet.getRange(2, 1, subsSheet.getLastRow() - 1, 13).getValues();
     for (var i = 0; i < data.length; i++) {
       var row = data[i];
       if (row[0] === studentId && row[4]) {
@@ -348,8 +348,8 @@ function getRecommendedTask(teacherCode, studentId) {
     }
   }
 
-  for (let i = 0; i < tasks.length; i++) {
-    const t = tasks[i];
+  for (var i = 0; i < tasks.length; i++) {
+    var t = tasks[i];
     if (t.closed) continue;
     if (classId && String(t.classId) !== String(classId)) continue;
     if (!answeredIds.includes(t.id)) {
@@ -371,24 +371,24 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
                       startAt, submitAt, productUrl, qSummary, aSummary) {
   console.time('submitAnswer');
   studentId = String(studentId || '').trim();
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error('回答送信エラー: 教師の設定ファイルが見つかりません。');
   }
-  const taskMap = getTaskMap_(teacherCode);
-  const info = taskMap[taskId];
-  const questionText = info ? info.questionText : '';
-  const startTime  = startAt ? new Date(startAt) : new Date();
-  const submitTime = submitAt ? new Date(submitAt) : new Date();
+  var taskMap = getTaskMap_(teacherCode);
+  var info = taskMap[taskId];
+  var questionText = info ? info.questionText : '';
+  var startTime  = startAt ? new Date(startAt) : new Date();
+  var submitTime = submitAt ? new Date(submitAt) : new Date();
   removeCacheValue_('history_' + teacherCode + '_' + studentId);
 
-  const globalAnswerSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  var globalAnswerSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (globalAnswerSheet) {
-    let questionSummary = qSummary || questionText;
+    var questionSummary = qSummary || questionText;
     if (typeof questionSummary === 'string' && questionSummary.length > 50) {
       questionSummary = questionSummary.substring(0, 50) + '...';
     }
-    let answerSummary = aSummary || answer;
+    var answerSummary = aSummary || answer;
     if (typeof answerSummary === 'string' && answerSummary.length > 50) {
       answerSummary = answerSummary.substring(0, 50) + '...';
     }
@@ -418,15 +418,15 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
  * 下書きとして課題を保存
  */
 function saveDraftTask(teacherCode, taskObj) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error('ドラフト保存失敗: 教師のスプレッドシートが見つかりません。');
   }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) {
     throw new Error(`システムエラー: 「${CONSTS.SHEET_TASKS}」シートが見つかりません。`);
   }
-  const id = Utilities.getUuid();
+  var id = Utilities.getUuid();
   var obj = taskObj || {};
   var classId = obj.classId || '';
   var choices = Array.isArray(obj.choices) ? JSON.stringify(obj.choices) : '';
@@ -441,14 +441,14 @@ function saveDraftTask(teacherCode, taskObj) {
  * draft=1 の行のみ削除
  */
 function deleteDraftTask(teacherCode, taskId) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return;
-  const last = sheet.getLastRow();
+  var last = sheet.getLastRow();
   if (last < 2) return;
-  const data = sheet.getRange(2, 1, last - 1, 15).getValues();
-  for (let i = 0; i < data.length; i++) {
+  var data = sheet.getRange(2, 1, last - 1, 15).getValues();
+  for (var i = 0; i < data.length; i++) {
     if (data[i][0] === taskId && String(data[i][10] || '') === '1') {
       sheet.deleteRow(i + 2);
       removeCacheValue_('tasks_' + teacherCode);
@@ -463,13 +463,13 @@ function deleteDraftTask(teacherCode, taskId) {
  * 現在公開中の最新課題IDを返す
  */
 function getLatestActiveTaskId(teacherCode) {
-  const cacheKey = 'latestActiveTask_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'latestActiveTask_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) return cached;
 
-  const tasks = listTasks(teacherCode);
+  var tasks = listTasks(teacherCode);
   if (!tasks || tasks.length === 0) return null;
-  for (let i = 0; i < tasks.length; i++) {
+  for (var i = 0; i < tasks.length; i++) {
     if (!tasks[i].closed) {
       putCacheValue_(cacheKey, tasks[i].id, 30);
       return tasks[i].id;
@@ -485,14 +485,14 @@ function getLatestActiveTaskId(teacherCode) {
 function updateTask(teacherCode, taskId, updateData) {
   taskId = String(taskId || '').trim();
   if (!taskId) return { status: 'error', message: 'invalid_id' };
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return { status: 'error', message: 'no_sheet' };
-  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return { status: 'error', message: 'no_sheet' };
-  const ids = sheet.getRange(2, 1, Math.max(0, sheet.getLastRow()-1), 1).getValues().flat();
-  const idx = ids.indexOf(taskId);
+  var ids = sheet.getRange(2, 1, Math.max(0, sheet.getLastRow()-1), 1).getValues().flat();
+  var idx = ids.indexOf(taskId);
   if (idx < 0) return { status: 'error', message: 'not_found' };
-  const row = sheet.getRange(idx+2, 1, 1, 11).getValues()[0];
+  var row = sheet.getRange(idx+2, 1, 1, 11).getValues()[0];
   if (updateData && typeof updateData.status !== 'undefined') {
     row[9] = updateData.status;
   }

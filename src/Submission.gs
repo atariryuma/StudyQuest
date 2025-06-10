@@ -1,4 +1,4 @@
-const XP_PER_SUBMISSION = 10;
+var XP_PER_SUBMISSION = 10;
 
 // Fallbacks for non-GAS environments (tests)
 if (typeof getTaskMap_ !== 'function') {

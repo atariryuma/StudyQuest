@@ -2,15 +2,15 @@
  * generateTeacherCode(): 6桁英数字のユニークな教師コードを生成
  */
 
-const _ssCache = {};
+var _ssCache = {};
 
 function generateTeacherCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  var code = '';
+  for (var i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  const props = PropertiesService.getScriptProperties();
+  var props = PropertiesService.getScriptProperties();
   if (props.getProperty(code)) {
     return generateTeacherCode();
   }
@@ -22,8 +22,8 @@ function generateTeacherCode() {
  * 同名フォルダが複数ある場合、作成日が最新のものを返す
  */
 function findLatestFolderByName_(name) {
-  const cacheKey = 'latestFolder_' + name;
-  const cachedId = getCacheValue_(cacheKey);
+  var cacheKey = 'latestFolder_' + name;
+  var cachedId = getCacheValue_(cacheKey);
   if (cachedId) {
     try {
       return DriveApp.getFolderById(cachedId);
@@ -31,13 +31,13 @@ function findLatestFolderByName_(name) {
       removeCacheValue_(cacheKey);
     }
   }
-  const q = "mimeType='application/vnd.google-apps.folder' " +
+  var q = "mimeType='application/vnd.google-apps.folder' " +
             `and name='${name}' and 'root' in parents and trashed=false`;
   try {
-    const it = DriveApp.searchFolders(q);
-    let latest = null;
+    var it = DriveApp.searchFolders(q);
+    var latest = null;
     while (it.hasNext()) {
-      const f = it.next();
+      var f = it.next();
       if (!latest || f.getDateCreated() > latest.getDateCreated()) {
         latest = f;
       }
@@ -58,19 +58,19 @@ function findLatestFolderByName_(name) {
  * 最も新しいものの教師コードとIDを返す
  */
 function detectTeacherFolderOnDrive_() {
-  const cacheKey = 'teacherFolderLatest';
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'teacherFolderLatest';
+  var cached = getCacheValue_(cacheKey);
   if (cached) return cached;
-  const q = `mimeType='application/vnd.google-apps.folder' ` +
+  var q = `mimeType='application/vnd.google-apps.folder' ` +
             `and title contains '${CONSTS.FOLDER_NAME_PREFIX}' and trashed=false`;
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdDate desc' });
-    const items = res.items || [];
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const m = item.title.match(new RegExp('^' + CONSTS.FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
+    var res = Drive.Files.list({ q, orderBy: 'createdDate desc' });
+    var items = res.items || [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var m = item.title.match(new RegExp('^' + CONSTS.FOLDER_NAME_PREFIX + '([A-Z0-9]{6})$'));
       if (m) {
-        const info = { code: m[1], id: item.id };
+        var info = { code: m[1], id: item.id };
         putCacheValue_(cacheKey, info, 300);
         return info;
       }
@@ -94,9 +94,9 @@ function initTeacher(passcode) {
       teacherCode: 'DEV001'
     };
   }
-  const email = Session.getEffectiveUser().getEmail();
-  const props = PropertiesService.getScriptProperties();
-  const storedPass = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
+  var email = Session.getEffectiveUser().getEmail();
+  var props = PropertiesService.getScriptProperties();
+  var storedPass = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
   if (storedPass) {
     if (storedPass !== passcode) {
       return { status: 'error', message: 'パスコードが違います。' };
@@ -105,7 +105,7 @@ function initTeacher(passcode) {
     props.setProperty(CONSTS.PROP_TEACHER_PASSCODE, passcode);
   }
 
-  const stored = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
+  var stored = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (stored) {
     if (typeof grantTeacherAccess === 'function') {
       try { grantTeacherAccess(email); } catch (e) {}
@@ -113,7 +113,7 @@ function initTeacher(passcode) {
     return { status: 'ok', teacherCode: stored };
   }
 
-  const info = detectTeacherFolderOnDrive_();
+  var info = detectTeacherFolderOnDrive_();
   if (info) {
     props.setProperty(info.code, info.id);
     props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, info.code);
@@ -122,13 +122,13 @@ function initTeacher(passcode) {
     }
     return { status: 'ok', teacherCode: info.code };
   }
-  const existingCodes = props.getKeys().filter(key => key.match(/^[A-Z0-9]{6}$/));
-  let foundCode = null;
-  let foundDate = null;
-  existingCodes.forEach(code => {
-    const folder = findLatestFolderByName_(CONSTS.FOLDER_NAME_PREFIX + code);
+  var existingCodes = props.getKeys().filter(function(key){ return key.match(/^[A-Z0-9]{6}$/); });
+  var foundCode = null;
+  var foundDate = null;
+  existingCodes.forEach(function(code) {
+    var folder = findLatestFolderByName_(CONSTS.FOLDER_NAME_PREFIX + code);
     if (folder) {
-      const d = folder.getDateCreated();
+      var d = folder.getDateCreated();
       if (!foundDate || d > foundDate) {
         foundDate = d;
         foundCode = code;
@@ -143,19 +143,19 @@ function initTeacher(passcode) {
     return { status: 'ok', teacherCode: foundCode };
   }
   // 新規作成
-  const newCode    = generateTeacherCode();
-  const folderName = CONSTS.FOLDER_NAME_PREFIX + newCode;
-  const folderInstance = DriveApp.createFolder(folderName);
+  var newCode    = generateTeacherCode();
+  var folderName = CONSTS.FOLDER_NAME_PREFIX + newCode;
+  var folderInstance = DriveApp.createFolder(folderName);
   props.setProperty(newCode, folderInstance.getId());
   props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, newCode);
   initializeFolders(newCode, [], folderInstance);
 
-  const ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
+  var ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
   props.setProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + newCode, ss.getId());
   DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
   // 目次シート作成
-  const tocSheet = ss.getSheets()[0];
+  var tocSheet = ss.getSheets()[0];
   tocSheet.setName(CONSTS.SHEET_TOC);
   tocSheet.clear();
   tocSheet.appendRow(['StudyQuest データシート']);
@@ -164,7 +164,7 @@ function initTeacher(passcode) {
   tocSheet.setColumnWidth(2, 400);
 
   // 各シートの初期化
-  const sheetInfos = [
+  var sheetInfos = [
     {
       name: CONSTS.SHEET_TASKS,
       color: "ff9900",
@@ -220,15 +220,15 @@ function initTeacher(passcode) {
   tocSheet.appendRow(['']);
   tocSheet.appendRow(['主要シート一覧']);
   tocSheet.getRange('A3').setFontWeight('bold');
-  const spreadsheetUrl = ss.getUrl();
-  sheetInfos.forEach(info => {
-    const sheet = ss.insertSheet(info.name);
+  var spreadsheetUrl = ss.getUrl();
+  sheetInfos.forEach(function(info) {
+    var sheet = ss.insertSheet(info.name);
     sheet.appendRow(info.header);
     sheet.setTabColor(info.color);
-    const linkFormula = `=HYPERLINK("${spreadsheetUrl}#gid=${sheet.getSheetId()}","${info.name}")`;
+    var linkFormula = `=HYPERLINK("${spreadsheetUrl}#gid=${sheet.getSheetId()}","${info.name}")`;
     tocSheet.appendRow([linkFormula, info.description]);
     if (Array.isArray(info.columnsJa)) {
-      const detail = info.header.map((h,i)=> `${h}=${info.columnsJa[i] || ''}`).join(', ');
+      var detail = info.header.map(function(h,i){ return h + '=' + (info.columnsJa[i] || ''); }).join(', ');
       tocSheet.appendRow(['', detail]);
     }
   });
@@ -265,10 +265,10 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   if (!teacherCode) { console.timeEnd('getSpreadsheetByTeacherCode'); return null; }
   if (_ssCache[teacherCode]) { console.timeEnd('getSpreadsheetByTeacherCode'); return _ssCache[teacherCode]; }
 
-  const props = PropertiesService.getScriptProperties();
-  const idKey = CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode;
+  var props = PropertiesService.getScriptProperties();
+  var idKey = CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode;
 
-  let cachedId = getCacheValue_('ssid_' + teacherCode);
+  var cachedId = getCacheValue_('ssid_' + teacherCode);
   if (!cachedId) {
     cachedId = props.getProperty(idKey);
     if (cachedId) putCacheValue_('ssid_' + teacherCode, cachedId, 3600);
@@ -276,7 +276,7 @@ function getSpreadsheetByTeacherCode(teacherCode) {
 
   if (cachedId) {
     try {
-      const ss = SpreadsheetApp.openById(cachedId);
+      var ss = SpreadsheetApp.openById(cachedId);
       _ssCache[teacherCode] = ss;
       console.timeEnd('getSpreadsheetByTeacherCode');
       return ss;
@@ -286,16 +286,16 @@ function getSpreadsheetByTeacherCode(teacherCode) {
     }
   }
 
-  const folderId = props.getProperty(teacherCode);
+  var folderId = props.getProperty(teacherCode);
   if (!folderId) { console.timeEnd('getSpreadsheetByTeacherCode'); return null; }
   try {
-    const folder = DriveApp.getFolderById(folderId);
-    const targetName = 'StudyQuest_DB_' + teacherCode;
-    const files = folder.getFilesByName(targetName);
+    var folder = DriveApp.getFolderById(folderId);
+    var targetName = 'StudyQuest_DB_' + teacherCode;
+    var files = folder.getFilesByName(targetName);
     if (files.hasNext()) {
-      const id = files.next().getId();
+      var id = files.next().getId();
       props.setProperty(idKey, id);
-      const ss = SpreadsheetApp.openById(id);
+      var ss = SpreadsheetApp.openById(id);
       _ssCache[teacherCode] = ss;
       console.timeEnd('getSpreadsheetByTeacherCode');
       return ss;
@@ -309,7 +309,7 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   }
 }
 function ensureSettingsSheet_(ss) {
-  let sheet = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
   if (!sheet) {
     sheet = ss.insertSheet(CONSTS.SHEET_SETTINGS);
     sheet.appendRow(['type', 'value1', 'value2']);
@@ -348,18 +348,18 @@ function saveTeacherSettings_(teacherCode, obj) {
 }
 
 function loadTeacherSettings_(teacherCode) {
-  const cacheKey = 'settings_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'settings_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) return cached;
 
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
-  const data = { persona: '', classes: [] };
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
+  var data = { persona: '', classes: [] };
   if (ss) {
-    const sheet = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
+    var sheet = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
     if (sheet) {
-      const values = sheet.getDataRange().getValues();
-      for (let i = 1; i < values.length; i++) {
-        const row = values[i];
+      var values = sheet.getDataRange().getValues();
+      for (var i = 1; i < values.length; i++) {
+        var row = values[i];
         if (row[0] === 'persona') data.persona = row[1] || '';
         else if (row[0] === 'class') data.classes.push([row[1], row[2]]);
       }
@@ -376,8 +376,8 @@ function loadTeacherSettings_(teacherCode) {
  * フォルダ ID は教師コードをキーとしてスクリプトプロパティに保存される。
  */
 function getTeacherRootFolder(teacherCode) {
-  const cacheKey = 'rootId_' + teacherCode;
-  let cached = getCacheValue_(cacheKey);
+  var cacheKey = 'rootId_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) {
     try {
       return DriveApp.getFolderById(cached);
@@ -386,11 +386,11 @@ function getTeacherRootFolder(teacherCode) {
     }
   }
 
-  const props = PropertiesService.getScriptProperties();
-  const stored = props.getProperty(teacherCode);
+  var props = PropertiesService.getScriptProperties();
+  var stored = props.getProperty(teacherCode);
   if (stored) {
     try {
-      const f = DriveApp.getFolderById(stored);
+      var f = DriveApp.getFolderById(stored);
       putCacheValue_(cacheKey, stored, 3600);
       return f;
     } catch (e) {
@@ -398,25 +398,25 @@ function getTeacherRootFolder(teacherCode) {
     }
   }
 
-  const name = CONSTS.FOLDER_NAME_PREFIX + teacherCode;
-  const q = `title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-  let items = [];
+  var name = CONSTS.FOLDER_NAME_PREFIX + teacherCode;
+  var q = `title='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  var items = [];
   try {
-    const res = Drive.Files.list({ q, orderBy: 'createdDate asc' });
+    var res = Drive.Files.list({ q, orderBy: 'createdDate asc' });
     items = res.items || [];
   } catch (e) {
     logError_('getTeacherRootFolder', e);
   }
   if (items.length) {
-    const keep = items[0];
-    for (let i = 1; i < items.length; i++) {
+    var keep = items[0];
+    for (var i = 1; i < items.length; i++) {
       try { Drive.Files.trash(items[i].id); } catch (err) { logError_('trashDup', err); }
     }
     props.setProperty(teacherCode, keep.id);
     putCacheValue_(cacheKey, keep.id, 3600);
     return DriveApp.getFolderById(keep.id);
   }
-  const folder = DriveApp.createFolder(name);
+  var folder = DriveApp.createFolder(name);
   props.setProperty(teacherCode, folder.getId());
   putCacheValue_(cacheKey, folder.getId(), 3600);
   return folder;
@@ -430,17 +430,17 @@ function getTeacherRootFolder(teacherCode) {
 function initializeFolders(teacherCode, classList, root) {
   root = root || getTeacherRootFolder(teacherCode);
 
-  const map = {};
-  (classList || []).forEach((cls, idx) => {
-    const grade = Array.isArray(cls) ? cls[0] : cls.grade;
-    const klass = Array.isArray(cls) ? cls[1] : (cls.class || cls.classroom);
-    const id = idx + 1;
+  var map = {};
+  (classList || []).forEach(function(cls, idx) {
+    var grade = Array.isArray(cls) ? cls[0] : cls.grade;
+    var klass = Array.isArray(cls) ? cls[1] : (cls.class || cls.classroom);
+    var id = idx + 1;
     if (grade !== undefined && klass !== undefined) {
       map[id] = `${grade}-${klass}`;
     }
   });
 
-  const current = loadTeacherSettings_(teacherCode);
+  var current = loadTeacherSettings_(teacherCode);
   current.classes = classList;
   saveTeacherSettings_(teacherCode, current);
   removeCacheValue_('classmap_' + teacherCode);
@@ -453,16 +453,16 @@ function initializeFolders(teacherCode, classList, root) {
  * initializeFolders を呼び出してフォルダを作成
  */
 function setClassIdMap(teacherCode, idsString) {
-  const list = [];
+  var list = [];
   if (idsString) {
-    idsString.split(';').forEach(t => {
-      const parts = t.split(',').map(p => p.trim());
+    idsString.split(';').forEach(function(t) {
+      var parts = t.split(',').map(function(p){ return p.trim(); });
       if (parts.length === 2 && parts[0] && parts[1]) {
         list.push([parts[0], parts[1]]);
       }
     });
   }
-  const map = initializeFolders(teacherCode, list);
+  var map = initializeFolders(teacherCode, list);
   removeCacheValue_('classmap_' + teacherCode);
   return map;
 }
@@ -476,13 +476,13 @@ function updateClassIdMap(teacherCode, idsString) {
 }
 
 function getClassIdMap(teacherCode) {
-  const cacheKey = 'classmap_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'classmap_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) return cached;
 
-  const data = loadTeacherSettings_(teacherCode);
-  const map = {};
-  (data.classes || []).forEach((c, idx) => {
+  var data = loadTeacherSettings_(teacherCode);
+  var map = {};
+  (data.classes || []).forEach(function(c, idx) {
     if (c && c[0] !== undefined && c[1] !== undefined) {
       map[idx + 1] = `${c[0]}-${c[1]}`;
     }
@@ -493,14 +493,14 @@ function getClassIdMap(teacherCode) {
 
 
 function setGlobalGeminiApiKey(apiKey) {
-  const props = PropertiesService.getScriptProperties();
-  const encoded = Utilities.base64Encode(apiKey || '');
+  var props = PropertiesService.getScriptProperties();
+  var encoded = Utilities.base64Encode(apiKey || '');
   props.setProperty('geminiApiKey', encoded);
 }
 
 function getGlobalGeminiApiKey() {
-  const props = PropertiesService.getScriptProperties();
-  const encoded = props.getProperty('geminiApiKey') || '';
+  var props = PropertiesService.getScriptProperties();
+  var encoded = props.getProperty('geminiApiKey') || '';
   if (!encoded) return '';
   try {
     return Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString();
