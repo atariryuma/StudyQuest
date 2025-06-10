@@ -305,6 +305,30 @@
                     <form id="taskForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
+                                <label class="block text-sm mb-1 text-gray-400">タイトル</label>
+                                <input id="title" type="text" placeholder="クエストのタイトル" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">難易度</label>
+                                <select id="difficulty" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="easy">易しい</option>
+                                    <option value="medium">普通</option>
+                                    <option value="hard">難しい</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">制限時間 (秒)</label>
+                                <input id="timeLimit" type="number" min="0" placeholder="例: 60" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">基本XP</label>
+                                <input id="xpBase" type="number" min="0" placeholder="例: 10" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
                                 <label class="block text-sm mb-1 text-gray-400">教科</label>
                                 <input id="subject" type="text" list="subjectHistory" placeholder="例: 算数, 国語..." class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
                                 <datalist id="subjectHistory"></datalist>
@@ -313,6 +337,24 @@
                                 <label class="block text-sm mb-1 text-gray-400">対象クラス</label>
                                 <div id="taskClassButtons" class="flex flex-wrap gap-2"></div>
                             </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">ステータス</label>
+                                <select id="status" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="draft">下書き</option>
+                                    <option value="open" selected>公開</option>
+                                    <option value="closed">終了</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">作成日</label>
+                                <input id="createdAt" type="text" disabled class="w-full p-2 bg-gray-800/50 rounded-md border border-gray-600">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-400">正答</label>
+                            <input id="correctAnswer" type="text" placeholder="例: A" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
                         </div>
                         <div>
                             <label class="block text-sm mb-1 text-gray-400">クエスト内容 (問題文)</label>
@@ -516,8 +558,14 @@
       loadClassOptions();
       loadSubjectHistory();
       loadDraft();
+      document.getElementById('title').addEventListener('input', saveDraft);
       document.getElementById('subject').addEventListener('input', saveDraft);
       document.getElementById('question').addEventListener('input', saveDraft);
+      document.getElementById('difficulty').addEventListener('change', saveDraft);
+      document.getElementById('timeLimit').addEventListener('input', saveDraft);
+      document.getElementById('xpBase').addEventListener('input', saveDraft);
+      document.getElementById('status').addEventListener('change', saveDraft);
+      document.getElementById('correctAnswer').addEventListener('input', saveDraft);
       document.getElementById('single-register-btn').addEventListener('click', openSingleRegisterModal);
       document.getElementById('delete-student-btn').addEventListener('click', openDeleteStudentModal);
       const bulkBtn = document.getElementById('bulk-register-btn');
@@ -624,7 +672,18 @@
         const cls = clsRadio ? clsRadio.value : '';
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
-        const draftPayload = { classId: cls, subject, question: q };
+        const draftPayload = {
+          classId: cls,
+          title: document.getElementById('title').value.trim(),
+          subject,
+          question: q,
+          difficulty: document.getElementById('difficulty').value,
+          timeLimit: document.getElementById('timeLimit').value,
+          xpBase: document.getElementById('xpBase').value,
+          status: document.getElementById('status').value,
+          correctAnswer: document.getElementById('correctAnswer').value,
+          createdAt: document.getElementById('createdAt').value
+        };
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
 
         aiCredits--;
@@ -659,7 +718,18 @@
         const subject = document.getElementById('subject').value.trim();
         const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
         const cls = clsRadio ? clsRadio.value : '';
-        const draftPayload = { classId: cls, subject, question };
+        const draftPayload = {
+          classId: cls,
+          title: document.getElementById('title').value.trim(),
+          subject,
+          question,
+          difficulty: document.getElementById('difficulty').value,
+          timeLimit: document.getElementById('timeLimit').value,
+          xpBase: document.getElementById('xpBase').value,
+          status: document.getElementById('status').value,
+          correctAnswer: document.getElementById('correctAnswer').value,
+          createdAt: document.getElementById('createdAt').value
+        };
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
         container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
@@ -703,14 +773,31 @@
 
       // 5) 「新しい課題」フォーム送信時
       const taskForm = document.getElementById('taskForm');
+      taskForm.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          const fields = Array.from(taskForm.querySelectorAll('input, textarea, select'))
+            .filter(el => !el.disabled && el.type !== 'hidden');
+          const idx = fields.indexOf(e.target);
+          if (idx >= 0 && idx < fields.length - 1) {
+            fields[idx + 1].focus();
+          }
+        }
+      });
       taskForm.addEventListener('submit', e => {
         e.preventDefault();
         debug('taskForm submit');
 
         const clsCheckboxes = Array.from(document.querySelectorAll('input[name="taskClassCheckbox"]:checked'));
         const classIds = clsCheckboxes.map(cb => cb.value);
+        const title = document.getElementById('title').value.trim();
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
+        const difficulty = document.getElementById('difficulty').value;
+        const timeLimit = document.getElementById('timeLimit').value.trim();
+        const xpBase = document.getElementById('xpBase').value.trim();
+        const status = document.getElementById('status').value;
+        const correctAnswer = document.getElementById('correctAnswer').value.trim();
         const self = document.getElementById('selfEval').checked;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
@@ -721,6 +808,10 @@
 
         if (classIds.length === 0) {
           alert('クラスを選択してください。');
+          return;
+        }
+        if (!title) {
+          alert('タイトルを入力してください。');
           return;
         }
         if (!subject) {
@@ -734,8 +825,9 @@
 
         // ペイロードをタイプ別に組み立て
         const makePayload = cls => {
+          const base = { classId: cls, title, subject, question: q, type: ansType, difficulty, timeLimit, xpBase, status, correctAnswer };
           if (ansType === 'text') {
-            return { classId: cls, subject, question: q, type: 'text' };
+            return base;
           }
           const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
                               .map(inp => inp.value.trim());
@@ -743,13 +835,8 @@
             alert('すべての選択肢を入力してください。');
             return null;
           }
-          return {
-            classId: cls,
-            subject,
-            question: q,
-            type: ansType,
-            choices: inputs
-          };
+          base.choices = inputs;
+          return base;
         };
         let completed = 0;
         const total = classIds.length;
@@ -953,15 +1040,29 @@
       function loadDraft() {
         try {
           const d = JSON.parse(localStorage.getItem('taskDraft') || '{}');
+          if (d.title) document.getElementById('title').value = d.title;
           if (d.subject) document.getElementById('subject').value = d.subject;
           if (d.question) document.getElementById('question').value = d.question;
+          if (d.difficulty) document.getElementById('difficulty').value = d.difficulty;
+          if (d.timeLimit) document.getElementById('timeLimit').value = d.timeLimit;
+          if (d.xpBase) document.getElementById('xpBase').value = d.xpBase;
+          if (d.status) document.getElementById('status').value = d.status;
+          if (d.correctAnswer) document.getElementById('correctAnswer').value = d.correctAnswer;
+          document.getElementById('createdAt').value = d.createdAt || new Date().toISOString().slice(0,16).replace('T',' ');
         } catch (_) {}
       }
 
       function saveDraft() {
         const draft = {
+          title: document.getElementById('title').value,
           subject: document.getElementById('subject').value,
-          question: document.getElementById('question').value
+          question: document.getElementById('question').value,
+          difficulty: document.getElementById('difficulty').value,
+          timeLimit: document.getElementById('timeLimit').value,
+          xpBase: document.getElementById('xpBase').value,
+          status: document.getElementById('status').value,
+          correctAnswer: document.getElementById('correctAnswer').value,
+          createdAt: document.getElementById('createdAt').value
         };
         try {
           localStorage.setItem('taskDraft', JSON.stringify(draft));
@@ -1009,8 +1110,15 @@
 
       // 9) フォームリセットヘルパー
       function resetForm() {
+        document.getElementById('title').value = '';
+        document.getElementById('difficulty').value = 'easy';
+        document.getElementById('timeLimit').value = '';
+        document.getElementById('xpBase').value = '';
         document.getElementById('subject').value = '';
         document.getElementById('question').value = '';
+        document.getElementById('status').value = 'open';
+        document.getElementById('correctAnswer').value = '';
+        document.getElementById('createdAt').value = new Date().toISOString().slice(0,16).replace('T',' ');
         const textRadio = document.querySelector('input[name="ansType"][value="text"]');
         if (textRadio) textRadio.checked = true;
         document.getElementById('aiToolsSection').classList.remove('hidden');
@@ -1062,8 +1170,15 @@
         let data;
         try { data = JSON.parse(task.q); } catch (_) { return; }
         resetForm();
+        document.getElementById('title').value = data.title || '';
+        document.getElementById('difficulty').value = data.difficulty || 'easy';
+        document.getElementById('timeLimit').value = data.timeLimit || '';
+        document.getElementById('xpBase').value = data.xpBase || '';
         document.getElementById('subject').value = data.subject || '';
         document.getElementById('question').value = data.question || '';
+        document.getElementById('status').value = task.closed ? 'closed' : 'open';
+        document.getElementById('correctAnswer').value = data.correctAnswer || '';
+        document.getElementById('createdAt').value = task.date || new Date().toISOString().slice(0,16).replace('T',' ');
         const radio = document.querySelector(`input[name="ansType"][value="${data.type}"]`);
         if (radio) radio.checked = true;
         document.getElementById('aiToolsSection').classList.remove('hidden');
