@@ -2,7 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
 body { font-family: 'Inter', sans-serif; }
-.font-retro { font-family: 'DotGothic16', sans-serif; }
 
 /* Glass style panel */
 .glass-panel {
@@ -53,20 +52,3 @@ body { font-family: 'Inter', sans-serif; }
   border-color: #ec4899;
 }
 
-/* Simple particles background */
-.particle-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(circle at var(--x) var(--y), rgba(255,255,255,0.25) 1px, transparent 1px);
-  background-size: 30px 30px;
-  animation: move-bg 10s linear infinite;
-}
-@keyframes move-bg {
-  0% { background-position: 0 0; }
-  100% { background-position: 30px 30px; }
-}
