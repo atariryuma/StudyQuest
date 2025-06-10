@@ -7,36 +7,62 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
   <style>
+    body {
+      font-family: 'DotGothic16', sans-serif;
+      background-color: #1a1b26;
+      overflow: hidden;
+    }
+    #particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .glass-panel {
+      background: rgba(26,27,38,0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
     .game-btn {
       transition: all 0.2s ease;
       border-bottom-width: 4px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
-    .game-btn:not(:disabled):hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 0 15px rgba(250,204,21,0.4);
-    }
     .game-btn:active:not(:disabled) {
       transform: translateY(2px);
       border-bottom-width: 2px;
-      box-shadow: none;
+    }
+    .game-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen" style="font-family:'DotGothic16',sans-serif;">
-  <main class="space-y-4 text-center">
-    <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
-    <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-purple-800 hover:bg-purple-500">教師としてログイン</button>
-    <button id="student-login-btn" class="game-btn bg-cyan-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-cyan-800 hover:bg-cyan-500">生徒としてログイン</button>
-    <form id="teacher-secret-form" class="space-y-2" style="display:none;">
-      <input id="secret-key-input" type="password" placeholder="共通秘密キーを入力" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none" />
-      <div class="flex gap-2 justify-center">
-        <button id="secret-key-submit-btn" type="submit" class="game-btn bg-green-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-green-800 hover:bg-green-500 flex-1">セットアップ実行</button>
-        <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-b-4 border-gray-800 hover:bg-gray-500 flex-1">戻る</button>
+<body class="text-gray-200">
+  <canvas id="particleCanvas"></canvas>
+  <main class="min-h-screen flex items-center justify-center p-4">
+    <section id="loginBox" class="glass-panel rounded-2xl p-8 w-full max-w-md shadow-2xl text-center">
+      <div class="mb-6">
+        <i data-lucide="swords" class="w-12 h-12 text-pink-400 mx-auto mb-2"></i>
+        <h1 class="text-3xl font-bold tracking-widest text-white">StudyQuest</h1>
       </div>
-    </form>
+      <button id="teacher-login-btn" class="w-full game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500 mb-4">教師としてログイン</button>
+      <button id="student-login-btn" class="w-full game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500">生徒としてログイン</button>
+      <form id="teacher-secret-form" class="space-y-2 mt-4 hidden">
+        <input id="secret-key-input" type="password" placeholder="共通秘密キーを入力" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none" />
+        <div class="flex gap-2 justify-center">
+          <button id="secret-key-submit-btn" type="submit" class="game-btn bg-green-600 text-white px-4 py-2 rounded-lg font-bold border-green-800 hover:bg-green-500 flex-1">セットアップ実行</button>
+          <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex-1">戻る</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <div id="errorModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -48,6 +74,48 @@
   <div id="loadingOverlay" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 text-white z-40">ロード中…</div>
 
   <script>
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.3;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+          this.reset();
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function initParticles() { particles = []; for (let i = 0; i < 80; i++) particles.push(new Particle()); }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    initParticles();
+    animateParticles();
+
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
 
     const teacherBtn = document.getElementById('teacher-login-btn');
