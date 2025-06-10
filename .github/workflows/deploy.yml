@@ -1,57 +1,78 @@
 name: deploy-gas-webapp
+
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'src/**'         # src 以下のファイル・フォルダに変更があったときのみ
-# ここで GITHUB_TOKEN に contents: write を与える
+    branches: [ main ]
+    paths:     # コード・テスト・設定の変更で発火
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/**'
+
 permissions:
-  contents: write
+  contents: write   # version bump 用の push に必要
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          # persist-credentials: true が既定ですが、念のため明示的に
-          persist-credentials: true
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm test
-      - name: Install clasp
-        run: npm install --global @google/clasp@latest
-      - name: Configure clasp auth
-        run: |
-          mkdir -p ~/.config
-          echo "${CLASPRC_JSON}" > ~/.clasprc.json
-      - name: Push & Update Web App
-        run: |
-          set -eux
-          clasp push --force
-          NEW_VER=$(clasp version "auto-$(date +%Y%m%d%H%M%S)" \
-            | grep -oE "[0-9]+" | head -n1)
-          [ -n "$NEW_VER" ] || { echo "Failed to retrieve version" >&2; exit 1; }
-          clasp update-deployment "${DEPLOYMENT_ID}" \
-            --versionNumber "${NEW_VER}" \
-            --description "auto-deploy from GitHub Actions"
-      - name: Bump version and push
-        if: ${{ success() }}
-        run: |
-          set -eux
-          npm version patch --no-git-tag-version
-          NEW_VER=$(node -p "require('./package.json').version")
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add package.json src/Code.gs tests/Code.test.js
-          git commit -m "Bump version to v${NEW_VER} [skip ci]"
-          git push
+    # 0. チェックアウト
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: true
+
+    # 1. Node.js + npm キャッシュ
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    # 2. 依存インストール（再現性の高い npm ci）
+    - run: npm ci
+
+    # 3. パッケージバージョン取得
+    - id: ver
+      run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+    # 4. Code.gs のプレースホルダーを置換（リポジトリにはコミットしない）
+    - name: Inject build version
+      run: |
+        ver="v${{ steps.ver.outputs.VERSION }}"
+        sed -i "s/__BUILD_VERSION__/${ver}/" src/Code.gs
+
+    # 5. テスト実行（Jest は package.json の version を参照）
+    - run: npm test
+
+    # 6. clasp インストール & 認証
+    - run: npm i -g @google/clasp@latest
+    - run: |
+        mkdir -p ~/.config
+        echo "${CLASPRC_JSON}" > ~/.clasprc.json
+
+    # 7. push → 新バージョン作成
+    - run: |
+        set -eux
+        clasp push --force
+        clasp version "v${{ steps.ver.outputs.VERSION }}"
+
+    # 8. jq で最新 versionNumber を取得しデプロイ更新
+    - run: sudo apt-get update -y && sudo apt-get install -y jq
+    - run: |
+        vnum=$(clasp versions --json | jq -r '.[0].versionNumber')
+        clasp update-deployment "$DEPLOYMENT_ID" \
+          --versionNumber "$vnum" \
+          --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
+
+    # 9. 次回開発用に patch バンプ（ループ防止に [skip ci]）
+    - if: ${{ success() }}
+      run: |
+        set -eux
+        npm version patch -m "chore: bump to %s [skip ci]"
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git push --follow-tags
