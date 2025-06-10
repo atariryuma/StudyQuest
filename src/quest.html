@@ -260,6 +260,11 @@
       if (typeof google.script.run.loadStudentData === 'function') {
         google.script.run
           .withSuccessHandler(data => {
+            if (data && data.status === 'error' && data.message === 'not_found_in_class') {
+              const el = document.getElementById('loadingOverlay');
+              el.textContent = '名簿に存在しないためデータを取得できません。教師に確認してください。';
+              return;
+            }
             state.userInfo = data.userInfo || null;
             state.tasks = data.tasks || { uncompleted: [], completed: [] };
             state.chatHistory = data.chatHistory || [];
