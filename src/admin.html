@@ -35,6 +35,15 @@
     <h2 class="font-bold mb-2">課題情報</h2>
     <ul id="taskList" class="list-disc pl-4 text-sm"></ul>
   </section>
+  <section class="mb-6">
+    <h2 class="font-bold mb-2">課題進捗</h2>
+    <table class="min-w-full border text-sm" id="progressTable">
+      <thead>
+        <tr><th class="border px-2">課題</th><th class="border px-2">完了数</th><th class="border px-2">総数</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
   <section>
     <h2 class="font-bold mb-2">最近の提出</h2>
     <ul id="logList" class="list-disc pl-4 text-sm"></ul>
@@ -62,6 +71,7 @@
       google.script.run.withSuccessHandler(renderClassTable).getClassStatistics(teacherCode);
       google.script.run.withSuccessHandler(renderStudentTable).listStudents(teacherCode);
       google.script.run.withSuccessHandler(renderTaskList).listTasks(teacherCode);
+      google.script.run.withSuccessHandler(renderProgressTable).getTaskCompletionStatus(teacherCode);
       google.script.run.withSuccessHandler(renderLogList).listBoard(teacherCode);
     }
 
@@ -92,6 +102,13 @@
         let q = '';
         try { q = JSON.parse(t.q).question || ''; } catch(e) { q = t.q; }
         return `<li>${q}</li>`;
+      }).join('');
+    }
+
+    function renderProgressTable(progress) {
+      const tbody = document.querySelector('#progressTable tbody');
+      tbody.innerHTML = (progress || []).map(p => {
+        return `<tr><td class="border px-2">${escapeHtml(String(p.question))}</td><td class="border px-2 text-right">${p.count}</td><td class="border px-2 text-right">${p.total}</td></tr>`;
       }).join('');
     }
 
