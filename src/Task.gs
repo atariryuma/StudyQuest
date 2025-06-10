@@ -1,9 +1,9 @@
 /**
- * createTask(teacherCode, payloadAsJson, selfEval):
+ * createTask(teacherCode, taskObj, selfEval):
  * 新しい課題を課題一覧シートに追加
  */
 
-function createTask(teacherCode, payloadAsJson, selfEval) {
+function createTask(teacherCode, taskObj, selfEval) {
   console.time('createTask');
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
@@ -13,17 +13,24 @@ function createTask(teacherCode, payloadAsJson, selfEval) {
   if (!taskSheet) {
     throw new Error(`システムエラー: 「${CONSTS.SHEET_TASKS}」シートが見つかりません。`);
   }
-  let parsed;
-  try {
-    parsed = JSON.parse(payloadAsJson);
-  } catch (e) {
-    parsed = null;
-  }
+  var parsed = taskObj || null;
 
   if (parsed && Array.isArray(parsed.classIds)) {
-    const rows = parsed.classIds.map(cid => {
-      const rowPayload = JSON.stringify(Object.assign({}, parsed, { classId: cid }));
-      return [Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), '', '', ''];
+    const rows = parsed.classIds.map(function(cid) {
+      var choices = Array.isArray(parsed.choices) ? JSON.stringify(parsed.choices) : '';
+      return [
+        Utilities.getUuid(),
+        cid,
+        parsed.subject || '',
+        parsed.question || '',
+        parsed.type || 'text',
+        choices,
+        selfEval,
+        new Date(),
+        parsed.persona || '',
+        '',
+        ''
+      ];
     });
     bulkAppend_(taskSheet, rows);
     removeCacheValue_('tasks_' + teacherCode);
@@ -58,17 +65,17 @@ function listTasks(teacherCode) {
   if (!sheet) { console.timeEnd('listTasks'); return []; }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listTasks'); return []; }
-  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
-  const result = data.filter(r => String(r[7] || '') !== '1')
+  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  const result = data.filter(function(r){ return String(r[10] || '') !== '1'; })
                      .reverse()
                      .map(row => ({
     id: row[0],
     classId: row[1],
-    q: row[2],
-    selfEval: row[3],
-    date: Utilities.formatDate(new Date(row[4]), 'JST', 'yyyy/MM/dd HH:mm'),
-    persona: row[5] || '',
-    closed: String(row[6] || '').toLowerCase() === 'closed'
+    q: JSON.stringify({ subject: row[2], question: row[3], type: row[4], choices: JSON.parse(row[5] || '[]') }),
+    selfEval: row[6],
+    date: Utilities.formatDate(new Date(row[7]), 'JST', 'yyyy/MM/dd HH:mm'),
+    persona: row[8] || '',
+    closed: String(row[9] || '').toLowerCase() === 'closed'
   }));
   putCacheValue_(cacheKey, result, 300);
   console.timeEnd('listTasks');
@@ -87,24 +94,21 @@ function getTaskMap_(teacherCode) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
 
-  const rows = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  const rows = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
   const map = {};
   rows.forEach(row => {
-    if (String(row[7] || '') === '1') return; // skip draft rows
-    let qText = '';
-    try {
-      const parsed = JSON.parse(row[2]);
-      qText = parsed.question || row[2];
-    } catch (e) {
-      qText = row[2];
-    }
+    if (String(row[10] || '') === '1') return; // skip draft rows
+    var qText = row[3] || '';
+    var qObj = { subject: row[2], question: row[3], type: row[4], choices: [] };
+    try { qObj.choices = JSON.parse(row[5] || '[]'); } catch (_) { qObj.choices = []; }
+    var qStr = JSON.stringify(qObj);
     map[row[0]] = {
       classId: row[1],
-      q: row[2],
-      selfEval: row[3],
-      date: row[4],
-      persona: row[5] || '',
-      closed: String(row[6] || '').toLowerCase() === 'closed',
+      q: qStr,
+      selfEval: row[6],
+      date: row[7],
+      persona: row[8] || '',
+      closed: String(row[9] || '').toLowerCase() === 'closed',
       questionText: qText
     };
   });
@@ -154,15 +158,18 @@ function duplicateTask(teacherCode, taskId) {
   if (!sheet) return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
-  const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === taskId) {
       const newId = Utilities.getUuid();
       const classId = data[i][1];
-      const payload = data[i][2];
-      const selfEval = data[i][3];
-      const persona = data[i][5] || '';
-      sheet.appendRow([newId, classId, payload, selfEval, new Date(), persona, '', '']);
+      const subject = data[i][2];
+      const question = data[i][3];
+      const type = data[i][4];
+      const choices = data[i][5];
+      const selfEval = data[i][6];
+      const persona = data[i][8] || '';
+      sheet.appendRow([newId, classId, subject, question, type, choices, selfEval, new Date(), persona, '', '']);
       removeCacheValue_('tasks_' + teacherCode);
       removeCacheValue_('taskmap_' + teacherCode);
       removeCacheValue_('stats_' + teacherCode);
@@ -203,7 +210,7 @@ function closeTask(teacherCode, taskId) {
   const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
   const idx = ids.indexOf(taskId);
   if (idx >= 0) {
-    sheet.getRange(idx + 2, 7).setValue('closed');
+    sheet.getRange(idx + 2, 10).setValue('closed');
   }
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
@@ -370,7 +377,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
  * saveDraftTask(teacherCode, payloadJson):
  * 下書きとして課題を保存
  */
-function saveDraftTask(teacherCode, payloadJson) {
+function saveDraftTask(teacherCode, taskObj) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error('ドラフト保存失敗: 教師のスプレッドシートが見つかりません。');
@@ -380,12 +387,10 @@ function saveDraftTask(teacherCode, payloadJson) {
     throw new Error(`システムエラー: 「${CONSTS.SHEET_TASKS}」シートが見つかりません。`);
   }
   const id = Utilities.getUuid();
-  let classId = '';
-  try {
-    const obj = JSON.parse(payloadJson);
-    classId = obj.classId || '';
-  } catch (e) {}
-  sheet.appendRow([id, classId, payloadJson, '', new Date(), '', '', 1]);
+  var obj = taskObj || {};
+  var classId = obj.classId || '';
+  var choices = Array.isArray(obj.choices) ? JSON.stringify(obj.choices) : '';
+  sheet.appendRow([id, classId, obj.subject || '', obj.question || '', obj.type || '', choices, '', new Date(), '', '', 1]);
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   return id;
@@ -402,9 +407,9 @@ function deleteDraftTask(teacherCode, taskId) {
   if (!sheet) return;
   const last = sheet.getLastRow();
   if (last < 2) return;
-  const data = sheet.getRange(2, 1, last - 1, 8).getValues();
+  const data = sheet.getRange(2, 1, last - 1, 11).getValues();
   for (let i = 0; i < data.length; i++) {
-    if (data[i][0] === taskId && String(data[i][7] || '') === '1') {
+    if (data[i][0] === taskId && String(data[i][10] || '') === '1') {
       sheet.deleteRow(i + 2);
       removeCacheValue_('tasks_' + teacherCode);
       removeCacheValue_('taskmap_' + teacherCode);
@@ -447,11 +452,11 @@ function updateTask(teacherCode, taskId, updateData) {
   const ids = sheet.getRange(2, 1, Math.max(0, sheet.getLastRow()-1), 1).getValues().flat();
   const idx = ids.indexOf(taskId);
   if (idx < 0) return { status: 'error', message: 'not_found' };
-  const row = sheet.getRange(idx+2, 1, 1, 8).getValues()[0];
+  const row = sheet.getRange(idx+2, 1, 1, 11).getValues()[0];
   if (updateData && typeof updateData.status !== 'undefined') {
-    row[6] = updateData.status;
+    row[9] = updateData.status;
   }
-  sheet.getRange(idx+2, 1, 1, 8).setValues([row]);
+  sheet.getRange(idx+2, 1, 1, 11).setValues([row]);
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
