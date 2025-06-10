@@ -219,4 +219,18 @@ function getLeaderboard(teacherCode) {
   return rows.map(r => ({ rank: r[0], userEmail: r[1], handleName: r[2], level: r[3], totalXp: r[4] }));
 }
 
+function getGlobalLeaderboard(limit) {
+  const db = getGlobalDb_();
+  if (!db) return [];
+  const sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+  if (!sheet) return [];
+  const rows = sheet.getRange(2,1,Math.max(0, sheet.getLastRow()-1),6).getValues();
+  var data = rows.map(function(r){
+    return { handleName: r[1], level: r[4], totalXp: r[3] };
+  });
+  data.sort(function(a,b){ return b.totalXp - a.totalXp; });
+  if (limit) data = data.slice(0, limit);
+  return data.map(function(d,i){ return { rank:i+1, handleName:d.handleName, level:d.level, totalXp:d.totalXp }; });
+}
+
 // no exports needed; functions run in GAS context

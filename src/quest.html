@@ -101,10 +101,6 @@
         </div>
       </div>
     </header>
-      <nav class="glass-panel rounded-xl p-2 flex justify-around items-center text-sm shadow">
-        <a href="#" id="linkProfile" class="hover:underline">プロフィール</a>
-        <a href="#" id="linkLeaderboard" class="hover:underline">ランキング</a>
-      </nav>
 
     <div class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
       <!-- ===== サイドバー: クエストボード ===== -->
@@ -267,10 +263,6 @@
         document.getElementById('loadingOverlay').textContent = '不正なアクセスです。';
         return;
     }
-    const profileLink = document.getElementById('linkProfile');
-    if (profileLink) profileLink.href = `${SCRIPT_URL}?page=profile&teacher=${encodeURIComponent(teacherCode)}`;
-    const leaderboardLink = document.getElementById('linkLeaderboard');
-    if (leaderboardLink) leaderboardLink.href = `${SCRIPT_URL}?page=leaderboard&teacher=${encodeURIComponent(teacherCode)}`;
     document.getElementById('versionInfo').textContent = version;
     document.querySelectorAll('.ai-avatar').forEach(img => img.src = aiIconSvg);
     document.getElementById('sendBtn').addEventListener('click', handleSend);

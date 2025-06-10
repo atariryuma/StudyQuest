@@ -11,6 +11,7 @@
   <script>
     fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
       .then(r=>r.text()).then(t=>{const s=document.createElement('script');s.innerHTML=t;document.head.appendChild(s);s.onload=()=>{ if(window.lucide){ window.lucide.createIcons(); } }});
+    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
   </script>
   <style>
     .pixel-bg{background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px;}
@@ -18,6 +19,11 @@
   </style>
 </head>
 <body class="bg-[#1a1b26] text-gray-200 font-sans min-h-screen p-4 pixel-bg">
+  <header class="mb-4">
+    <a id="backToSelect" class="text-sm hover:underline flex items-center gap-1" href="#">
+      <i data-lucide="chevron-left" class="w-4 h-4"></i>クラス選択へ
+    </a>
+  </header>
   <main class="max-w-3xl mx-auto space-y-4">
     <div id="statusCard" class="glass-panel p-4 rounded-xl space-y-3">
       <h1 class="text-xl font-bold">プロフィール</h1>
@@ -52,7 +58,12 @@
     function highlightNew(){let raw=sessionStorage.getItem('newTrophies');if(!raw) return;let ids;try{ids=JSON.parse(raw);}catch(e){ids=[];}if(!ids.length) return;ids.forEach(id=>{const el=document.querySelector(`[data-id="${id}"]`);if(el){gsap.fromTo(el,{scale:1.5},{scale:1,duration:0.6,repeat:1,yoyo:true});}});const m=document.getElementById('trophyModal');m.innerHTML='<div class="glass-panel p-6 rounded-xl text-center"><h3 class="text-xl mb-4">新しいトロフィーを獲得しました！</h3><button id="tmOk" class="game-btn bg-pink-600 text-white px-4 py-2 rounded">OK</button></div>';m.classList.remove('hidden');renderIcons();if(window.confetti){window.confetti({particleCount:100,spread:70,origin:{y:0.6}});}document.getElementById('tmOk').addEventListener('click',()=>{m.classList.add('hidden');});sessionStorage.removeItem('newTrophies');}
     function renderTrophies(earned){const g=document.getElementById('trophyGrid');let html='';allTrophies.forEach(t=>{const has=earned.includes(t.id);const cls=has?'text-yellow-400':'text-gray-500 opacity-40';html+=`<div class="flex flex-col items-center"><i data-id="${t.id}" data-lucide="${t.icon}" class="w-8 h-8 ${cls}"></i><span class="text-xs mt-1">${escapeHtml(t.name)}</span></div>`;});g.innerHTML=html;renderIcons();highlightNew();}
     function renderProfile(data){const xp=calcXpInLevel(data.totalXp,data.level);document.getElementById('profLevel').textContent=data.level;document.getElementById('profCoins').textContent=data.coins;document.getElementById('profXpCurrent').textContent=xp;document.getElementById('profXpNext').textContent=data.level*100;gsap.to('#profXpFill',{width:(xp/(data.level*100))*100+'%',duration:0.5});renderTrophies(data.trophies||[]);}
-    document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(location.search);const teacher=p.get('teacher')||'';if(google&&google.script&&google.script.run){google.script.run.withSuccessHandler(renderProfile).loadProfileData(teacher);} });
+    document.addEventListener('DOMContentLoaded',()=>{
+      const p=new URLSearchParams(location.search);
+      const teacher=p.get('teacher')||'';
+      const back=document.getElementById('backToSelect');
+      if(back) back.href=`${SCRIPT_URL}?page=class-select`;
+      if(google&&google.script&&google.script.run){google.script.run.withSuccessHandler(renderProfile).loadProfileData(teacher);} });
   </script>
 </body>
 </html>

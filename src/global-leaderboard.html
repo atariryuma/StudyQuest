@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Leaderboard - StudyQuest</title>
+  <title>Global Leaderboard - StudyQuest</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="styles.css" rel="stylesheet">
@@ -14,28 +14,26 @@
 </head>
 <body class="bg-[#1a1b26] text-gray-200 font-sans min-h-screen p-4">
   <header class="mb-4">
-    <a id="backToSelectLb" class="text-sm hover:underline flex items-center gap-1" href="#">
+    <a id="backToSelectGlobal" class="text-sm hover:underline flex items-center gap-1" href="#">
       <i data-lucide="chevron-left" class="w-4 h-4"></i>クラス選択へ
     </a>
   </header>
-  <h1 class="text-xl font-bold mb-4">ランキング</h1>
-  <table class="min-w-full text-sm" id="leaderboardTable">
+  <h1 class="text-xl font-bold mb-4">グローバルランキング</h1>
+  <table class="min-w-full text-sm" id="globalTable">
     <thead><tr class="text-left"><th>Rank</th><th>Name</th><th>Lv</th><th>XP</th></tr></thead>
     <tbody></tbody>
   </table>
   <script>
     <?!= include('shared/escapeHtml'); ?>
-    const params=new URLSearchParams(location.search);
-    const teacher=params.get('teacher')||'';
     function renderLeaderboard(data){
-      const tbody=document.querySelector('#leaderboardTable tbody');
+      const tbody=document.querySelector('#globalTable tbody');
       tbody.innerHTML=data.map(r=>`<tr><td>${r.rank}</td><td>${escapeHtml(r.handleName)}</td><td>${escapeHtml(r.level)}</td><td>${escapeHtml(r.totalXp)}</td></tr>`).join('');
     }
     document.addEventListener('DOMContentLoaded',()=>{
-      const back=document.getElementById('backToSelectLb');
+      const back=document.getElementById('backToSelectGlobal');
       if(back) back.href=`${SCRIPT_URL}?page=class-select`;
       if(google && google.script && google.script.run){
-        google.script.run.withSuccessHandler(renderLeaderboard).getLeaderboard(teacher);
+        google.script.run.withSuccessHandler(renderLeaderboard).getGlobalLeaderboard();
       }
     });
   </script>
