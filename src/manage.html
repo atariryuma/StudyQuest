@@ -198,8 +198,10 @@
                 <!-- Dashboard Panel -->
                 <section class="glass-panel rounded-xl p-4 shadow-lg">
                     <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b-2 border-gray-600 pb-2">
-                        <i data-lucide="layout-dashboard" class="w-6 h-6 text-cyan-400"></i>
-                        <span>ダッシュボード</span>
+                        <a id="adminPageLink" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=admin&teacher=<?!= teacher ?>" target="_top" class="flex items-center gap-2 hover:text-cyan-300">
+                            <i data-lucide="layout-dashboard" class="w-6 h-6 text-cyan-400"></i>
+                            <span>ダッシュボード</span>
+                        </a>
                     </h2>
                     <div class="space-y-4">
                         <div class="flex justify-around text-center">
