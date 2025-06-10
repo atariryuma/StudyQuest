@@ -107,6 +107,9 @@ function initTeacher(passcode) {
 
   const stored = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (stored) {
+    if (typeof grantTeacherAccess === 'function') {
+      try { grantTeacherAccess(email); } catch (e) {}
+    }
     return { status: 'ok', teacherCode: stored };
   }
 
@@ -114,6 +117,9 @@ function initTeacher(passcode) {
   if (info) {
     props.setProperty(info.code, info.id);
     props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, info.code);
+    if (typeof grantTeacherAccess === 'function') {
+      try { grantTeacherAccess(email); } catch (e) {}
+    }
     return { status: 'ok', teacherCode: info.code };
   }
   const existingCodes = props.getKeys().filter(key => key.match(/^[A-Z0-9]{6}$/));
@@ -131,6 +137,9 @@ function initTeacher(passcode) {
   });
   if (foundCode) {
     props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, foundCode);
+    if (typeof grantTeacherAccess === 'function') {
+      try { grantTeacherAccess(email); } catch (e) {}
+    }
     return { status: 'ok', teacherCode: foundCode };
   }
   // 新規作成
@@ -236,6 +245,9 @@ function initTeacher(passcode) {
 
   props.setProperty(newCode, folderInstance.getId());
   saveTeacherSettings_(newCode, { persona: '', classes: [] });
+  if (typeof grantTeacherAccess === 'function') {
+    try { grantTeacherAccess(email); } catch (e) {}
+  }
   return {
     status: 'new',
     teacherCode: newCode,
