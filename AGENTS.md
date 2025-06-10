@@ -1,187 +1,154 @@
-StudyQuest Developer Reference v1.0
+# StudyQuest Developer Reference v1.0
 
-> **Audience **: Apps Script / Front‑End engineers contributing to the StudyQuest code‑base. **Scope **: Server‑side GAS modules, Spreadsheet schema, front‑end APIs and deployment pipeline.
-
-
-
+> \*\*Audience \*\*: Apps Script / Front‑End engineers contributing to the StudyQuest code‑base.
+> \*\*Scope \*\*: Server‑side GAS modules, Spreadsheet schema, front‑end APIs and deployment pipeline.
 
 ---
 
-0  Glossary
+## 0  Glossary
 
-Term	Meaning
-
-Global DB	Master Spreadsheet (ID stored as Global_Master_DB) holding user‑centric persistent data.
-Teacher DB	Per‑teacher Spreadsheet (StudyQuest_DB_<TeacherCode>). Holds class‑scoped data.
-SSoT	Single Source of Truth – the Global DB for XP/coins/level/trophies.
-PK / FK	Primary / Foreign key. All PKs are unique and immutable.
-
-
+| Term           | Meaning                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| **Global DB**  | Master Spreadsheet (ID stored as `Global_Master_DB`) holding user‑centric persistent data. |
+| **Teacher DB** | Per‑teacher Spreadsheet (`StudyQuest_DB_<TeacherCode>`). Holds class‑scoped data.          |
+| **SSoT**       | Single Source of Truth – the Global DB for XP/coins/level/trophies.                        |
+| **PK / FK**    | Primary / Foreign key. All PKs are unique and immutable.                                   |
 
 ---
 
-1  Spreadsheet Schemas (Quick Reference)
+## 1  Spreadsheet Schemas (Quick Reference)
 
-1.1 Global_Master_DB
+### 1.1 Global\_Master\_DB
 
-Sheet	PK	Selected Columns
+| Sheet                        | PK             | Selected Columns                                                                                            |
+| ---------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Global\_Users**            | `Email`        | `HandleName, Role, Global_TotalXP, Global_Level, Global_Coins, EquippedTitle, LastGlobalLogin, LoginStreak` |
+| **Global\_Trophies\_Log**    | `UserTrophyID` | `UserEmail → Global_Users.Email`, `TrophyID`, `AwardedAt`                                                   |
+| **Global\_Items\_Inventory** | `UserItemID`   | `UserEmail`, `ItemID`, `Quantity`, `AcquiredAt`                                                             |
 
-Global_Users	Email	HandleName, Role, Global_TotalXP, Global_Level, Global_Coins, EquippedTitle, LastGlobalLogin, LoginStreak
-Global_Trophies_Log	UserTrophyID	UserEmail → Global_Users.Email, TrophyID, AwardedAt
-Global_Items_Inventory	UserItemID	UserEmail, ItemID, Quantity, AcquiredAt
+### 1.2 Teacher\_DB (`StudyQuest_DB_<TeacherCode>`)
 
-
-1.2 Teacher_DB (StudyQuest_DB_<TeacherCode>)
-
-Sheet	PK / Composite PK	Notes
-
-Enrollments	UserEmail + Grade + Class	ClassRole = student (固定) – 先生は別途登録済み。
-Tasks	TaskID	Status ∈ {draft,open,closed}
-Submissions	SubmissionID	AI summary stored in AiSummary if free‑text
-Trophies	TrophyID	JSON Condition を評価
-Items	ItemID	Type ∈ {title,consumable,...}
-Leaderboard	generated	再生成用ワークシート（非永続）
-
-
+| Sheet           | PK / Composite PK           | Notes                                         |
+| --------------- | --------------------------- | --------------------------------------------- |
+| **Enrollments** | `UserEmail + Grade + Class` | `ClassRole` = `student` (固定) – 先生は別途登録済み。     |
+| **Tasks**       | `TaskID`                    | `Status` ∈ {`draft`,`open`,`closed`}          |
+| **Submissions** | `SubmissionID`              | AI summary stored in `AiSummary` if free‑text |
+| **Trophies**    | `TrophyID`                  | JSON `Condition` を評価                          |
+| **Items**       | `ItemID`                    | `Type` ∈ {`title`,`consumable`,...}           |
+| **Leaderboard** | generated                   | 再生成用ワークシート（非永続）                               |
 
 ---
 
-2  Server‑Side Modules & Public APIs
+## 2  Server‑Side Modules & Public APIs
 
-> All functions return plain JS objects ({status: "ok", ...}) to ease JSON‑serialisation over google.script.run.
+> **All functions return plain JS objects** (`{status: "ok", ...}`) to ease JSON‑serialisation over `google.script.run`.
 
+### 2.1 Auth.gs
 
-
-2.1 Auth.gs
-
+```js
 /** 初回: 教師用DB作成 & teacherCode 発行 */
 function setupInitialTeacher(secretKey): {status, teacherCode}
 /** 既存教師ログイン */
 function loginAsTeacher(): {status, teacherCode}
 /** 生徒ログイン */
 function loginAsStudent(teacherCode): {status, userInfo | error}
+```
 
-Lock scope: per‑user row lock when mutating Global_Users.
+*Lock scope*: per‑user row lock when mutating `Global_Users`.
 
-2.2 Enrollment.gs
+### 2.2 Enrollment.gs
 
+```js
 function registerUsersFromCsv(teacherCode, csvString)
   -> {created, enrolled, skipped, errors[]}
 function registerSingleStudent(teacherCode, studentObj)
 function deleteStudentsFromClass(teacherCode, emailList)
+```
 
-CSV header must be exactly: Email, Name, Grade, Class, Number.
+*CSV header must be exactly*: `Email, Name, Grade, Class, Number`.
 
-2.3 Submission.gs
+### 2.3 Submission.gs
 
+```js
 function processSubmission(teacherCode, userEmail, taskId, answer)
   -> {status, earnedXp, earnedCoins, trophies[], correctAnswer, explanation}
+```
 
-Flow:
+*Flow*:
 
-1. Validate task (open, not duplicate).
-
-
+1. Validate task (`open`, not duplicate).
 2. Compute XP (base 10 ± bonuses).
-
-
-3. Global Users: add XP, recalc level ⇒ level = floor(sqrt(totalXP/100)).
-
-
+3. **Global Users**: add XP, recalc level ⇒ `level = floor(sqrt(totalXP/100))`.
 4. Coins = XP / 10 (int).
-
-
 5. AI summary for free text.
+6. Append to `Submissions`.
+7. `checkAndAwardTrophies`.
 
+### 2.4 Gamification.gs
 
-6. Append to Submissions.
-
-
-7. checkAndAwardTrophies.
-
-
-
-2.4 Gamification.gs
-
+```js
 function processLoginBonus(userEmail)
 function checkAndAwardTrophies(userEmail, context)
 function generateLeaderboard(teacherCode)   // daily trigger
+```
 
-Daily coins: 5 + (streak % 7). Lock scope: entire Global_Users row.
-
-
----
-
-3  Utility Conventions
-
-Caching: Use CacheService (6 h) for Spreadsheet IDs.
-
-Batch I/O: Always group getValues / setValues – avoid cell‑by‑cell writes.
-
-Locking: LockService.getDocumentLock() for cross‑sheet mutations; release in finally.
-
-Error Codes (non‑exhaustive):
-
-invalid_header, unexpected_column, invalid_email, duplicate_number, not_found_in_class, duplicate_main_teacher.
-
-
-Logging: logError_(fn, err) → central Errors sheet.
-
-
+*Daily coins*: `5 + (streak % 7)`.
+*Lock scope*: entire `Global_Users` row.
 
 ---
 
-4  Front‑End Contract
+## 3  Utility Conventions
 
-View	Primary API calls	Success handler duties
+* **Caching**: Use `CacheService` (6 h) for Spreadsheet IDs.
+* **Batch I/O**: Always group `getValues / setValues` – avoid cell‑by‑cell writes.
+* **Locking**: `LockService.getDocumentLock()` for cross‑sheet mutations; release in `finally`.
+* **Error Codes** (non‑exhaustive):
 
-login.html	loginAsTeacher / loginAsStudent	route, store session info
-quest.html	processSubmission	animate XP bar, stash trophy IDs → sessionStorage
-profile.html	loadProfileData (client wrapper)	highlight new trophies
-
-
-
----
-
-5  Deployment & CI
-
-Tooling: clasp push --force via GitHub Actions (deploy-gas-webapp.yml).
-
-Secrets: CLASPRC_JSON, DEPLOYMENT_ID.
-
-Branch policy: PR → main triggers lint + Jest (optional) + deploy.
-
-
+  * `invalid_header`, `unexpected_column`, `invalid_email`, `duplicate_number`, `not_found_in_class`, `duplicate_main_teacher`.
+* **Logging**: `logError_(fn, err)` → central `Errors` sheet.
 
 ---
 
-6  Testing Matrix
+## 4  Front‑End Contract
 
-Area	Tests
-
-CSV Import	header mismatch, dup email, dup number, enrol vs global upsert
-Login Bonus	streak reset, day‑skip, same‑day no double coins
-Submission	XP calc, level up edge, coin calc, trophy trigger
-Concurrency	simultaneous submissions (Lock collisions)
-
-
+| View           | Primary API calls                  | Success handler duties                              |
+| -------------- | ---------------------------------- | --------------------------------------------------- |
+| `login.html`   | `loginAsTeacher / loginAsStudent`  | route, store session info                           |
+| `quest.html`   | `processSubmission`                | animate XP bar, stash trophy IDs → `sessionStorage` |
+| `profile.html` | `loadProfileData` (client wrapper) | highlight new trophies                              |
 
 ---
 
-7  Coding Standards
+## 5  Deployment & CI
 
-ES5 syntax (GAS runtime). Use var + IIFE to mimic modules.
-
-No arrow functions / let / const (still V8 but keeps linter happy).
-
-Centralise literals (consts.gs).
-
-
+* **Tooling**: `clasp push --force` via GitHub Actions (`deploy-gas-webapp.yml`).
+* **Secrets**: `CLASPRC_JSON`, `DEPLOYMENT_ID`.
+* **Branch policy**: PR → `main` triggers lint + Jest (optional) + deploy.
 
 ---
 
-8  Reference Snippets
+## 6  Testing Matrix
 
+| Area        | Tests                                                          |
+| ----------- | -------------------------------------------------------------- |
+| CSV Import  | header mismatch, dup email, dup number, enrol vs global upsert |
+| Login Bonus | streak reset, day‑skip, same‑day no double coins               |
+| Submission  | XP calc, level up edge, coin calc, trophy trigger              |
+| Concurrency | simultaneous submissions (Lock collisions)                     |
+
+---
+
+## 7  Coding Standards
+
+* ES5 syntax (GAS runtime). Use `var` + IIFE to mimic modules.
+* **No** arrow functions / `let` / `const` (still V8 but keeps linter happy).
+* Centralise literals (`consts.gs`).
+
+---
+
+## 8  Reference Snippets
+
+```js
 // Get Teacher DB once, cached
 function getTeacherDb_(code) {
   var cache = CacheService.getUserCache();
@@ -190,31 +157,26 @@ function getTeacherDb_(code) {
   cache.put(code, id, 21600); // 6h
   return SpreadsheetApp.openById(id);
 }
-
-
----
-
-9  Spreadsheet I/O Optimisation Best Practices
-
-Area	Recommendation	Rationale
-
-Open / close cost	Cache Spreadsheet IDs (CacheService) and Sheet objects when possible.	openById() is an API round‑trip (~300–400 ms).
-Row index map	Build an email → rowIdx map once via Array.prototype.reduce and reuse for look‑ups.	O(1) access vs linear scan.
-Diff‑aware writes	Compare in‑memory row snapshot with new payload; setValues() only if something changed.	Eliminates ~70 % of needless writes in load‑test.
-Chunk size	For bulk inserts, push in blocks of 500 rows max.	Keeps payload <50 KB, fits quota.
-Retry strategy	Wrap write ops in Utilities.sleep(100*retry) exponential‑backoff (max 3).	Handles sporadic Rate Limit or Service invoked too many times.
-Archiving	Year末に古い Submissions を別シートへ移動し、メインを軽量化。	Sheets degrade >50 k rows.
-Named Ranges	Use Named Ranges (GLOBAL_USERS_RANGE) instead of hard‑coding A2:K.	Resilient to column re‑order, self‑documenting.
-Advanced Service	For massive ops (> 10 k rows), use Sheets Advanced Service batchUpdate (updateCells, appendDimension).	Cuts HTTP overhead vs Apps Script wrappers.
-Atomic writes	When appending multiple related sheets, write to a hidden temp sheet then moveTo target.	Guarantees all‑or‑nothing visibility to users.
-
-
-Implement gradually; start with diff‑aware writes and row‑index maps—they yield the biggest win with minimal refactor.
-
+```
 
 ---
 
-> End of Reference
+## 9  Spreadsheet I/O Optimisation Best Practices
 
+| Area                  | Recommendation                                                                                                 | Rationale                                                          |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Open / close cost** | Cache Spreadsheet IDs (`CacheService`) **and** Sheet objects when possible.                                    | `openById()` is an API round‑trip (\~300–400 ms).                  |
+| **Row index map**     | Build an **email → rowIdx** map once via `Array.prototype.reduce` and reuse for look‑ups.                      | O(1) access vs linear scan.                                        |
+| **Diff‑aware writes** | Compare in‑memory row snapshot with new payload; `setValues()` only if something changed.                      | Eliminates \~70 % of needless writes in load‑test.                 |
+| **Chunk size**        | For bulk inserts, push in blocks of **500 rows** max.                                                          | Keeps payload <50 KB, fits quota.                                  |
+| **Retry strategy**    | Wrap write ops in `Utilities.sleep(100*retry)` exponential‑backoff (max 3).                                    | Handles sporadic `Rate Limit` or `Service invoked too many times`. |
+| **Archiving**         | Year末に古い `Submissions` を別シートへ移動し、メインを軽量化。                                                                      | Sheets degrade >50 k rows.                                         |
+| **Named Ranges**      | Use Named Ranges (`GLOBAL_USERS_RANGE`) instead of hard‑coding `A2:K`.                                         | Resilient to column re‑order, self‑documenting.                    |
+| **Advanced Service**  | For massive ops (> 10 k rows), use **Sheets Advanced Service** batchUpdate (`updateCells`, `appendDimension`). | Cuts HTTP overhead vs Apps Script wrappers.                        |
+| **Atomic writes**     | When appending multiple related sheets, write to a hidden temp sheet then `moveTo` target.                     | Guarantees all‑or‑nothing visibility to users.                     |
 
+*Implement gradually; start with diff‑aware writes and row‑index maps—they yield the biggest win with minimal refactor.*
 
+---
+
+> *End of Reference*
