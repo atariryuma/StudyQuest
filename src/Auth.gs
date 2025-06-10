@@ -1,10 +1,10 @@
-var INITIAL_TEACHER_SECRET = "changeme";
 function setupInitialTeacher(secretKey) {
-  if (secretKey !== INITIAL_TEACHER_SECRET) {
+  const props = PropertiesService.getScriptProperties();
+  const stored = props.getProperty('teacherPasscode');
+  if (!stored || secretKey !== stored) {
     return { status: "error", message: "invalid_key" };
   }
   const email = Session.getEffectiveUser().getEmail();
-  const props = PropertiesService.getScriptProperties();
   if (props.getProperty("teacherCode_" + email)) {
     return { status: "error", message: "already_exists" };
   }

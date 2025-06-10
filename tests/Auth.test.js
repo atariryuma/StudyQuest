@@ -33,7 +33,7 @@ test('loginAsTeacher returns not_found when missing', () => {
 });
 
 test('handleTeacherLogin differentiates new teacher', () => {
-  const props = {};
+  const props = { teacherPasscode: 'changeme' };
   const context = {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] }) },
     Session: { getEffectiveUser: () => ({ getEmail: () => 'new@example.com' }) },
@@ -108,7 +108,7 @@ test('loginAsStudent without teacherCode lists classes', () => {
 });
 
 test('setupInitialTeacher creates resources and stores ids', () => {
-  const props = {};
+  const props = { teacherPasscode: 'changeme' };
   const folder = { getId: jest.fn(() => 'fid') };
   const moveTarget = { moveTo: jest.fn() };
   const settingsSheet = { appendRow: jest.fn() };
@@ -139,7 +139,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
 });
 
 test('setupInitialTeacher validates secret and duplication', () => {
-  const props = { 'teacherCode_teacher@example.com': 'EXIST' };
+  const props = { 'teacherCode_teacher@example.com': 'EXIST', teacherPasscode: 'changeme' };
   const context = {
     PropertiesService: { getScriptProperties: () => ({
       getProperty: k => props[k],
