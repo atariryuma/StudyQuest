@@ -200,6 +200,16 @@
         const versionEl = document.getElementById('versionInfo');
         versionEl.textContent = version;
         versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
+        if (google && google.script && google.script.run) {
+            google.script.run
+                .withSuccessHandler(role => {
+                    if (role === 'admin') {
+                        debugPanel.classList.remove('hidden');
+                        debug('admin mode');
+                    }
+                })
+                .getCurrentUserRole();
+        }
 
         const params = new URLSearchParams(location.search);
         let teacherCode = params.get('teacher') || teacherParam;

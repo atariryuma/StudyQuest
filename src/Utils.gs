@@ -100,3 +100,21 @@ function getTeacherDb_(teacherCode) {
     return null;
   }
 }
+
+function isAdminUser_(email) {
+  email = String(email || '').trim().toLowerCase();
+  if (!email) return false;
+  var db = getGlobalDb_();
+  if (!db) return false;
+  var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+  if (!sheet) return false;
+  var last = sheet.getLastRow();
+  if (last < 2) return false;
+  var data = sheet.getRange(2, 1, last - 1, 3).getValues();
+  for (var i = 0; i < data.length; i++) {
+    if (String(data[i][0]).trim().toLowerCase() === email) {
+      return String(data[i][2]).trim().toLowerCase() === 'admin';
+    }
+  }
+  return false;
+}
