@@ -174,7 +174,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
   expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 10);
   expect(userRange.setValues).toHaveBeenCalled();
   const settingsSheet = sheetMap['Settings'];
-  expect(settingsSheet.appendRow).toHaveBeenCalledWith(['Key','Value']);
+  expect(settingsSheet.appendRow).toHaveBeenCalledWith(['type','value1','value2']);
   expect(settingsSheet.appendRow).toHaveBeenCalledWith(['ownerEmail', 'teacher@example.com']);
   const sheetNames = Object.keys(sheetMap);
   ['Enrollments','Tasks','Submissions','Trophies','Items','Leaderboard','Settings','TOC'].forEach(name => {

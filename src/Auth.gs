@@ -58,12 +58,12 @@ function setupInitialTeacher(secretKey) {
   const sheetDefs = [
     { name: 'Enrollments', headers: ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'] },
     { name: CONSTS.SHEET_STUDENTS, headers: ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID'] },
-    { name: 'Tasks', headers: ['TaskID','Title','Subject','Question','Type','Choices','Difficulty','TimeLimit','XpBase','Status','CreatedAt','CorrectAnswer','Explanation','IsAiGenerated'] },
-    { name: 'Submissions', headers: ['SubmissionID','UserEmail','TaskID','Answer','EarnedXP','Bonuses','SubmittedAt','AiSummary'] },
+    { name: 'Tasks', headers: ['TaskID','ClassID','Subject','Question','Type','Choices','AllowSelfEval','CreatedAt','Persona','Status','draft','Difficulty','TimeLimit','XPBase','CorrectAnswer'] },
+    { name: 'Submissions', headers: ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status'] },
     { name: 'Trophies', headers: ['TrophyID','Name','Description','IconURL','Condition'] },
     { name: 'Items', headers: ['ItemID','Name','Type','Price','Effect'] },
     { name: 'Leaderboard', headers: ['Rank','UserEmail','HandleName','Level','TotalXP','UpdatedAt'] },
-    { name: 'Settings', headers: ['Key','Value'] },
+    { name: 'Settings', headers: ['type','value1','value2'] },
     { name: 'TOC', headers: ['Sheet','Description'] }
   ];
   sheetDefs.forEach(def => {
