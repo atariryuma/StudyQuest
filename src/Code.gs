@@ -53,14 +53,7 @@ function getCurrentUser() {
   return { email: email };
 }
 
-/**
- * CSVテンプレート文字列を返す
- */
-function getStudentTemplateCsv() {
-  return 'Email,Name,Grade,Class,Number\n';
-}
-
 // Export for testing in Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getSqVersion, getStudentTemplateCsv };
+  module.exports = { getSqVersion };
 }
