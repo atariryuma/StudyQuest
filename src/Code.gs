@@ -26,6 +26,26 @@ const SHEET_GLOBAL_ITEMS        = 'Global_Items_Inventory';
  */
 function doGet(e) {
   console.time('doGet');
+  if (e && e.parameter && e.parameter.download === 'student_template.csv') {
+    const code = e.parameter.teacher || '';
+    let csv = getStudentTemplateCsv();
+    try {
+      const props = PropertiesService.getScriptProperties();
+      const fid = props.getProperty(code);
+      if (fid) {
+        const folder = DriveApp.getFolderById(fid);
+        const files = folder.getFilesByName('student_template.csv');
+        if (files.hasNext()) {
+          csv = files.next().getBlob().getDataAsString();
+        }
+      }
+    } catch (_) {}
+    console.timeEnd('doGet');
+    return ContentService
+      .createTextOutput(csv)
+      .downloadAsFile('student_template.csv')
+      .setMimeType(ContentService.MimeType.CSV);
+  }
   const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'login';
   const template = HtmlService.createTemplateFromFile(page);
   template.scriptUrl   = ScriptApp.getService().getUrl();
