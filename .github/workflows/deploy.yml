@@ -1,10 +1,14 @@
 # .github/workflows/deploy-gas-webapp.yml
+# ────────────────────────────────────────────────
+# GAS プロジェクトを自動テスト → 自動デプロイし、
+# その後 package.json の patch を自動で +1 します
+# ────────────────────────────────────────────────
 name: deploy-gas-webapp
 
-# ❶ 並列実行は 1 本に制限
+# ── 同じブランチ(main)のジョブは必ず 1 本ずつ順番に実行させる
 concurrency:
-  group: deploy-gas-webapp
-  cancel-in-progress: true
+  group: deploy-gas-webapp          # 「workflow 名 + ブランチ名」でも可
+  # cancel-in-progress を付けない ── 途中で kill される事故を防ぐ
 
 on:
   push:
@@ -16,70 +20,105 @@ on:
       - '.github/workflows/**'
 
 permissions:
-  contents: write   # 自動コミット用
+  contents: write                   # 自動コミット用
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-    # 1) Checkout
-    - uses: actions/checkout@v4
+    #──────────────────────────────
+    # ① Checkout
+    #──────────────────────────────
+    - name: Checkout
+      uses: actions/checkout@v4
       with:
         persist-credentials: true
         fetch-depth: 1
 
-    # 2) Node + npm cache
-    - uses: actions/setup-node@v4
+    #──────────────────────────────
+    # ② Node.js ＋ npm キャッシュ
+    #──────────────────────────────
+    - name: Use Node.js 20
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
 
-    # 3) Install deps
-    - run: npm ci
+    #──────────────────────────────
+    # ③ 依存インストール（npm ci）
+    #──────────────────────────────
+    - name: Install dependencies
+      run: npm ci
 
-    # 4) 版本取得 → GitHub Output
+    #──────────────────────────────
+    # ④ package.json の version を取得
+    #──────────────────────────────
     - id: ver
+      name: Get package version
       run: |
         VERSION=$(node -p 'require("./package.json").version')
         echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
-    # 5) Build version 注入
-    - name: Inject build version
+    #──────────────────────────────
+    # ⑤ Code.gs にビルド番号を注入
+    #──────────────────────────────
+    - name: Inject build version into Code.gs
       run: |
         sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
 
-    # 6) Tests
-    - run: npm test
+    #──────────────────────────────
+    # ⑥ ユニットテスト
+    #──────────────────────────────
+    - name: Run tests
+      run: npm test
 
-    # 7) Tools インストール
-    - run: npm i -g @google/clasp@latest
-    - run: sudo apt-get update -y && sudo apt-get install -y jq
+    #──────────────────────────────
+    # ⑦ clasp & jq をインストール
+    #──────────────────────────────
+    - name: Install clasp & jq
+      run: |
+        npm i -g @google/clasp@latest
+        sudo apt-get update -y && sudo apt-get install -y jq
 
-    # 8) clasp 認証
-    - run: |
+    #──────────────────────────────
+    # ⑧ clasp 認証ファイルを配置
+    #──────────────────────────────
+    - name: Configure clasp auth
+      run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # 9) clasp push & version 作成
-    - run: |
+    #──────────────────────────────
+    # ⑨ push → GAS で新バージョン作成
+    #──────────────────────────────
+    - name: Push and create new GAS version
+      run: |
         set -eux
         clasp push --force
         clasp version "v${{ steps.ver.outputs.VERSION }}"
 
-    # 10) Web-App デプロイ更新（--json 代替で awk 使用）
-    - run: |
+    #──────────────────────────────
+    # ⑩ 既存 Web-App デプロイを更新
+    #──────────────────────────────
+    - name: Update Web-App deployment
+      run: |
         set -eux
+        # 先頭行のバージョン番号だけ抽出
         VNUM=$(clasp versions | awk 'NR==1 {print $1}')
         clasp update-deployment "$DEPLOYMENT_ID" \
           --versionNumber "$VNUM" \
           --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
 
-    # 11) 次回用バージョンを bump & push
-    - if: ${{ success() }}
+    #──────────────────────────────
+    # ⑪ 次回開発用に patch を +1 & push
+    #──────────────────────────────
+    - name: Bump patch and push back
+      if: ${{ success() }}
       run: |
         set -eux
         git config user.name github-actions
