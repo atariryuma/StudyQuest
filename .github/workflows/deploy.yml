@@ -75,4 +75,4 @@ jobs:
         npm version patch -m "chore: bump to %s [skip ci]"
         git config user.name github-actions
         git config user.email github-actions@github.com
-        git push --follow-tags
+        git push --follow-tags --force-with-lease
