@@ -26,6 +26,14 @@ const SHEET_GLOBAL_ITEMS        = 'Global_Items_Inventory';
  */
 function doGet(e) {
   console.time('doGet');
+  if (e && e.parameter && e.parameter.download === 'student_template.csv') {
+    const csv = getStudentTemplateCsv();
+    console.timeEnd('doGet');
+    return ContentService
+      .createTextOutput(csv)
+      .downloadAsFile('student_template.csv')
+      .setMimeType(ContentService.MimeType.CSV);
+  }
   const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'login';
   const template = HtmlService.createTemplateFromFile(page);
   template.scriptUrl   = ScriptApp.getService().getUrl();
@@ -64,7 +72,14 @@ function getCurrentUser() {
   return { email: email };
 }
 
+/**
+ * CSVテンプレート文字列を返す
+ */
+function getStudentTemplateCsv() {
+  return 'Email,Name,Grade,Class,Number\n';
+}
+
 // Export for testing in Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getSqVersion };
+  module.exports = { getSqVersion, getStudentTemplateCsv };
 }
