@@ -24,7 +24,7 @@
           const code = encodeURIComponent(c.teacherCode);
             return `
               <div class="p-4 bg-gray-800 rounded-lg shadow space-y-2">
-                <p class="font-bold">${escapeHtml(c.className)}</p>
+                <p class="font-bold">${escapeHtml(c.teacherName || c.className)}</p>
                 <div class="flex gap-2 text-sm">
                   <a href="${SCRIPT_URL}?page=quest&teacher=${code}" class="flex-1 px-2 py-1 text-center bg-blue-600 rounded hover:bg-blue-500">クエストに挑戦</a>
                   <a href="${SCRIPT_URL}?page=leaderboard&teacher=${code}" class="flex-1 px-2 py-1 text-center bg-purple-600 rounded hover:bg-purple-500">ランキング</a>

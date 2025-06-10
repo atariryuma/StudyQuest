@@ -120,8 +120,11 @@ function loginAsStudent(teacherCode) {
       const last = sheet.getLastRow();
       if (last < 2) return;
       const emails = sheet.getRange(2,1,last-1,1).getValues().flat();
-      const found = emails.some(e => String(e).trim().toLowerCase() === email.toLowerCase());
-      if (found) classes.push({ teacherCode: code, className: code });
+      const found = emails.some(function(e) { return String(e).trim().toLowerCase() === email.toLowerCase(); });
+      if (found) {
+        var tName = getTeacherName_(code);
+        classes.push({ teacherCode: code, className: tName || code, teacherName: tName || code });
+      }
     });
     if (classes.length) {
       try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
@@ -180,4 +183,65 @@ function loginAsStudent(teacherCode) {
   var bonus = null;
   try { if (typeof processLoginBonus === 'function') bonus = processLoginBonus(email, teacherCode, sid); } catch (_) {}
   return { status:'ok', userInfo:{ globalData: globalData, classData: classData }, loginBonus: bonus };
+}
+
+function getTeacherName_(teacherCode) {
+  teacherCode = String(teacherCode || '').trim();
+  if (!teacherCode) return '';
+  if (typeof getTeacherDb_ !== 'function' || typeof getGlobalDb_ !== 'function') {
+    return '';
+  }
+  try {
+    var db = getTeacherDb_(teacherCode);
+    if (!db) return '';
+    var set = db.getSheetByName(CONSTS.SHEET_SETTINGS);
+    if (!set) return '';
+    var last = set.getLastRow();
+    var email = '';
+    if (last >= 2) {
+      var vals = set.getRange(2, 1, last - 1, 2).getValues();
+      for (var i = 0; i < vals.length; i++) {
+        if (String(vals[i][0]) === 'ownerEmail') { email = vals[i][1]; break; }
+      }
+    }
+    if (!email) return '';
+    var gdb = getGlobalDb_();
+    if (!gdb) return '';
+    var us = gdb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+    if (!us) return '';
+    var uLast = us.getLastRow();
+    if (uLast < 2) return '';
+    var rows = us.getRange(2, 1, uLast - 1, 2).getValues();
+    for (var j = 0; j < rows.length; j++) {
+      if (String(rows[j][0]).trim().toLowerCase() === String(email).toLowerCase()) {
+        return rows[j][1];
+      }
+    }
+  } catch (e) {}
+  return '';
+}
+
+function getTeacherName(teacherCode) {
+  return { name: getTeacherName_(teacherCode) };
+}
+
+function updateTeacherName(name) {
+  name = String(name || '').trim();
+  if (!name) return { status: 'error', message: 'empty' };
+  var email = Session.getEffectiveUser().getEmail();
+  var db = getGlobalDb_();
+  if (!db) return { status: 'error', message: 'missing_global' };
+  var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+  if (!sheet) return { status: 'error', message: 'sheet_not_found' };
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    var vals = sheet.getRange(2, 1, last - 1, sheet.getLastColumn()).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0]).trim().toLowerCase() === email.toLowerCase()) {
+        sheet.getRange(i + 2, 2).setValue(name);
+        return { status: 'ok' };
+      }
+    }
+  }
+  return { status: 'error', message: 'user_not_found' };
 }

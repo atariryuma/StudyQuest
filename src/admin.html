@@ -10,6 +10,7 @@
 <body class="bg-[#1a1b26] text-gray-200 font-sans p-4">
   <header class="mb-4">
     <h1 class="text-2xl font-bold">管理ダッシュボード</h1>
+    <p id="teacherName" class="text-sm text-gray-400"></p>
   </header>
   <section id="stats" class="mb-4"></section>
   <section class="mb-6">
@@ -45,7 +46,16 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       loadDashboard();
+      loadTeacherName();
     });
+
+    function loadTeacherName() {
+      google.script.run.withSuccessHandler(function(p) {
+        if (p && p.handleName) {
+          document.getElementById('teacherName').textContent = p.handleName;
+        }
+      }).loadProfileData(teacherCode);
+    }
 
     function loadDashboard() {
       google.script.run.withSuccessHandler(renderStats).getStatistics(teacherCode);
