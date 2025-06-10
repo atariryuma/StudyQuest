@@ -337,47 +337,9 @@
                             <label class="block text-sm mb-1 text-gray-400">クエスト内容 (問題文)</label>
                             <textarea id="question" rows="3" placeholder="ここに問題文を入力します。" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></textarea>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm mb-1 text-gray-400">難易度</label>
-                                <select id="difficulty" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                                    <option value="easy">易しい</option>
-                                    <option value="medium" selected>普通</option>
-                                    <option value="hard">難しい</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm mb-1 text-gray-400">制限時間</label>
-                                <select id="timeLimit" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                                    <option value="">なし</option>
-                                    <option value="180">3分</option>
-                                    <option value="300">5分</option>
-                                    <option value="420">7分</option>
-                                    <option value="600">10分</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm mb-1 text-gray-400">ステータス</label>
-                                <select id="status" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                                    <option value="draft">下書き</option>
-                                    <option value="open" selected>公開</option>
-                                    <option value="closed">終了</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm mb-1 text-gray-400">基本XP</label>
-                                <select id="xpBase" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></select>
-                            </div>
-                        </div>
                         <div>
                             <label class="block text-sm mb-1 text-gray-400">正答</label>
                             <input id="correctAnswer" type="text" placeholder="例: A" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                        </div>
-                        <div>
-                            <label class="block text-sm mb-1 text-gray-400">クエスト内容 (問題文)</label>
-                            <textarea id="question" rows="3" placeholder="ここに問題文を入力します。" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></textarea>
                         </div>
                         <div>
                             <label class="block text-sm mb-1 text-gray-400">回答タイプ</label>
@@ -420,6 +382,40 @@
                         <label class="block text-sm mb-1 text-gray-400 cursor-pointer">
                             <input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する
                         </label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">難易度</label>
+                                <select id="difficulty" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="easy">易しい</option>
+                                    <option value="medium" selected>普通</option>
+                                    <option value="hard">難しい</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">制限時間</label>
+                                <select id="timeLimit" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="">なし</option>
+                                    <option value="180">3分</option>
+                                    <option value="300">5分</option>
+                                    <option value="420">7分</option>
+                                    <option value="600">10分</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">ステータス</label>
+                                <select id="status" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="draft">下書き</option>
+                                    <option value="open" selected>公開</option>
+                                    <option value="closed">終了</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">基本XP</label>
+                                <select id="xpBase" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></select>
+                            </div>
+                        </div>
                         <div>
                             <label class="block text-sm mb-1 text-gray-400">対象クラス</label>
                             <div id="taskClassButtons" class="flex flex-wrap gap-2"></div>
