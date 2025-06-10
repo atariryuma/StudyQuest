@@ -30,12 +30,13 @@ test('saveDraftTask appends row with draft flag', () => {
   expect(row[2]).toBe('S');
   expect(row[3]).toBe('Q');
   expect(row[10]).toBe(1);
+  expect(row.length).toBe(15);
 });
 
 test('deleteDraftTask deletes only draft rows', () => {
   const rows = [
-    ['id1','', 'S','Q','text','[]','', new Date(), '', '', 1],
-    ['id2','', 'S2','Q2','text','[]','', new Date(), '', '', '']
+    ['id1','', 'S','Q','text','[]','', new Date(), '', '', 1, '', '', '', ''],
+    ['id2','', 'S2','Q2','text','[]','', new Date(), '', '', '', '', '', '', '']
   ];
   const sheetStub = {
     getLastRow: jest.fn(() => rows.length + 1),

@@ -168,9 +168,9 @@ function initTeacher(passcode) {
     {
       name: CONSTS.SHEET_TASKS,
       color: "ff9900",
-      header: ['TaskID', 'ClassID', 'Subject', 'Question', 'Type', 'Choices', 'AllowSelfEval', 'CreatedAt', 'Persona', 'Status', 'draft'],
+      header: ['TaskID', 'ClassID', 'Subject', 'Question', 'Type', 'Choices', 'AllowSelfEval', 'CreatedAt', 'Persona', 'Status', 'draft', 'Difficulty', 'TimeLimit', 'XPBase', 'CorrectAnswer'],
       description: "作成された課題の一覧です。",
-      columnsJa: ['課題ID','クラスID','教科','問題文','形式','選択肢(JSON)','自己評価許可','作成日時','ペルソナ','状態','下書きフラグ']
+      columnsJa: ['課題ID','クラスID','教科','問題文','形式','選択肢(JSON)','自己評価許可','作成日時','ペルソナ','状態','下書きフラグ','難易度','制限時間','基本XP','正答']
     },
     {
       name: CONSTS.SHEET_STUDENTS,

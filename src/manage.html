@@ -305,13 +305,32 @@
                     <form id="taskForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm mb-1 text-gray-400">教科</label>
-                                <input id="subject" type="text" list="subjectHistory" placeholder="例: 算数, 国語..." class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                                <datalist id="subjectHistory"></datalist>
-                            </div>
-                            <div>
                                 <label class="block text-sm mb-1 text-gray-400">タイトル</label>
                                 <input id="title" type="text" placeholder="クエストのタイトル" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1 text-gray-400">教科</label>
+                                <select id="subject" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
+                                    <option value="">選択してください</option>
+                                    <option value="国語">国語</option>
+                                    <option value="社会">社会</option>
+                                    <option value="算数">算数</option>
+                                    <option value="数学">数学</option>
+                                    <option value="理科">理科</option>
+                                    <option value="生活">生活</option>
+                                    <option value="音楽">音楽</option>
+                                    <option value="図工">図工</option>
+                                    <option value="美術">美術</option>
+                                    <option value="家庭">家庭</option>
+                                    <option value="技術・家庭">技術・家庭</option>
+                                    <option value="体育">体育</option>
+                                    <option value="保健体育">保健体育</option>
+                                    <option value="道徳">道徳</option>
+                                    <option value="英語">英語</option>
+                                    <option value="外国語">外国語</option>
+                                    <option value="総合">総合</option>
+                                    <option value="特別活動">特別活動</option>
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -350,10 +369,6 @@
                             <div>
                                 <label class="block text-sm mb-1 text-gray-400">基本XP</label>
                                 <select id="xpBase" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></select>
-                            </div>
-                            <div>
-                                <label class="block text-sm mb-1 text-gray-400">対象クラス</label>
-                                <div id="taskClassButtons" class="flex flex-wrap gap-2"></div>
                             </div>
                         </div>
                         <div>
@@ -405,6 +420,10 @@
                         <label class="block text-sm mb-1 text-gray-400 cursor-pointer">
                             <input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する
                         </label>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-400">対象クラス</label>
+                            <div id="taskClassButtons" class="flex flex-wrap gap-2"></div>
+                        </div>
                         <button type="submit" id="createBtn" class="w-full game-btn bg-amber-600 text-white px-4 py-2 rounded-lg font-bold border-amber-800 hover:bg-amber-500 text-base flex items-center justify-center gap-2">
                             <i data-lucide="wand-sparkles" class="w-5 h-5"></i>
                             <span>クエストを作成する</span>
@@ -561,7 +580,6 @@
 
       // Gemini 設定読み込み
       loadClassOptions();
-      loadSubjectHistory();
       loadDraft();
       document.getElementById('title').addEventListener('input', saveDraft);
       document.getElementById('subject').addEventListener('input', saveDraft);
@@ -643,6 +661,7 @@
           const isText = e.target.value === 'text';
           document.getElementById('aiToolsSection').classList.remove('hidden');
           document.getElementById('choiceTool').classList.toggle('hidden', isText);
+          document.getElementById('correctAnswer').parentElement.classList.toggle('hidden', !isText);
           if (!isText) {
             const cnt = parseInt(document.getElementById('choiceCount').value, 10) || 1;
             renderOptionInputs(Array(cnt).fill(''));
@@ -656,6 +675,7 @@
         const isText = radio.value === 'text';
         document.getElementById('aiToolsSection').classList.remove('hidden');
         document.getElementById('choiceTool').classList.toggle('hidden', isText);
+        document.getElementById('correctAnswer').parentElement.classList.toggle('hidden', !isText);
         if (!isText) {
           const cnt = parseInt(document.getElementById('choiceCount').value, 10) || 1;
           renderOptionInputs(Array(cnt).fill(''));
@@ -677,6 +697,9 @@
         const cls = clsRadio ? clsRadio.value : '';
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
+        const markVals = Array.from(document.querySelectorAll('#optionInputs input[name="correctMark"]'))
+                             .map((cb, idx) => cb.checked ? document.querySelectorAll('#optionInputs input[type="text"]')[idx].value.trim() : null)
+                             .filter(v => v);
         const draftPayload = {
           classId: cls,
           title: document.getElementById('title').value.trim(),
@@ -686,7 +709,7 @@
           timeLimit: document.getElementById('timeLimit').value,
           xpBase: xpFinal,
           status: document.getElementById('status').value,
-          correctAnswer: document.getElementById('correctAnswer').value
+          correctAnswer: markVals.join(', ')
         };
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
 
@@ -722,6 +745,9 @@
         const subject = document.getElementById('subject').value.trim();
         const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
         const cls = clsRadio ? clsRadio.value : '';
+        const marks2 = Array.from(document.querySelectorAll('#optionInputs input[name="correctMark"]'))
+                          .map((cb, idx) => cb.checked ? document.querySelectorAll('#optionInputs input[type="text"]')[idx].value.trim() : null)
+                          .filter(v => v);
         const draftPayload = {
           classId: cls,
           title: document.getElementById('title').value.trim(),
@@ -731,7 +757,7 @@
           timeLimit: document.getElementById('timeLimit').value,
           xpBase: xpFinal,
           status: document.getElementById('status').value,
-          correctAnswer: document.getElementById('correctAnswer').value
+          correctAnswer: marks2.join(', ')
         };
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
         container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
@@ -802,7 +828,7 @@
         const diffBonusMap = { easy: 20, medium: 30, hard: 50 };
         const xpFinal = xpBase + (diffBonusMap[difficulty] || 0);
         const status = document.getElementById('status').value;
-        const correctAnswer = document.getElementById('correctAnswer').value.trim();
+        const correctAnswerInput = document.getElementById('correctAnswer').value.trim();
         const self = document.getElementById('selfEval').checked;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
@@ -830,17 +856,22 @@
 
         // ペイロードをタイプ別に組み立て
         const makePayload = cls => {
-          const base = { classId: cls, title, subject, question: q, type: ansType, difficulty, timeLimit, xpBase: xpFinal, status, correctAnswer };
+          const base = { classId: cls, title, subject, question: q, type: ansType, difficulty, timeLimit, xpBase: xpFinal, status };
           if (ansType === 'text') {
+            base.correctAnswer = correctAnswerInput;
             return base;
           }
-          const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
-                              .map(inp => inp.value.trim());
-          if (inputs.some(text => text === '')) {
+          const textInputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
+                                .map(inp => inp.value.trim());
+          if (textInputs.some(t => t === '')) {
             alert('すべての選択肢を入力してください。');
             return null;
           }
-          base.choices = inputs;
+          const marks = Array.from(document.querySelectorAll('#optionInputs input[name="correctMark"]'))
+                            .map((cb, idx) => cb.checked ? textInputs[idx] : null)
+                            .filter(v => v);
+          base.choices = textInputs;
+          base.correctAnswer = marks.join(', ');
           return base;
         };
         let completed = 0;
@@ -1014,32 +1045,8 @@
       }
 
 
-        function loadSubjectHistory() {
-          const list = document.getElementById('subjectHistory');
-          if (!list) return;
-          let hist = [];
-          try {
-            hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
-          } catch (_) {
-            hist = [];
-          }
-          let html = '';
-          hist.forEach(s => {
-            html += `<option value="${escapeHtml(s)}"></option>`;
-          });
-          list.innerHTML = html;
-        }
-
-      function addSubjectHistory(subj) {
-        try {
-          let hist = JSON.parse(localStorage.getItem('subjectHistory') || '[]');
-          hist = hist.filter(s => s !== subj);
-          hist.unshift(subj);
-          if (hist.length > 8) hist = hist.slice(0,8);
-          localStorage.setItem('subjectHistory', JSON.stringify(hist));
-        } catch (_) {
-          // ignore storage errors
-        }
+      function addSubjectHistory() {
+        // 選択式に変更したため履歴機能は未使用
       }
 
       function loadDraft() {
@@ -1159,10 +1166,14 @@
         if (controls) controls.innerHTML = '';
         if (choices.length === 0) choices = [''];
 
+        const ansType = document.querySelector('input[name="ansType"]:checked')?.value || 'radio';
+        const markType = ansType === 'checkbox' ? 'checkbox' : 'radio';
+
         let html = '';
         choices.forEach((choice, index) => {
           html += `
             <div class="flex items-center gap-2">
+              <input type="${markType}" name="correctMark" class="accent-pink-500">
               <input type="text" value="${escapeHtml(choice)}" placeholder="選択肢 ${index + 1}" class="w-full p-2 bg-gray-900/80 rounded-md border border-gray-700 text-sm">
               <button type="button" class="removeOptionBtn text-red-400 hover:text-red-300 p-1"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
             </div>`;
@@ -1201,6 +1212,10 @@
         if (!isText) {
           document.getElementById('choiceCount').value = (data.choices || []).length || 1;
           renderOptionInputs(data.choices || []);
+          const marks = Array.isArray(data.correctAnswer) ? data.correctAnswer : String(data.correctAnswer || '').split(/,\s*/);
+          const inputs = document.querySelectorAll('#optionInputs input[type="text"]');
+          const cbs = document.querySelectorAll('#optionInputs input[name="correctMark"]');
+          inputs.forEach((inp, i) => { if (marks.includes(inp.value)) cbs[i].checked = true; });
         }
         const clsCheckbox = document.querySelector(`#taskClassButtons input[value="${task.classId}"]`);
         if (clsCheckbox) clsCheckbox.checked = true;
