@@ -474,19 +474,6 @@ function getClassIdMap(teacherCode) {
   return map;
 }
 
-function setGeminiSettings(teacherCode, persona) {
-  const data = loadTeacherSettings_(teacherCode);
-  if (persona !== undefined) data.persona = persona;
-  saveTeacherSettings_(teacherCode, data);
-}
-
-/**
- * Gemini 設定を取得
- */
-function getGeminiSettings(teacherCode) {
-  const data = loadTeacherSettings_(teacherCode);
-  return { apiKey: getGlobalGeminiApiKey(), persona: data.persona || '' };
-}
 
 function setGlobalGeminiApiKey(apiKey) {
   const props = PropertiesService.getScriptProperties();
@@ -506,13 +493,3 @@ function getGlobalGeminiApiKey() {
   }
 }
 
-function setGeminiPersona(teacherCode, persona) {
-  const data = loadTeacherSettings_(teacherCode);
-  data.persona = persona;
-  saveTeacherSettings_(teacherCode, data);
-}
-
-function getGeminiPersona(teacherCode) {
-  const data = loadTeacherSettings_(teacherCode);
-  return data.persona || '';
-}

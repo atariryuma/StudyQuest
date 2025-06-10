@@ -248,18 +248,6 @@
                                 <input type="file" id="csvInput" accept=".csv" class="w-full text-sm text-gray-200" />
                             </div>
                         </div>
-                        <div>
-                            <h3 class="font-bold text-pink-400 mb-2">AIペルソナ設定</h3>
-                            <div class="space-y-2 text-sm">
-                                <input id="personaInput" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" placeholder="例: 優しく導く先生" />
-                                <div class="space-y-1" id="geminiTestArea">
-                                    <input id="geminiTestPrompt" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600" value="こんにちは" />
-                                    <button type="button" id="geminiTestBtn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">Gemini テスト送信</button>
-                                    <div id="geminiTestResult" class="text-xs text-gray-300 whitespace-pre-wrap"></div>
-                                </div>
-                                <span id="apiStatus" class="text-green-400 text-xs hidden"></span>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
@@ -358,11 +346,13 @@
                                     <div id="generationHistory" class="hidden mt-2 p-2 bg-gray-900/50 rounded-md space-y-2"></div>
                                 </div>
                             </div>
-                            <div id="followupTool" class="p-3 rounded-lg ai-tool-panel space-y-3">
-                                <label class="font-bold text-purple-300 flex items-center gap-1"><i data-lucide="messages-square" class="w-4 h-4"></i>Geminiによる深掘りの質問例</label>
-                                <button type="button" id="generate-followup-btn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">深掘り質問をAIに聞く</button>
-                                <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
-                            </div>
+                            <details id="followupTool" class="p-3 rounded-lg ai-tool-panel space-y-3">
+                                <summary class="font-bold text-purple-300 flex items-center gap-1 cursor-pointer"><i data-lucide="messages-square" class="w-4 h-4"></i>Geminiによる深掘りの質問例</summary>
+                                <div class="mt-2 space-y-3">
+                                    <button type="button" id="generate-followup-btn" class="w-full game-btn bg-purple-600 text-white px-4 py-2 rounded-lg font-bold border-purple-800 hover:bg-purple-500 text-sm">深掘り質問をAIに聞く</button>
+                                    <div id="followupSuggestions" class="text-sm text-gray-300 bg-gray-900/50 p-2 rounded-md min-h-[40px] whitespace-pre-wrap"></div>
+                                </div>
+                            </details>
                         </div>
                         <label class="block text-sm mb-1 text-gray-400 cursor-pointer">
                             <input type="checkbox" id="selfEval" class="mr-1"> 自己評価を許可する
@@ -521,26 +511,11 @@
       }).getTeacherName(teacherCode);
 
       // Gemini 設定読み込み
-      loadGeminiSettings();
       loadClassOptions();
       loadSubjectHistory();
       loadDraft();
       document.getElementById('subject').addEventListener('input', saveDraft);
       document.getElementById('question').addEventListener('input', saveDraft);
-      document.getElementById('personaInput').addEventListener('change', saveGeminiSettings);
-      const testBtn = document.getElementById('geminiTestBtn');
-      if (testBtn) {
-        testBtn.addEventListener('click', () => {
-          const prompt = document.getElementById('geminiTestPrompt').value;
-          const resultEl = document.getElementById('geminiTestResult');
-          const persona = document.getElementById('personaInput').value;
-          resultEl.textContent = '送信中...';
-          google.script.run
-            .withSuccessHandler(res => { resultEl.textContent = res; })
-            .withFailureHandler(err => { resultEl.textContent = '失敗: ' + err.message; })
-            .callGeminiAPI_GAS(prompt, persona, teacherCode);
-        });
-      }
       document.getElementById('single-register-btn').addEventListener('click', openSingleRegisterModal);
       document.getElementById('delete-student-btn').addEventListener('click', openDeleteStudentModal);
       const bulkBtn = document.getElementById('bulk-register-btn');
@@ -655,7 +630,6 @@
 
         const choiceType = document.getElementById('aiChoiceType').value;
         const count = parseInt(document.getElementById('choiceCount').value, 10) || 3;
-        const persona = document.getElementById('personaInput').value;
         const container = document.getElementById('optionInputs');
         container.innerHTML = `<div class="text-center text-sm p-4">Geminiが選択肢を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i></div>`;
         renderIcons(document);
@@ -674,14 +648,13 @@
           .withFailureHandler(err => {
             container.innerHTML = `<div class="text-red-500 text-sm">生成に失敗しました: ${escapeHtml(err.message)}</div>`;
           })
-          .generateChoicePrompt(teacherCode, q, choiceType, count, persona);
+          .generateChoicePrompt(teacherCode, q, choiceType, count, '');
       });
 
       document.getElementById('generate-followup-btn').addEventListener('click', () => {
         const container = document.getElementById('followupSuggestions');
         const question = document.getElementById('question').value.trim();
         const subject = document.getElementById('subject').value.trim();
-        const persona = document.getElementById('personaInput').value;
         const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
         const cls = clsRadio ? clsRadio.value : '';
         const draftPayload = JSON.stringify({ classId: cls, subject, question });
@@ -696,7 +669,7 @@
           .withFailureHandler(err => {
             container.innerHTML = `<span class="text-red-500">生成に失敗しました: ${escapeHtml(err.message)}</span>`;
           })
-          .generateDeepeningPrompt(teacherCode, question, persona);
+          .generateDeepeningPrompt(teacherCode, question, '');
       });
 
       document.getElementById('toggleHistoryBtn').addEventListener('click', (e) => {
@@ -737,7 +710,6 @@
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
         const self = document.getElementById('selfEval').checked;
-        const persona = document.getElementById('personaInput').value;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
           alert('回答タイプを選択してください。');
@@ -805,7 +777,7 @@
               alert('課題作成中にエラーが発生しました: ' + err.message);
               debug('createTask failed: ' + err.message);
             })
-            .createTask(teacherCode, payload, self, persona);
+            .createTask(teacherCode, payload, self);
         });
 
         // ボタンアニメーション
@@ -922,20 +894,6 @@
         if (el) el.textContent = text;
       }
 
-      // Gemini 設定を取得して表示
-      function loadGeminiSettings() {
-        debug('loadGeminiSettings');
-        google.script.run
-          .withSuccessHandler(res => {
-            document.getElementById('personaInput').value = res.persona || '';
-            document.getElementById('apiStatus').classList.add('hidden');
-            debug('loadGeminiSettings success');
-          })
-          .withFailureHandler(err => {
-            debug('loadGeminiSettings failed: ' + err.message);
-          })
-          .getGeminiSettings(teacherCode);
-      }
 
       function loadClassOptions() {
         debug('loadClassOptions');
@@ -961,23 +919,6 @@
           .getClassIdMap(teacherCode);
       }
 
-      // Gemini 設定を保存
-      function saveGeminiSettings() {
-        const persona = document.getElementById('personaInput').value;
-        debug('saveGeminiSettings');
-        google.script.run
-          .withSuccessHandler(() => {
-            document.getElementById('apiStatus').textContent = '保存しました';
-            document.getElementById('apiStatus').classList.remove('hidden');
-            debug('saveGeminiSettings success');
-          })
-          .withFailureHandler(err => {
-            document.getElementById('apiStatus').textContent = '保存に失敗: ' + err.message;
-            document.getElementById('apiStatus').classList.remove('hidden');
-            debug('saveGeminiSettings failed: ' + err.message);
-          })
-          .setGeminiSettings(teacherCode, persona);
-      }
 
         function loadSubjectHistory() {
           const list = document.getElementById('subjectHistory');

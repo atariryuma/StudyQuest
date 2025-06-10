@@ -330,11 +330,7 @@ test('saveTeacherSettings persists values correctly and global key handling', ()
   expect(loaded.classes).toEqual([[1, 'A']]);
   // test global key functions
   context.setGlobalGeminiApiKey('xyz');
-  context.setGeminiSettings('ABC', 'P2');
   expect(props['geminiApiKey']).toBe(Buffer.from('xyz').toString('base64'));
-  const settings = context.getGeminiSettings('ABC');
-  expect(settings.apiKey).toBe('xyz');
-  expect(settings.persona).toBe('P2');
   expect(sheetStub.appendRow).toHaveBeenCalledWith(['persona', 'P1', '']);
   expect(sheetStub.appendRow).toHaveBeenCalledWith(['class', 1, 'A']);
   expect(sheetData[0]).toEqual(['type', 'value1', 'value2']);

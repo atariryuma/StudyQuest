@@ -22,13 +22,12 @@ test('generateFollowupFromAnswer builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((p, persona) => {
-    calls.push({ p, persona });
+  context.callGeminiAPI_GAS = jest.fn(p => {
+    calls.push({ p });
     return 'ok';
   });
-  const res = context.generateFollowupFromAnswer('sample answer', 'P');
+  const res = context.generateFollowupFromAnswer('sample answer', '');
   expect(res).toBe('ok');
-  expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('sample answer');
 });
 
@@ -62,14 +61,13 @@ test('generateProblemPrompt builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((p, persona, code) => {
-    calls.push({ p, persona, code });
+  context.callGeminiAPI_GAS = jest.fn((p, _persona, code) => {
+    calls.push({ p, code });
     return 'ok';
   });
-  const res = context.generateProblemPrompt('T1', 'Math', 'fractions', 'P');
+  const res = context.generateProblemPrompt('T1', 'Math', 'fractions', '');
   expect(res).toBe('ok');
   expect(calls[0].code).toBe('T1');
-  expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('Math');
   expect(calls[0].p).toContain('fractions');
 });
@@ -78,14 +76,13 @@ test('generateChoicePrompt builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((p, persona, code) => {
-    calls.push({ p, persona, code });
+  context.callGeminiAPI_GAS = jest.fn((p, _persona, code) => {
+    calls.push({ p, code });
     return 'ok';
   });
-  const res = context.generateChoicePrompt('T2', 'What?', '単語', 3, 'P');
+  const res = context.generateChoicePrompt('T2', 'What?', '単語', 3, '');
   expect(res).toBe('ok');
   expect(calls[0].code).toBe('T2');
-  expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('What?');
   expect(calls[0].p).toContain('単語');
   expect(calls[0].p).toContain('3');
@@ -95,14 +92,13 @@ test('generateDeepeningPrompt builds prompt and calls API', () => {
   const calls = [];
   const context = {};
   loadGemini(context);
-  context.callGeminiAPI_GAS = jest.fn((p, persona, code) => {
-    calls.push({ p, persona, code });
+  context.callGeminiAPI_GAS = jest.fn((p, _persona, code) => {
+    calls.push({ p, code });
     return 'ok';
   });
-  const res = context.generateDeepeningPrompt('T3', 'Explain gravity', 'P');
+  const res = context.generateDeepeningPrompt('T3', 'Explain gravity', '');
   expect(res).toBe('ok');
   expect(calls[0].code).toBe('T3');
-  expect(calls[0].persona).toBe('P');
   expect(calls[0].p).toContain('Explain gravity');
 });
 
