@@ -196,10 +196,19 @@ function generateLeaderboard(teacherCode) {
   const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!enrollSheet || !lbSheet || !userSheet) return;
   const emails = enrollSheet.getRange(2,1,enrollSheet.getLastRow()-1,1).getValues().flat();
-  const userRows = userSheet.getRange(2,1,userSheet.getLastRow()-1,6).getValues();
-  const map = {};
-  userRows.forEach(r => { map[r[0]] = { name: r[1], level: r[4], xp: r[3] }; });
-  const data = emails.map(e => Object.assign({ email: e }, map[e] || { name:'', level:0, xp:0 }));
+  var userRows = userSheet.getRange(2,1,userSheet.getLastRow()-1,6).getValues();
+  var map = {};
+  userRows.forEach(function(r) {
+    if (String(r[2]) === 'student') {
+      map[r[0]] = { name: r[1], level: r[4], xp: r[3] };
+    }
+  });
+  var data = [];
+  emails.forEach(function(e) {
+    if (map[e]) {
+      data.push({ email: e, name: map[e].name, level: map[e].level, xp: map[e].xp });
+    }
+  });
   data.sort((a,b) => b.xp - a.xp);
   lbSheet.clearContents();
   lbSheet.appendRow(['Rank','UserEmail','HandleName','Level','TotalXP','UpdatedAt']);
@@ -225,8 +234,11 @@ function getGlobalLeaderboard(limit) {
   const sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!sheet) return [];
   const rows = sheet.getRange(2,1,Math.max(0, sheet.getLastRow()-1),6).getValues();
-  var data = rows.map(function(r){
-    return { handleName: r[1], level: r[4], totalXp: r[3] };
+  var data = [];
+  rows.forEach(function(r) {
+    if (String(r[2]) === 'student') {
+      data.push({ handleName: r[1], level: r[4], totalXp: r[3] });
+    }
   });
   data.sort(function(a,b){ return b.totalXp - a.totalXp; });
   if (limit) data = data.slice(0, limit);

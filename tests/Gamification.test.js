@@ -107,6 +107,24 @@ test('purchaseItem deducts coins and records inventory', () => {
   expect(inventory[1][3]).toBe(2);
 });
 
+test('getGlobalLeaderboard filters non-students', () => {
+  const users = [
+    ['Email','Name','Role','Global_TotalXP','Global_Level','Global_Coins'],
+    ['stu@example.com','Stu','student',120,3,0],
+    ['teach@example.com','Teach','teacher',500,5,0]
+  ];
+  const userSheet = makeSheet2(users);
+  const globalDb = { getSheetByName: jest.fn(name => {
+    if (name === 'Global_Users') return userSheet;
+    return null;
+  }) };
+  const context = { getGlobalDb_: () => globalDb };
+  loadGamification(context);
+  const list = context.getGlobalLeaderboard();
+  expect(list.length).toBe(1);
+  expect(list[0].handleName).toBe('Stu');
+});
+
 
 function makeSheet2(data) {
   return {
