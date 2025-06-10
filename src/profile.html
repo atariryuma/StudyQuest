@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <title>Profile - StudyQuest</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="styles.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
   <script>
@@ -15,12 +13,11 @@
       .then(r=>r.text()).then(t=>{const s=document.createElement('script');s.innerHTML=t;document.head.appendChild(s);s.onload=()=>{ if(window.lucide){ window.lucide.createIcons(); } }});
   </script>
   <style>
-    body{background:#1a1b26;color:#c0caf5;font-family:'DotGothic16',sans-serif;}
     .pixel-bg{background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px;}
     .glass-panel{background:rgba(26,27,38,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);}
   </style>
 </head>
-<body class="min-h-screen p-4 pixel-bg">
+<body class="bg-[#1a1b26] text-gray-200 font-sans min-h-screen p-4 pixel-bg">
   <main class="max-w-3xl mx-auto space-y-4">
     <div id="statusCard" class="glass-panel p-4 rounded-xl space-y-3">
       <h1 class="text-xl font-bold">プロフィール</h1>

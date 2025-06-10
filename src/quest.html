@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <title>StudyQuest – クエスト画面 (UI改善版)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="styles.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
   <script>
@@ -28,8 +26,6 @@
   </script>
   <style>
     body {
-      font-family: 'DotGothic16', sans-serif;
-      background-color: #1a1b26;
       color: #c0caf5;
     }
     ::-webkit-scrollbar { width: 8px; }
@@ -85,7 +81,7 @@
     }
   </style>
 </head>
-<body class="min-h-screen p-4 pixel-bg">
+<body class="bg-[#1a1b26] text-gray-200 font-sans min-h-screen p-4 pixel-bg">
 
   <div class="max-w-7xl mx-auto h-[calc(100vh-2rem)] flex flex-col gap-4">
     <!-- ===== ヘッダー (アイコン削除) ===== -->
