@@ -134,7 +134,7 @@
         <div id="csv-upload-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
             <div class="bg-gray-800 p-6 rounded-xl space-y-4 w-80 modal-content">
                 <input type="file" id="csv-file-input" accept=".csv" class="w-full text-sm text-gray-200" />
-                <a href="<?!= scriptUrl.replace('/dev','/exec') ?>?download=student_template.csv&teacher=<?!= teacher ?>" download="student_template.csv" id="download-template-btn" class="text-blue-400 underline text-sm">テンプレートをダウンロード</a>
+                <a href="<?!= scriptUrl.replace('/dev','/exec') ?>?download=student_template.csv&teacher=<?!= teacher ?>" download="student_template.csv" target="_top" id="download-template-btn" class="text-blue-400 underline text-sm">テンプレートをダウンロード</a>
                 <div class="flex justify-end gap-2">
                     <button type="button" id="close-csv-modal" class="px-3 py-1 bg-gray-600 rounded">閉じる</button>
                     <button id="upload-csv-btn" class="px-3 py-1 bg-pink-600 rounded">アップロード</button>
