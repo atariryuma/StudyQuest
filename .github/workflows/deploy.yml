@@ -1,74 +1,88 @@
 name: deploy-gas-webapp
 
+# ─────────────────────────────────────────────────────
+# 同時実行を 1 本に制限（並列で競合 push しない）
+# ─────────────────────────────────────────────────────
+concurrency:
+  group: deploy-gas-webapp
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ main ]
-    paths:     # コード・テスト・設定の変更で発火
+    paths:
       - 'src/**'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/**'
 
 permissions:
-  contents: write   # version bump 用の push に必要
+  contents: write     # 自動バンプ用 push に必要
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-    # 0. チェックアウト
+    # 1. Checkout
     - uses: actions/checkout@v4
       with:
         persist-credentials: true
+        fetch-depth: 1        # デフォルト
+        fetch-tags: false
 
-    # 1. Node.js + npm キャッシュ
+    # 2. Node.js + npm cache
     - uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
 
-    # 2. 依存インストール（再現性の高い npm ci）
+    # 3. Install deps (再現性◎)
     - run: npm ci
 
-    # 3. パッケージバージョン取得
+    # 4. Read package version → GitHub Output（安全な多行シェル）
     - id: ver
-      run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+      shell: bash
+      run: |
+        VERSION=$(node -p 'require("./package.json").version')
+        echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
-    # 4. Code.gs のプレースホルダーを置換（リポジトリにはコミットしない）
+    # 5. Inject __BUILD_VERSION__ in Code.gs（コミットしない）
     - name: Inject build version
       run: |
-        ver="v${{ steps.ver.outputs.VERSION }}"
-        sed -i "s/__BUILD_VERSION__/${ver}/" src/Code.gs
+        BUILD="v${{ steps.ver.outputs.VERSION }}"
+        sed -i "s/__BUILD_VERSION__/${BUILD}/" src/Code.gs
 
-    # 5. テスト実行（Jest は package.json の version を参照）
+    # 6. Run tests
     - run: npm test
 
-    # 6. clasp インストール & 認証
+    # 7. Install clasp & jq
     - run: npm i -g @google/clasp@latest
+    - run: sudo apt-get update -y && sudo apt-get install -y jq
+
+    # 8. Authenticate clasp
     - run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # 7. push → 新バージョン作成
+    # 9. Push to GAS & create version
     - run: |
         set -eux
         clasp push --force
         clasp version "v${{ steps.ver.outputs.VERSION }}"
 
-    # 8. jq で最新 versionNumber を取得しデプロイ更新
-    - run: sudo apt-get update -y && sudo apt-get install -y jq
+    # 10. Update existing Web-App deployment
     - run: |
-        vnum=$(clasp versions --json | jq -r '.[0].versionNumber')
+        set -eux
+        VNUM=$(clasp versions --json | jq -r '.[0].versionNumber')
         clasp update-deployment "$DEPLOYMENT_ID" \
-          --versionNumber "$vnum" \
+          --versionNumber "$VNUM" \
           --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
 
-    # 9. 次回開発用に patch バンプ（ループ防止に [skip ci]）
+    # 11. Bump patch for next dev cycle & push (安全に上書き)
     - if: ${{ success() }}
       run: |
         set -eux
