@@ -12,7 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.395.0/dist/umd/lucide.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
   <style>
-    body { font-family: 'DotGothic16', sans-serif; background-color: #1a1b26; overflow: hidden; }
+    body { font-family: 'DotGothic16', sans-serif; background: linear-gradient(to bottom right, #7e22ce, #1e3a8a); overflow: hidden; }
     #particleCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
     .glass-panel { background: rgba(26, 27, 38, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
     .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
@@ -22,7 +22,7 @@
     input:focus, select:focus { outline: none; --tw-ring-color: #f472b6; box-shadow: 0 0 0 2px var(--tw-ring-color); border-color: #f472b6; }
   </style>
 </head>
-<body class="bg-[#1a1b26] text-gray-200">
+<body class="text-gray-200">
   <canvas id="particleCanvas"></canvas>
   <main class="min-h-screen flex items-center justify-center p-4">
     <section id="loginBox" class="glass-panel rounded-2xl p-8 w-full max-w-md shadow-2xl text-center">
@@ -44,9 +44,7 @@
           </div>
           <div class="flex gap-2 justify-center">
             <button id="secret-key-submit-btn" type="submit" class="game-btn bg-pink-600 text-white px-4 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex-1">セットアップ実行</button>
-            <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex-1">
-              <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            </button>
+            <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex-1">◀︎キャンセル</button>
           </div>
         </form>
         <div id="devLoginSection" class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg hidden">
@@ -58,9 +56,7 @@
       <div id="studentSection" class="space-y-4 hidden">
         <button id="student-login-btn" class="game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500 w-full">生徒としてログイン</button>
       </div>
-      <button id="reselect-btn" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 w-full mt-4 hidden">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>
-      </button>
+      <button id="reselect-btn" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 w-full mt-4 hidden">◀︎</button>
     </section>
   </main>
 
@@ -229,26 +225,32 @@
     });
 
     document.getElementById('back-to-login-btn').addEventListener('click', () => {
-      if (window.gsap) {
-        gsap.to(secretForm, { opacity: 0, scale: 0.8, duration: 0.3, onComplete: () => {
+        if (window.gsap) {
+          gsap.to(secretForm, { opacity: 0, scale: 0.8, duration: 0.3, onComplete: () => {
+            secretForm.classList.add('hidden');
+            secretForm.style.opacity = '';
+            secretForm.style.transform = '';
+            teacherBtn.disabled = false;
+            gsap.fromTo(teacherBtn, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.3 });
+          }});
+        } else {
           secretForm.classList.add('hidden');
+          secretForm.style.opacity = '';
+          secretForm.style.transform = '';
           teacherBtn.disabled = false;
-          gsap.fromTo(teacherBtn, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.3 });
-        }});
-      } else {
-        secretForm.classList.add('hidden');
-        teacherBtn.disabled = false;
-      }
-    });
+        }
+      });
 
-    reselectBtn.addEventListener('click', () => {
-      stage1.classList.remove('hidden');
-      teacherSec.classList.add('hidden');
-      studentSec.classList.add('hidden');
-      secretForm.classList.add('hidden');
-      teacherBtn.disabled = false;
-      reselectBtn.classList.add('hidden');
-    });
+      reselectBtn.addEventListener('click', () => {
+        stage1.classList.remove('hidden');
+        teacherSec.classList.add('hidden');
+        studentSec.classList.add('hidden');
+        secretForm.classList.add('hidden');
+        secretForm.style.opacity = '';
+        secretForm.style.transform = '';
+        teacherBtn.disabled = false;
+        reselectBtn.classList.add('hidden');
+      });
 
     function onTeacherLoginResponse(res) {
       hideLoadingOverlay();
