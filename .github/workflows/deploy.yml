@@ -47,8 +47,8 @@ jobs:
     # 4. Get current version
     - id: ver
       run: |
-        echo "VERSION=$(node -p 'require(\"./package.json\").version')" >> $GITHUB_OUTPUT
-
+        echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+    
     # 5. Inject version into Code.gs
     - run: sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
 
@@ -71,11 +71,10 @@ jobs:
         clasp push --force
         clasp version "v${{ steps.ver.outputs.VERSION }}"
 
-    # 10. Update deployment  (cut コマンドで安全に取得)
+    # 10. versionNumber 抽出（数字行だけ grep）
     - run: |
         set -eux
-        VNUM=$(clasp versions | head -n1 | cut -d' ' -f1)
-        [[ "$VNUM" =~ ^[0-9]+$ ]] || { echo "Bad version: $VNUM"; exit 1; }
+        VNUM=$(clasp versions | grep -E '^[0-9]+' | head -n1 | cut -d' ' -f1)
         clasp update-deployment "$DEPLOYMENT_ID" \
           --versionNumber "$VNUM" \
           --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
