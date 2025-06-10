@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body { font-family: 'Inter', sans-serif; }
+.font-retro { font-family: 'DotGothic16', sans-serif; }
+
+/* Glass style panel */
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Common game-like button */
+.game-btn {
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  transition: transform 0.1s;
+  border-bottom-width: 4px;
+  border-style: solid;
+}
+.game-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+/* Role buttons color */
+.role-btn:nth-child(1) {
+  background-color: #0891b2;
+  border-color: #155e75;
+}
+.role-btn:nth-child(1):hover { background-color: #06b6d4; }
+.role-btn:nth-child(2) {
+  background-color: #7e22ce;
+  border-color: #581c87;
+}
+.role-btn:nth-child(2):hover { background-color: #9333ea; }
+
+/* Input field */
+.input-field {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid #3730a3;
+}
+.input-field:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #ec4899;
+  border-color: #ec4899;
+}
+
+/* Simple particles background */
+.particle-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--x) var(--y), rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: move-bg 10s linear infinite;
+}
+@keyframes move-bg {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 30px; }
+}

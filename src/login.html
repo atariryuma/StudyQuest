@@ -4,58 +4,18 @@
   <meta charset="UTF-8">
   <title>StudyQuest - Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="styles.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #1a1b26;
-      overflow: hidden;
-    }
-    #particleCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
-    .glass-panel {
-      background: rgba(26,27,38,0.8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .game-btn {
-      transition: all 0.2s ease;
-      border-bottom-width: 4px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-    }
-    .game-btn:not(:disabled):hover {
-      filter: brightness(1.1);
-      transform: translateY(-2px);
-    }
-    .game-btn:active:not(:disabled) {
-      transform: translateY(2px);
-      border-bottom-width: 2px;
-    }
-    .game-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  </style>
 </head>
-<body class="text-gray-200">
-  <canvas id="particleCanvas"></canvas>
+<body class="bg-[#1a1b26] text-gray-200 font-sans">
+  <div class="particle-bg"></div>
   <main class="min-h-screen flex items-center justify-center p-4">
     <section id="loginBox" class="glass-panel rounded-2xl p-8 w-full max-w-md shadow-2xl text-center">
       <div class="mb-6">
         <i data-lucide="swords" class="w-12 h-12 text-pink-400 mx-auto mb-2"></i>
-        <h1 class="text-3xl font-bold tracking-widest text-white" style="font-family:'DotGothic16',sans-serif">StudyQuest</h1>
+        <h1 class="text-3xl font-bold tracking-widest font-retro">StudyQuest</h1>
       </div>
       <div class="grid grid-cols-2 gap-4 mb-4">
         <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500">教師としてログイン</button>
@@ -100,47 +60,6 @@
   </div>
 
   <script>
-    const canvas = document.getElementById('particleCanvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    class Particle {
-      constructor() { this.reset(); }
-      reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.3;
-        this.vy = (Math.random() - 0.5) * 0.3;
-        this.size = Math.random() * 2 + 1;
-        this.alpha = Math.random() * 0.5 + 0.3;
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-          this.reset();
-        }
-      }
-      draw() {
-        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    function initParticles() { particles = []; for (let i = 0; i < 80; i++) particles.push(new Particle()); }
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => { p.update(); p.draw(); });
-      requestAnimationFrame(animateParticles);
-    }
-    initParticles();
-    animateParticles();
     if (window.lucide) window.lucide.createIcons();
     if (window.gsap) {
       gsap.from('#loginBox', { opacity: 0, scale: 0.8, duration: 0.6, ease: 'power2.out' });
