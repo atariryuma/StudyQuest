@@ -82,6 +82,23 @@
   </div>
   <div id="loadingOverlay" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 text-white z-40">ロード中…</div>
 
+  <div id="firstMessage" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel modal rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+      <p class="mb-2">🎉 初回ログインありがとうございます！</p>
+      <p class="mb-2">これから Google Drive 上に</p>
+      <p class="mb-2"><strong>「StudyQuest_<span id="newCodeSpan"></span>」</strong>フォルダを作成します。</p>
+      <p class="mb-4">生徒の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
+      <button id="closeFirstMsg" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">了解しました</button>
+    </div>
+  </div>
+
+  <div id="welcomeBack" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel modal rounded-2xl p-6 w-full max-w-md text-center shadow-2xl">
+      <p id="welcomeText" class="mb-4"></p>
+      <button id="closeWelcome" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">OK</button>
+    </div>
+  </div>
+
   <script>
     const canvas = document.getElementById('particleCanvas');
     const ctx = canvas.getContext('2d');
@@ -135,6 +152,9 @@
     const studentBtn = document.getElementById('student-login-btn');
     const secretForm = document.getElementById('teacher-secret-form');
 
+    const LS_TEACHER = 'sq_welcome_teacher';
+    const LS_STUDENT = 'sq_welcome_student';
+
     teacherBtn.addEventListener('click', () => {
       showLoadingOverlay();
       google.script.run
@@ -182,7 +202,7 @@
       if (!res || !res.status) { showError('エラーが発生しました'); return; }
       switch(res.status) {
         case 'ok':
-          window.top.location.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(res.teacherCode)}`;
+          showTeacherMessage(res.teacherCode);
           break;
         case 'new_teacher_prompt_key':
           if (window.gsap) {
@@ -204,7 +224,7 @@
     function onSetupSuccess(res) {
       hideLoadingOverlay();
       if (res && res.status === 'ok') {
-        window.top.location.href = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(res.teacherCode)}`;
+        showTeacherMessage(res.teacherCode, true);
       } else {
         showError('セットアップに失敗しました');
       }
@@ -217,14 +237,17 @@
         return;
       }
       const classes = res.enrolledClasses;
+      let redirect;
       if (classes.length === 1) {
-        window.top.location.href = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(classes[0].teacherCode)}`;
+        redirect = `${SCRIPT_URL}?page=quest&teacher=${encodeURIComponent(classes[0].teacherCode)}`;
       } else if (classes.length > 1) {
         sessionStorage.setItem('enrolledClasses', JSON.stringify(classes));
-        window.top.location.href = `${SCRIPT_URL}?page=class-select`;
+        redirect = `${SCRIPT_URL}?page=class-select`;
       } else {
         showError('どのクラスにも登録されていません');
+        return;
       }
+      showStudentMessage(redirect);
     }
 
     function onLoginFailure(err) {
@@ -244,6 +267,42 @@
     }
     function hideLoadingOverlay() {
       document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    function showTeacherMessage(code, isFirst) {
+      const redirect = `${SCRIPT_URL}?page=manage&teacher=${encodeURIComponent(code)}`;
+      if (!localStorage.getItem(LS_TEACHER) || isFirst) {
+        document.getElementById('newCodeSpan').textContent = code;
+        document.getElementById('newCodeSpan2').textContent = code;
+        const modal = document.getElementById('firstMessage');
+        modal.classList.remove('hidden');
+        document.getElementById('closeFirstMsg').onclick = () => {
+          modal.classList.add('hidden');
+          localStorage.setItem(LS_TEACHER, '1');
+          window.top.location.href = redirect;
+        };
+      } else {
+        document.getElementById('welcomeText').textContent = `${new Date().toLocaleDateString('ja-JP')} にログインしました。ログインボーナスが付与されました。`;
+        const w = document.getElementById('welcomeBack');
+        w.classList.remove('hidden');
+        document.getElementById('closeWelcome').onclick = () => {
+          w.classList.add('hidden');
+          window.top.location.href = redirect;
+        };
+      }
+    }
+
+    function showStudentMessage(redirect) {
+      const first = !localStorage.getItem(LS_STUDENT);
+      const text = first ? '初回ログインありがとうございます！' : `${new Date().toLocaleDateString('ja-JP')} ようこそ！ログインボーナスを獲得しました。`;
+      document.getElementById('welcomeText').textContent = text;
+      const w = document.getElementById('welcomeBack');
+      w.classList.remove('hidden');
+      document.getElementById('closeWelcome').onclick = () => {
+        w.classList.add('hidden');
+        if (first) localStorage.setItem(LS_STUDENT, '1');
+        window.top.location.href = redirect;
+      };
     }
   </script>
 </body>
