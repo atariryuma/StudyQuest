@@ -8,7 +8,7 @@ function replace(file, regex, replacement) {
   fs.writeFileSync(file, updated);
 }
 
-replace('src/Code.gs', /^const SQ_VERSION\s*=\s*'v[0-9.]+';/m,
-  `const SQ_VERSION           = 'v${version}';`);
+replace('src/Code.gs', /^(?:const|var)\s+SQ_VERSION\s*=\s*'v[0-9.]+';/m,
+  `var SQ_VERSION = 'v${version}';`);
 replace('tests/Code.test.js', /expect\(getSqVersion\(\)\).toBe\('v[0-9.]+'\);/,
   `expect(getSqVersion()).toBe('v${version}');`);
