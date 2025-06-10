@@ -51,7 +51,7 @@ function processSubmission(teacherCode, studentId, taskId, answer) {
   var earnedXp = XP_PER_SUBMISSION;
   var db = getGlobalDb_();
   if (!db) return { status: 'error', message: 'missing_global' };
-  var sheet = db.getSheetByName('Global_Users');
+  var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!sheet) return { status: 'error', message: 'missing_global' };
 
   var last = sheet.getLastRow();

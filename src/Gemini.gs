@@ -67,7 +67,7 @@ function callGeminiAPI_GAS(prompt, persona) {
 function logToSpreadsheet(logData) {
   const ss = getSpreadsheetByTeacherCode(logData.teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(SHEET_AI_FEEDBACK);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_AI_FEEDBACK);
   if (!sheet) return;
   const logId = sheet.getLastRow();
   sheet.appendRow([

@@ -8,10 +8,10 @@ function listBoard(teacherCode) {
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('listBoard'); return []; }
-  const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (!sheet) {
     console.timeEnd('listBoard');
-    return [{ name: "お知らせ", answer: `「${SHEET_SUBMISSIONS}」シートが見つかりません。` }];
+    return [{ name: "お知らせ", answer: `「${CONSTS.SHEET_SUBMISSIONS}」シートが見つかりません。` }];
   }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listBoard'); return []; }
@@ -44,7 +44,7 @@ function listTaskBoard(teacherCode, taskId) {
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('listTaskBoard'); return []; }
-  const sheet = ss.getSheetByName(SHEET_SUBMISSIONS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (!sheet) { console.timeEnd('listTaskBoard'); return []; }
 
   const lastRow = sheet.getLastRow();
@@ -94,8 +94,8 @@ function getStatistics(teacherCode) {
     console.timeEnd('getStatistics');
     return { taskCount: 0, studentCount: 0 };
   }
-  const taskSheet    = ss.getSheetByName(SHEET_TASKS);
-  const studentSheet = ss.getSheetByName(SHEET_STUDENTS);
+  const taskSheet    = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  const studentSheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   const taskCount    = taskSheet ? Math.max(0, taskSheet.getLastRow() - 1) : 0;
 
   let studentCount = 0;

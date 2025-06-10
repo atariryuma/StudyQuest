@@ -60,7 +60,7 @@ function getGlobalDb_() {
     }
   }
   const props = PropertiesService.getScriptProperties();
-  const propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
+  const propName = (typeof CONSTS !== 'undefined' && CONSTS.PROP_GLOBAL_MASTER_DB) ? CONSTS.PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
   const id = props.getProperty(propName);
   if (!id) return null;
   try {
@@ -89,7 +89,7 @@ function getTeacherDb_(teacherCode) {
     }
   }
   const props = PropertiesService.getScriptProperties();
-  const id = props.getProperty('ssId_' + teacherCode);
+  const id = props.getProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode);
   if (!id) return null;
   try {
     const ss = SpreadsheetApp.openById(id);

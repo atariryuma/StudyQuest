@@ -22,7 +22,7 @@ function processLoginBonus(userEmail) {
     if (lock.waitLock) lock.waitLock(5000);
     const db = getGlobalDb_();
     if (!db) return;
-    const sheet = db.getSheetByName('Global_Users');
+    const sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
     if (!sheet) return;
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) return;
@@ -61,9 +61,9 @@ function checkAndAwardTrophies(userEmail, context) {
   const globalDb = getGlobalDb_();
   if (!teacherDb || !globalDb) return [];
 
-  const trophySheet = teacherDb.getSheetByName('Trophies');
-  const logSheet = globalDb.getSheetByName('Global_Trophies_Log');
-  const userSheet = globalDb.getSheetByName('Global_Users');
+  const trophySheet = teacherDb.getSheetByName(CONSTS.SHEET_TROPHIES);
+  const logSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_TROPHIES_LOG);
+  const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!trophySheet || !logSheet || !userSheet) return [];
 
   const userEmails = userSheet.getRange(2, 1, Math.max(0, userSheet.getLastRow() - 1), 1)
@@ -148,8 +148,8 @@ function purchaseItem(userEmail, itemId, quantity) {
     if (lock.waitLock) lock.waitLock(5000);
     const db = getGlobalDb_();
     if (!db) return { status: 'error' };
-    const userSheet = db.getSheetByName('Global_Users');
-    const invSheet = db.getSheetByName('Global_Items_Inventory');
+    const userSheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+    const invSheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_ITEMS);
     const itemsSheet = db.getSheetByName('Items');
     if (!userSheet || !invSheet || !itemsSheet) return { status: 'error' };
     const rows = itemsSheet.getRange(2,1,itemsSheet.getLastRow()-1,5).getValues();
@@ -182,7 +182,7 @@ function generateLeaderboard(teacherCode) {
   if (!teacherDb || !globalDb) return;
   const enrollSheet = teacherDb.getSheetByName('Enrollments');
   const lbSheet = teacherDb.getSheetByName('Leaderboard') || teacherDb.insertSheet('Leaderboard');
-  const userSheet = globalDb.getSheetByName('Global_Users');
+  const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!enrollSheet || !lbSheet || !userSheet) return;
   const emails = enrollSheet.getRange(2,1,enrollSheet.getLastRow()-1,1).getValues().flat();
   const userRows = userSheet.getRange(2,1,userSheet.getLastRow()-1,6).getValues();

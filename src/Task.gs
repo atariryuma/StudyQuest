@@ -9,9 +9,9 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   if (!ss) {
     throw new Error("課題作成失敗: 教師のスプレッドシートが見つかりません。");
   }
-  const taskSheet = ss.getSheetByName(SHEET_TASKS);
+  const taskSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!taskSheet) {
-    throw new Error(`システムエラー: 「${SHEET_TASKS}」シートが見つかりません。`);
+    throw new Error(`システムエラー: 「${CONSTS.SHEET_TASKS}」シートが見つかりません。`);
   }
   let parsed;
   try {
@@ -54,7 +54,7 @@ function listTasks(teacherCode) {
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('listTasks'); return []; }
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) { console.timeEnd('listTasks'); return []; }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listTasks'); return []; }
@@ -82,7 +82,7 @@ function getTaskMap_(teacherCode) {
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return {};
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return {};
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
@@ -131,7 +131,7 @@ function listTasksForClass(teacherCode, grade, classroom) {
 function deleteTask(teacherCode, taskId) {
   const ss   = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return;
   const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
   const idx  = data.indexOf(taskId);
@@ -150,7 +150,7 @@ function deleteTask(teacherCode, taskId) {
 function duplicateTask(teacherCode, taskId) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
@@ -198,7 +198,7 @@ function closeTask(teacherCode, taskId) {
   console.time('closeTask');
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('closeTask'); return; }
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) { console.timeEnd('closeTask'); return; }
   const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
   const idx = ids.indexOf(taskId);
@@ -208,7 +208,7 @@ function closeTask(teacherCode, taskId) {
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
-  const subs = ss.getSheetByName(SHEET_SUBMISSIONS);
+  const subs = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (subs && subs.getLastRow() > 1) {
     const range = subs.getRange(2, 1, subs.getLastRow() - 1, 13);
     const data = range.getValues();
@@ -230,7 +230,7 @@ function closeTask(teacherCode, taskId) {
 
 function applyBonusXp_(ss, teacherCode, ids, amount) {
   if (!ids || ids.length === 0) return;
-  const sheet = ss.getSheetByName(SHEET_STUDENTS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return;
 
   const lastRow = (typeof sheet.getLastRow === 'function') ?
@@ -345,7 +345,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
   removeCacheValue_('history_' + teacherCode + '_' + studentId);
 
   // 全体ログにも追記
-  const globalAnswerSheet = ss.getSheetByName(SHEET_SUBMISSIONS);
+  const globalAnswerSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (globalAnswerSheet) {
     let questionSummary = qSummary || questionText;
     if (typeof questionSummary === 'string' && questionSummary.length > 50) {
@@ -371,7 +371,7 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
       1
       ]);
   } else {
-    console.warn(`「${SHEET_SUBMISSIONS}」シートが見つかりません。`);
+    console.warn(`「${CONSTS.SHEET_SUBMISSIONS}」シートが見つかりません。`);
   }
   console.timeEnd('submitAnswer');
 }
@@ -385,9 +385,9 @@ function saveDraftTask(teacherCode, payloadJson) {
   if (!ss) {
     throw new Error('ドラフト保存失敗: 教師のスプレッドシートが見つかりません。');
   }
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) {
-    throw new Error(`システムエラー: 「${SHEET_TASKS}」シートが見つかりません。`);
+    throw new Error(`システムエラー: 「${CONSTS.SHEET_TASKS}」シートが見つかりません。`);
   }
   const id = Utilities.getUuid();
   let classId = '';
@@ -408,7 +408,7 @@ function saveDraftTask(teacherCode, payloadJson) {
 function deleteDraftTask(teacherCode, taskId) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return;
   const last = sheet.getLastRow();
   if (last < 2) return;
@@ -452,7 +452,7 @@ function updateTask(teacherCode, taskId, updateData) {
   if (!taskId) return { status: 'error', message: 'invalid_id' };
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return { status: 'error', message: 'no_sheet' };
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return { status: 'error', message: 'no_sheet' };
   const ids = sheet.getRange(2, 1, Math.max(0, sheet.getLastRow()-1), 1).getValues().flat();
   const idx = ids.indexOf(taskId);

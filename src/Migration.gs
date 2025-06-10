@@ -19,7 +19,7 @@ function deleteLegacyApiKeys() {
 function addDraftColumn(teacherCode) {
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return false;
-  const sheet = ss.getSheetByName(SHEET_TASKS);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
   if (!sheet) return false;
   const lastCol = sheet.getLastColumn();
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];

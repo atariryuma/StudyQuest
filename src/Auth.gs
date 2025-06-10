@@ -1,12 +1,12 @@
 function setupInitialTeacher(secretKey) {
   const props = PropertiesService.getScriptProperties();
-  const stored = props.getProperty('teacherPasscode');
+  const stored = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
   if (!stored || secretKey !== stored) {
     return { status: "error", message: "invalid_key" };
   }
 
   const email = Session.getEffectiveUser().getEmail();
-  if (props.getProperty('teacherCode_' + email)) {
+  if (props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email)) {
     return { status: "error", message: "already_exists" };
   }
 
@@ -14,7 +14,7 @@ function setupInitialTeacher(secretKey) {
   if (typeof getGlobalDb_ === 'function') {
     const globalDb = getGlobalDb_();
     if (globalDb) {
-      const userSheet = globalDb.getSheetByName('Global_Users');
+      const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
       if (userSheet) {
         const last = userSheet.getLastRow();
         let exists = false;
@@ -43,7 +43,7 @@ function setupInitialTeacher(secretKey) {
   }
 
   const teacherCode = Utilities.getUuid().substring(0, 6).toUpperCase();
-  const folder = DriveApp.createFolder('StudyQuest_' + teacherCode);
+  const folder = DriveApp.createFolder(CONSTS.FOLDER_NAME_PREFIX + teacherCode);
   const ss = SpreadsheetApp.create('StudyQuest_DB_' + teacherCode);
   DriveApp.getFileById(ss.getId()).moveTo(folder);
 
@@ -71,11 +71,11 @@ function setupInitialTeacher(secretKey) {
   });
 
   // record owner email in Settings sheet
-  const settings = ss.getSheetByName('Settings');
+  const settings = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
   if (settings) settings.appendRow(['ownerEmail', email]);
 
-  props.setProperty('teacherCode_' + email, teacherCode);
-  props.setProperty('ssId_' + teacherCode, ss.getId());
+  props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, teacherCode);
+  props.setProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode, ss.getId());
   props.setProperty(teacherCode, folder.getId());
   return { status: "ok", teacherCode: teacherCode };
 }
@@ -85,7 +85,7 @@ function setupInitialTeacher(secretKey) {
 function handleTeacherLogin() {
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
-  const code = props.getProperty('teacherCode_' + email);
+  const code = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (code) {
     return { status: 'ok', teacherCode: code };
   }
@@ -95,7 +95,7 @@ function handleTeacherLogin() {
 function loginAsTeacher() {
   const email = Session.getEffectiveUser().getEmail();
   const props = PropertiesService.getScriptProperties();
-  const teacherCode = props.getProperty('teacherCode_' + email);
+  const teacherCode = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (teacherCode) {
     return { status: 'ok', teacherCode: teacherCode };
   }
@@ -109,7 +109,7 @@ function loginAsStudent(teacherCode) {
   if (!teacherCode) {
     const props = PropertiesService.getScriptProperties();
     const keys = (typeof props.getKeys === 'function') ? props.getKeys() : [];
-    const codes = keys.filter(k => k.indexOf('ssId_') === 0).map(k => k.substring(5));
+    const codes = keys.filter(k => k.indexOf(CONSTS.PROP_TEACHER_SSID_PREFIX) === 0).map(k => k.substring(CONSTS.PROP_TEACHER_SSID_PREFIX.length));
     const classes = [];
     codes.forEach(code => {
       const db = getTeacherDb_(code);
@@ -151,7 +151,7 @@ function loginAsStudent(teacherCode) {
     }
   }
   if (!classData) return { status: 'error', message: 'not_found_in_class' };
-  const userSheet = globalDb.getSheetByName('Global_Users');
+  const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!userSheet) return { status: 'error', message: 'missing_global' };
   const uLast = userSheet.getLastRow();
   let globalData = null;
