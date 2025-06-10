@@ -325,8 +325,13 @@
 
       showThinking(true);
       await delay(500);
-      await typeWriter('やあ！今日の調子はどう？', 'system');
-      await typeWriter('左のクエスト一覧から課題を選んでね！', 'system');
+      const hasCompleted = Array.isArray(state.chatHistory) && state.chatHistory.some(r => String(r[3] || '').trim() !== '');
+      if (hasCompleted) {
+        await typeWriter('前回のクエストおつかれさま！次の挑戦も楽しんでXPを稼ごう！', 'system');
+      } else {
+        await typeWriter('やあ！今日の調子はどう？', 'system');
+        await typeWriter('左のクエスト一覧から課題を選んでね！', 'system');
+      }
       showThinking(false);
   }
   // ▲▲▲ 新しいウェルカムメッセージ表示関数 ▲▲▲

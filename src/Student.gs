@@ -428,3 +428,26 @@ function registerStudentsFromCsv(teacherCode, csvText) {
   console.timeEnd('registerStudentsFromCsv');
   return { status: 'ok', added: append.length };
 }
+
+function loadStudentData(teacherCode) {
+  teacherCode = String(teacherCode || '').trim();
+  var login = (typeof loginAsStudent === 'function') ? loginAsStudent(teacherCode) : null;
+  if (!login || login.status !== 'ok') return login;
+
+  var info = login.userInfo || {};
+  var cls = info.classData || {};
+  var grade = cls.grade;
+  var classroom = cls.class;
+  var sid = grade + '-' + classroom + '-' + cls.number;
+
+  var tasks = [];
+  if (typeof listTasksForClass === 'function') {
+    tasks = listTasksForClass(teacherCode, grade, classroom) || [];
+  }
+  var history = [];
+  if (typeof getStudentHistory === 'function') {
+    history = getStudentHistory(teacherCode, sid) || [];
+  }
+
+  return { userInfo: info, tasks: { uncompleted: tasks }, chatHistory: history };
+}

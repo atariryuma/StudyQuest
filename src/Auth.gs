@@ -119,6 +119,7 @@ function loginAsStudent(teacherCode) {
       if (String(gRows[i][0]).trim().toLowerCase() === email.toLowerCase()) {
         globalData = {
           email: gRows[i][0],
+          handleName: gRows[i][1],
           name: gRows[i][1],
           role: gRows[i][2],
           globalXp: gRows[i][3],
