@@ -100,6 +100,10 @@
           <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white tracking-wider"><span id="xpCurrent">0</span> / <span id="xpNext">100</span> XP</div>
         </div>
       </div>
+      <a id="backToClassSelect" target="_top" href="#" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>クラス選択へ戻る</span>
+      </a>
     </header>
 
     <div class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
@@ -266,6 +270,8 @@
     document.getElementById('versionInfo').textContent = version;
     document.querySelectorAll('.ai-avatar').forEach(img => img.src = aiIconSvg);
     document.getElementById('sendBtn').addEventListener('click', handleSend);
+    const backBtn = document.getElementById('backToClassSelect');
+    if (backBtn) backBtn.href = `${SCRIPT_URL}?page=class-select`;
     loadStudentData(teacherCode);
   });
 
