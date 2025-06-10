@@ -213,6 +213,12 @@ npm install   # install dev dependencies
 npm test      # execute Jest test suite
 ```
 
+## トラブルシューティング
+
+### クエスト画面が「ロード中…」のまま進まない
+
+デプロイした Web アプリの URL（末尾が `/exec` のもの）からアクセスしているか確認してください。HTML ファイルを直接開いた場合、`google.script.run` が利用できないためデータを読み込めません。スプレッドシートの編集権限がある場合でも、必ず Web アプリとして実行されている URL を使用してください。
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
