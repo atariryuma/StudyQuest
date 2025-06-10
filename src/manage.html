@@ -106,6 +106,7 @@
             <div class="flex items-center gap-3">
                 <i data-lucide="shield-check" class="w-8 h-8 text-pink-400"></i>
                 <h1 class="text-2xl font-bold tracking-wider text-white">管理パネル</h1>
+                <p id="greetMsg" class="text-pink-300 text-sm font-bold mt-1"></p>
             </div>
             <div class="flex items-center gap-3">
                 <a id="backToLogin" href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=login" target="_top" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm flex items-center gap-2">
@@ -511,6 +512,13 @@
       document.getElementById('teacherCodeModal').addEventListener('click', () => {
         document.getElementById('teacherCodeModal').classList.add('hidden');
       });
+
+      google.script.run.withSuccessHandler(res => {
+        const el = document.getElementById('greetMsg');
+        if (res && res.name && el) {
+          el.textContent = `ようこそ、${escapeHtml(res.name)}先生！`;
+        }
+      }).getTeacherName(teacherCode);
 
       // Gemini 設定読み込み
       loadGeminiSettings();
