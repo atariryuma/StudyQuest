@@ -57,12 +57,6 @@ test('initStudent adds placeholder rows to Submissions', () => {
   const students = [
     ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID']
   ];
-  const studentSheetStub = {
-    appendRow: jest.fn(),
-    setTabColor: jest.fn(),
-    getSheetId: jest.fn(() => 2),
-    getLastRow: jest.fn(() => 1)
-  };
   const studentListSheet = {
     getDataRange: jest.fn(() => ({ getValues: () => students })),
     appendRow: jest.fn(row => { students.push(row); }),
@@ -83,17 +77,12 @@ test('initStudent adds placeholder rows to Submissions', () => {
       if (name === 'Submissions') return subsSheet;
       if (name === 'Tasks') return tasksSheet;
       return null;
-    }),
-    getSheets: jest.fn(() => []),
-    insertSheet: jest.fn(() => studentSheetStub),
-    getUrl: jest.fn(() => 'url')
+    })
   };
   const context = {
     SHEET_STUDENTS: 'Students',
     SHEET_SUBMISSIONS: 'Submissions',
     SHEET_TASKS: 'Tasks',
-    SHEET_TOC: 'TOC',
-    STUDENT_SHEET_PREFIX: 'stu_',
     getSpreadsheetByTeacherCode: () => ssStub,
     getClassIdMap: jest.fn(() => ({}))
   };

@@ -125,8 +125,9 @@ function initStudent(teacherCode, grade, classroom, number) {
   // 生徒一覧に未登録なら追加 / 旧ID のままなら更新
   const rowMap = getStudentRowMap_(teacherCode, studentListSheet);
   let studentRowIndex = rowMap[studentId] || -1;
+  const isNew = (studentRowIndex === -1);
   const now = new Date();
-  if (studentRowIndex === -1) {
+  if (isNew) {
     studentListSheet.appendRow([
       studentId,
       grade,
@@ -150,125 +151,40 @@ function initStudent(teacherCode, grade, classroom, number) {
     recordStudentLogin_(studentListSheet, studentRowIndex, current);
   }
 
-  const studentSheetName = CONSTS.STUDENT_SHEET_PREFIX + studentId; // e.g. "生徒_6-1-1"
-  let studentSheet = null;
-  let maxRows = -1;
-  const allSheets = ss.getSheets();
-  for (const sh of allSheets) {
-    const name = sh.getName();
-    if (!name.startsWith(CONSTS.STUDENT_SHEET_PREFIX)) continue;
-    const idPart = name.substring(CONSTS.STUDENT_SHEET_PREFIX.length);
-    const parts = idPart.split('-');
-    if (parts.length !== 3) continue;
-    if (parts[0].trim() === grade && parts[1].trim() === classroom && parts[2].trim() === number) {
-      const rows = sh.getLastRow();
-      if (rows > maxRows) {
-        studentSheet = sh;
-        maxRows = rows;
-      }
-    }
-  }
-
-  if (studentSheet) {
-    if (studentSheet.getName() !== studentSheetName) {
-      const existing = ss.getSheetByName(studentSheetName);
-      if (existing && existing !== studentSheet) {
-        // keep the sheet with more rows
-        if (existing.getLastRow() > studentSheet.getLastRow()) {
-          studentSheet = existing;
-        } else {
-          ss.deleteSheet(existing);
-        }
-      }
-      studentSheet.setName(studentSheetName);
-    }
-  }
-
-  if (!studentSheet) {
-    // 個別シートを作成
-    studentSheet = ss.insertSheet(studentSheetName);
-    studentSheet.appendRow(['Timestamp', 'TaskID', 'Question', 'Answer', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Attempts']);
-    studentSheet.setTabColor("f4b400");
-    const pre = (ss && typeof ss.getId === 'function') ? ss.getId() : '';
-    putCacheValue_('studentSheet_' + pre + '_' + studentId, studentSheetName, 3600);
-
-  // 既存タスクを Submissions シートにも空行として登録
-  const subsSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
-  const tasksSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
-  if (subsSheet && tasksSheet) {
-    const last = tasksSheet.getLastRow();
-    if (last >= 2) {
-      const rows = tasksSheet.getRange(2, 1, last - 1, 8).getValues();
-      const appendRows = [];
-      rows.forEach(r => {
-        if (String(r[6] || '').toLowerCase() === 'closed') return;
-        if (String(r[7] || '') === '1') return;
-        const taskId     = r[0];
-        const payload    = r[2];
-        const startTime  = r[4];
-        let questionText = '';
-        try {
-          const parsed = JSON.parse(payload);
-          questionText = parsed.question || payload;
-        } catch (e) {
-          questionText = payload;
-        }
-        appendRows.push([
-          studentId,
-          taskId,
-          questionText,
-          startTime || '',
-          '', '', '', '',
-          0, 0, 0,
-          '',
-          0
-        ]);
-      });
-      bulkAppend_(subsSheet, appendRows);
-    }
-  }
-
-    // 目次シートにリンクを追加
-    const tocSheet = ss.getSheetByName(CONSTS.SHEET_TOC);
-    if (tocSheet) {
-      const spreadsheetUrl = ss.getUrl();
-      const linkFormula   = `=HYPERLINK("${spreadsheetUrl}#gid=${studentSheet.getSheetId()}","${studentSheetName}")`;
-      const lastRowToc    = tocSheet.getLastRow();
-      tocSheet.insertRowAfter(lastRowToc);
-      tocSheet.getRange(lastRowToc + 1, 1).setFormula(linkFormula);
-      tocSheet.getRange(lastRowToc + 1, 2).setValue(`${grade}年${classroom}組${number}番の詳細ログ`);
-      tocSheet.autoResizeColumn(1);
-    }
-
-    // 課題一覧シートから全タスクをインポート（作成日時含む）
-    const taskSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
-    if (taskSheet) {
-      const lastRow = taskSheet.getLastRow();
-      if (lastRow >= 2) {
-        const map = getClassIdMap(teacherCode);
-        let classId = null;
-        Object.keys(map).forEach(id => {
-          if (map[id] === `${grade}-${classroom}`) classId = id;
-        });
-        const taskData = taskSheet.getRange(2, 1, lastRow - 1, 8).getValues();
-        const appendRows2 = [];
-        taskData.forEach(row => {
-          if (String(row[6] || '').toLowerCase() === 'closed') return;
-          if (String(row[7] || '') === '1') return;
-          if (classId && String(row[1]) !== String(classId)) return;
-          const taskId        = row[0];
-          const payloadAsJson = row[2];
-          const createdAt     = row[4]; // 作成日時
-          let questionText    = '';
+  if (isNew) {
+    // 既存タスクを Submissions シートにも空行として登録
+    const subsSheet  = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+    const tasksSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+    if (subsSheet && tasksSheet) {
+      const last = tasksSheet.getLastRow();
+      if (last >= 2) {
+        const rows = tasksSheet.getRange(2, 1, last - 1, 8).getValues();
+        const appendRows = [];
+        rows.forEach(function(r) {
+          if (String(r[6] || '').toLowerCase() === 'closed') return;
+          if (String(r[7] || '') === '1') return;
+          var taskId     = r[0];
+          var payload    = r[2];
+          var startTime  = r[4];
+          var questionText = '';
           try {
-            const parsed = JSON.parse(payloadAsJson);
-            questionText = parsed.question || payloadAsJson;
+            var parsed = JSON.parse(payload);
+            questionText = parsed.question || payload;
           } catch (e) {
-            questionText = payloadAsJson;
+            questionText = payload;
           }
-          appendRows2.push([createdAt, taskId, questionText, '', 0, 0, 0, '', 0]);
+          appendRows.push([
+            studentId,
+            taskId,
+            questionText,
+            startTime || '',
+            '', '', '', '',
+            0, 0, 0,
+            '',
+            0
+          ]);
         });
-        bulkAppend_(studentSheet, appendRows2);
+        bulkAppend_(subsSheet, appendRows);
       }
     }
   }
@@ -344,11 +260,17 @@ function getStudentHistory(teacherCode, studentId) {
 
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('getStudentHistory'); return []; }
-  const sheet = findStudentSheet_(ss, studentId);
+  const sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (!sheet) { console.timeEnd('getStudentHistory'); return []; }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('getStudentHistory'); return []; }
-  const rows = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
+  const rows = [];
+  for (var i = 0; i < data.length; i++) {
+    var r = data[i];
+    if (String(r[0]) !== studentId) continue;
+    rows.push([r[4], r[1], r[2], r[7], r[8], r[9], r[10], r[11], r[12]]);
+  }
   putCacheValue_(cacheKey, rows, 30);
   console.timeEnd('getStudentHistory');
   return rows;
