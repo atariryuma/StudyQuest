@@ -171,7 +171,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
   expect(props['ssId_ABC123']).toBe('sid');
   expect(props['ABC123']).toBe('fid');
   expect(props['templateCsv_ABC123']).toBe('tplid');
-  expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 10);
+  expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 12);
   expect(userRange.setValues).toHaveBeenCalled();
   const settingsSheet = sheetMap['Settings'];
   expect(settingsSheet.appendRow).toHaveBeenCalledWith(['type','value1','value2']);

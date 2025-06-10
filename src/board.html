@@ -324,7 +324,10 @@
             return;
         }
 
-        rows.sort((a, b) => b.level - a.level);
+        rows.sort((a, b) => {
+            if (b.likeScore !== a.likeScore) return b.likeScore - a.likeScore;
+            return b.level - a.level;
+        });
 
         let html = '';
         rows.forEach((r, i) => {
@@ -336,6 +339,7 @@
                         <div><span class="font-bold text-sm text-gray-200">${escapeHtml(r.studentId)}</span></div>
                         <div class="flex items-center gap-4">
                             <span class="flex items-center gap-1" title="レベル"><i data-lucide="star" class="w-4 h-4 text-amber-400"></i><span class="font-bold text-lg text-amber-300">${r.level}</span></span>
+                            <button type="button" data-idx="${i}" class="like-btn flex items-center gap-1"><i data-lucide="heart" class="w-4 h-4 text-pink-400"></i><span class="like-count">${r.likeScore}</span></button>
                         </div>
                     </div>`;
             } else {
@@ -346,6 +350,7 @@
                             <span class="flex items-center gap-1" title="レベル"><i data-lucide="star" class="w-4 h-4 text-amber-400"></i><span class="font-bold text-lg text-amber-300">${r.level}</span></span>
                             <span class="flex items-center gap-1" title="獲得XP"><i data-lucide="trending-up" class="w-4 h-4 text-green-400"></i><span class="font-bold text-green-400">+${r.earnedXp}</span></span>
                             <span class="flex items-center gap-1" title="累計XP"><i data-lucide="sigma" class="w-4 h-4 text-cyan-400"></i><span class="font-bold text-cyan-300">${r.totalXp}</span></span>
+                            <button type="button" data-idx="${i}" class="like-btn flex items-center gap-1"><i data-lucide="heart" class="w-4 h-4 text-pink-400"></i><span class="like-count">${r.likeScore}</span></button>
                         </div>
                     </div>`;
             }
@@ -358,10 +363,24 @@
             </div>`;
         });
         container.innerHTML = html;
-        const cards = container.querySelectorAll('.answer-card');
-        cards.forEach((card, i) => {
-            card.addEventListener('click', () => showModal(rows[i]));
-            gsap.fromTo(card, { opacity: 0, y: 50, scale: 0.95 }, { delay: i * 0.08, opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' });
+       const cards = container.querySelectorAll('.answer-card');
+       cards.forEach((card, i) => {
+           card.addEventListener('click', () => showModal(rows[i]));
+           gsap.fromTo(card, { opacity: 0, y: 50, scale: 0.95 }, { delay: i * 0.08, opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' });
+       });
+        const likeBtns = container.querySelectorAll('.like-btn');
+        likeBtns.forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const idx = btn.dataset.idx;
+                const row = rows[idx];
+                google.script.run.withSuccessHandler(res => {
+                    if(res && res.status === 'ok') {
+                        row.likeScore = res.newScore;
+                        btn.querySelector('.like-count').textContent = res.newScore;
+                    }
+                }).addLike(teacherParam, taskId, row.studentId);
+            });
         });
         if (window.lucide) { window.lucide.createIcons(); }
     }

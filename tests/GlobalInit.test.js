@@ -74,7 +74,7 @@ test('initGlobalDb grants editor and writes admin row', () => {
   loadGlobal(context);
   context.initGlobalDb();
   expect(ssStub.addEditor).toHaveBeenCalledWith('owner@example.com');
-  expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 10);
+  expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 12);
   expect(adminRange.setValues).toHaveBeenCalled();
 });
 

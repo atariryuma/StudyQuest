@@ -138,7 +138,8 @@ function initStudent(teacherCode, grade, classroom, number) {
       1,        // 累計ログイン回数
       0,        // 累積XP
       1,        // 現在レベル
-      ''        // 最終獲得トロフィーID
+      '',       // 最終獲得トロフィーID
+      0         // TotalLikes
     ]);
     studentRowIndex = studentListSheet.getLastRow();
     removeCacheValue_('stats_' + teacherCode);
@@ -181,6 +182,7 @@ function initStudent(teacherCode, grade, classroom, number) {
             '', '', '', '',
             0, 0, 0,
             '',
+            0,
             0
           ]);
         });

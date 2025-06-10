@@ -15,7 +15,7 @@ function listBoard(teacherCode) {
   }
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listBoard'); return []; }
-  var lastCol = Math.min(sheet.getLastColumn(), 13);
+  var lastCol = Math.min(sheet.getLastColumn(), 14);
   var numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
   var startRow = lastRow - numRows + 1;
   var data = sheet.getRange(startRow, 1, numRows, lastCol).getValues().reverse();
@@ -25,8 +25,13 @@ function listBoard(teacherCode) {
     earnedXp: row[8],
     totalXp: row[9],
     level: row[10],
-    trophies: row[11]
+    trophies: row[11],
+    likeScore: row[13] || 0
   }; });
+  result.sort(function(a,b){
+    if (b.likeScore !== a.likeScore) return b.likeScore - a.likeScore;
+    return b.level - a.level;
+  });
   putCacheValue_(cacheKey, result, 30);
   console.timeEnd('listBoard');
   return result;
@@ -49,7 +54,7 @@ function listTaskBoard(teacherCode, taskId) {
 
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listTaskBoard'); return []; }
-  var lastCol = Math.min(sheet.getLastColumn(), 13);
+  var lastCol = Math.min(sheet.getLastColumn(), 14);
   var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
   var filtered = data.filter(function(r){ return String(r[1]) === String(taskId); });
@@ -66,13 +71,19 @@ function listTaskBoard(teacherCode, taskId) {
     }
   }
 
+  rows.sort(function(a,b){
+    if ((b[13]||0) !== (a[13]||0)) return (b[13]||0) - (a[13]||0);
+    return (b[10]||0) - (a[10]||0);
+  });
+
   var result = rows.map(function(row){ return {
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
     totalXp: row[9],
     level: row[10],
-    trophies: row[11]
+    trophies: row[11],
+    likeScore: row[13] || 0
   }; });
 
   putCacheValue_(cacheKey, result, 30);

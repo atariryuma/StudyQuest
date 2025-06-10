@@ -405,7 +405,8 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
       totalXp,
       level,
       trophies || '',
-      1
+      1,
+      0
       ]);
   } else {
     console.warn(`「${CONSTS.SHEET_SUBMISSIONS}」シートが見つかりません。`);
