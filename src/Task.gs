@@ -3,7 +3,7 @@
  * 新しい課題を課題一覧シートに追加
  */
 
-function createTask(teacherCode, payloadAsJson, selfEval, persona) {
+function createTask(teacherCode, payloadAsJson, selfEval) {
   console.time('createTask');
   const ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
@@ -23,7 +23,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
   if (parsed && Array.isArray(parsed.classIds)) {
     const rows = parsed.classIds.map(cid => {
       const rowPayload = JSON.stringify(Object.assign({}, parsed, { classId: cid }));
-      return [Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), persona || '', '', ''];
+      return [Utilities.getUuid(), cid, rowPayload, selfEval, new Date(), '', '', ''];
     });
     bulkAppend_(taskSheet, rows);
     removeCacheValue_('tasks_' + teacherCode);
@@ -35,7 +35,7 @@ function createTask(teacherCode, payloadAsJson, selfEval, persona) {
 
   const taskId = Utilities.getUuid();
   const classId = parsed && parsed.classId ? parsed.classId : '';
-  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), persona || '', '', '']);
+  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), '', '', '']);
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
