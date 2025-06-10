@@ -235,8 +235,8 @@ This project is licensed under the [MIT License](LICENSE).
 * **Process:**
     1. `Session.getEffectiveUser().getEmail()`で`email`を取得。
     2. `PropertiesService`から`teacherCode_<email>`をキーに`teacherCode`を取得。
-    3. `teacherCode`が取得できた場合、`processLoginBonus(email)`を呼び出す。
-* **Output:**
+    3. `teacherCode`が取得できた場合、その`teacherCode`を返す。
+    * **Output:**
     * **Success:** `{ status: "ok", teacherCode: <string> }`
     * **Failure:** `{ status: "not_found" }`
 
@@ -261,7 +261,7 @@ This project is licensed under the [MIT License](LICENSE).
 ### 3.5. 共通ロジック
 #### `processLoginBonus(userEmail)`
 * **目的:** ログインボーナスの付与と連続ログイン日数の更新。
-* **トリガー:** `loginAsTeacher`, `loginAsStudent` の認証成功直後に内部的に呼び出される。
+* **トリガー:** `loginAsStudent` の認証成功直後に内部的に呼び出される。
 * **Input:**
     * `userEmail` (string): ログインしたユーザーのEmail。
 * **Process:**
@@ -306,7 +306,7 @@ This project is licensed under the [MIT License](LICENSE).
     * **Output:** `{ status: "ok", teacherCode: <string> }`
 * **`loginAsTeacher()`:**
     * **Input:** (none)
-    * **Process:** 1. `email`を取得. 2. `PropertiesService`から`teacherCode`を検索. 3. `processLoginBonus(email)`を呼び出し.
+    * **Process:** 1. `email`を取得. 2. `PropertiesService`から`teacherCode`を検索.
     * **Output:** `{ status: "ok", teacherCode: <string> }`
 * **`loginAsStudent(teacherCode)`:**
     * **Input:** `teacherCode` (string)

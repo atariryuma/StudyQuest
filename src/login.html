@@ -311,7 +311,7 @@
           window.top.location.href = redirect;
         };
       } else {
-        document.getElementById('welcomeText').textContent = `${new Date().toLocaleDateString('ja-JP')} にログインしました。ログインボーナスが付与されました。`;
+        document.getElementById('welcomeText').textContent = `${new Date().toLocaleDateString('ja-JP')} にログインしました。`;
         const w = document.getElementById('welcomeBack');
         w.classList.remove('hidden');
         document.getElementById('closeWelcome').onclick = () => {

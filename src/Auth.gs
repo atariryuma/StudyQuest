@@ -87,7 +87,6 @@ function handleTeacherLogin() {
   const props = PropertiesService.getScriptProperties();
   const code = props.getProperty('teacherCode_' + email);
   if (code) {
-    try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
     return { status: 'ok', teacherCode: code };
   }
   return { status: 'new_teacher_prompt_key' };
@@ -98,7 +97,6 @@ function loginAsTeacher() {
   const props = PropertiesService.getScriptProperties();
   const teacherCode = props.getProperty('teacherCode_' + email);
   if (teacherCode) {
-    try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
     return { status: 'ok', teacherCode: teacherCode };
   }
   return { status: 'not_found' };

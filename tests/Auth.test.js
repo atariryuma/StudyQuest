@@ -11,7 +11,7 @@ function loadAuth(context) {
   vm.runInNewContext(code, context);
 }
 
-test('loginAsTeacher returns ok and calls bonus', () => {
+test('loginAsTeacher returns ok without bonus', () => {
   const props = { 'teacherCode_teacher@example.com': 'TC123' };
   const context = {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] }) },
@@ -21,7 +21,7 @@ test('loginAsTeacher returns ok and calls bonus', () => {
   loadAuth(context);
   const res = context.loginAsTeacher();
   expect(res).toEqual({ status: 'ok', teacherCode: 'TC123' });
-  expect(context.processLoginBonus).toHaveBeenCalledWith('teacher@example.com');
+  expect(context.processLoginBonus).not.toHaveBeenCalled();
 });
 
 test('loginAsTeacher returns not_found when missing', () => {
@@ -34,7 +34,7 @@ test('loginAsTeacher returns not_found when missing', () => {
   expect(res.status).toBe('not_found');
 });
 
-test('handleTeacherLogin differentiates new teacher', () => {
+test('handleTeacherLogin differentiates new teacher without bonus', () => {
   const props = { teacherPasscode: 'changeme' };
   const context = {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] }) },
@@ -47,7 +47,7 @@ test('handleTeacherLogin differentiates new teacher', () => {
   props['teacherCode_new@example.com'] = 'NC123';
   res = context.handleTeacherLogin();
   expect(res).toEqual({ status: 'ok', teacherCode: 'NC123' });
-  expect(context.processLoginBonus).toHaveBeenCalledWith('new@example.com');
+  expect(context.processLoginBonus).not.toHaveBeenCalled();
 });
 
 test('loginAsStudent finds enrollment and global data', () => {
