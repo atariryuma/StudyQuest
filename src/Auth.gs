@@ -281,3 +281,20 @@ function updateTeacherName(name) {
   }
   return { status: 'ok' };
 }
+
+function getCurrentUserRole() {
+  var email = Session.getEffectiveUser().getEmail();
+  var db = getGlobalDb_();
+  if (!db) return '';
+  var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+  if (!sheet) return '';
+  var last = sheet.getLastRow();
+  if (last < 2) return '';
+  var rows = sheet.getRange(2, 1, last - 1, 3).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]).trim().toLowerCase() === email.toLowerCase()) {
+      return String(rows[i][2]).trim().toLowerCase();
+    }
+  }
+  return '';
+}

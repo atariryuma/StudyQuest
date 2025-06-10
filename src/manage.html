@@ -538,6 +538,16 @@
       const debugCloseBtn = document.getElementById('debugClose');
       versionEl.addEventListener('click', () => debugPanel.classList.toggle('hidden'));
       debugCloseBtn.addEventListener('click', () => debugPanel.classList.add('hidden'));
+      if (google && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(role => {
+            if (role === 'admin') {
+              debugPanel.classList.remove('hidden');
+              debug('admin mode');
+            }
+          })
+          .getCurrentUserRole();
+      }
 
       debug('🔄 ページ読み込み完了');
       debug(`▶ teacherCode="${teacherCode}"`);
