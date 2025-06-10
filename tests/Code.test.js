@@ -2,7 +2,7 @@ const { getSqVersion } = require('../src/Code.gs');
 const { getStudentTemplateCsv } = require('../src/StudentCsv.gs');
 
 test('getSqVersion returns correct version', () => {
-  expect(getSqVersion()).toBe('v1.0.205');
+  expect(getSqVersion()).toBe('v1.0.206');
 });
 
 test('getStudentTemplateCsv returns header row', () => {
