@@ -1,7 +1,7 @@
 # .github/workflows/deploy-gas-webapp.yml
 name: deploy-gas-webapp
 
-# ── 同じブランチでは 1 本ずつ直列実行
+# ── 同ブランチでは常に直列実行 (cancel しない)
 concurrency:
   group: deploy-gas-webapp
 
@@ -15,7 +15,7 @@ on:
       - '.github/workflows/**'
 
 permissions:
-  contents: write
+  contents: write  # 自動コミットに必要
 
 jobs:
   deploy:
@@ -25,17 +25,13 @@ jobs:
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-    #──────────────────────────────
     # 1. Checkout
-    #──────────────────────────────
     - uses: actions/checkout@v4
       with:
         persist-credentials: true
         fetch-depth: 1
 
-    #──────────────────────────────
-    # 2. Node + npm cache
-    #──────────────────────────────
+    # 2. Node.js + npm キャッシュ
     - uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -44,18 +40,17 @@ jobs:
     # 3. Install deps
     - run: npm ci
 
-    # 4. Get current version
+    # 4. Get package version
     - id: ver
-      run: |
-        echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-    
-    # 5. Inject version into Code.gs
+      run: echo "VERSION=$(node -p 'require(\"./package.json\").version')" >> $GITHUB_OUTPUT
+
+    # 5. Inject build version into Code.gs
     - run: sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
 
     # 6. Tests
     - run: npm test
 
-    # 7. Tools
+    # 7. Tools (clasp & jq)
     - run: |
         npm i -g @google/clasp@latest
         sudo apt-get update -y && sudo apt-get install -y jq
@@ -65,28 +60,32 @@ jobs:
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # 9. push → create new version
+    # 9. Push to GAS & create new version
     - run: |
         set -eux
         clasp push --force
         clasp version "v${{ steps.ver.outputs.VERSION }}"
 
-    # 10. versionNumber 抽出（数字行だけ grep）
+    # 10. Update existing Web-App deployment
     - run: |
         set -eux
-        VNUM=$(clasp versions | grep -E '^[0-9]+' | head -n1 | cut -d' ' -f1)
+        VNUM=$(clasp versions | grep -E '^[0-9]+' | awk '{print $1}' | sort -nr | head -n1)
         clasp update-deployment "$DEPLOYMENT_ID" \
           --versionNumber "$VNUM" \
           --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
 
-    # 11. Bump patch & push (rebase で stale 回避)
+    # 11. Bump patch for next dev cycle & push
     - if: ${{ success() }}
       run: |
         set -eux
         git config user.name github-actions
         git config user.email github-actions@github.com
+
+        # Stage Code.gs も含めてバージョンコミット
+        git add src/Code.gs
+
         npm version patch -m "chore: bump to %s [skip ci]"
-        # リモートを取り込んでから push
-        git fetch origin main
-        git rebase origin/main
+
+        # 最新リモートを取り込み、競合なく push
+        git pull --rebase --autostash origin main
         git push --follow-tags --force-with-lease
