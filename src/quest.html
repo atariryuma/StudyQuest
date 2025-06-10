@@ -70,6 +70,20 @@
         object-fit: cover;
         padding: 6px;
     }
+    .quest-card {
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        background: rgba(26, 27, 38, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .quest-card:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 0 15px rgba(14,165,233,0.4);
+    }
     .thinking-dots span {
         animation: blink 1.4s infinite both;
     }
@@ -359,8 +373,8 @@
         };
         const icon = subjectIcons[q.subject] || 'help-circle';
         const className = isAnswered
-            ? 'bg-gray-800/50 p-3 rounded-lg opacity-60'
-            : 'bg-gray-800/50 p-3 rounded-lg cursor-pointer hover:bg-cyan-900/50 border border-transparent hover:border-cyan-400 transition-all';
+            ? 'quest-card opacity-60'
+            : 'quest-card cursor-pointer hover:border-cyan-400';
         const html = `
             <div class="flex justify-between items-start">
                 <span class="font-bold ${isAnswered ? 'text-gray-300 line-through' : 'text-white'}">${escapeHtml(q.question)}</span>
