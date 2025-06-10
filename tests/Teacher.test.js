@@ -299,7 +299,17 @@ test('saveTeacherSettings persists values correctly and global key handling', ()
   const sheetStub = {
     clear: jest.fn(() => { sheetData.length = 1; }),
     appendRow: jest.fn(row => sheetData.push(row)),
-    getDataRange: jest.fn(() => ({ getValues: () => sheetData }))
+    getDataRange: jest.fn(() => ({ getValues: () => sheetData })),
+    getLastRow: jest.fn(() => sheetData.length),
+    getRange: jest.fn((r, c, nr, nc) => ({
+      getValues: () => {
+        const out = [];
+        for (let i = 0; i < nr; i++) {
+          out.push(sheetData[r - 1 + i].slice(c - 1, c - 1 + nc));
+        }
+        return out;
+      }
+    }))
   };
   const ssStub = {
     getSheetByName: jest.fn(() => sheetStub),

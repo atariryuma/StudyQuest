@@ -318,14 +318,31 @@ function ensureSettingsSheet_(ss) {
 }
 
 function saveTeacherSettings_(teacherCode, obj) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return;
-  const sheet = ensureSettingsSheet_(ss);
+  var sheet = ensureSettingsSheet_(ss);
+
+  var ownerEmail = '';
+  var ownerName  = '';
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    var rows = sheet.getRange(2, 1, last - 1, 2).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]) === 'ownerEmail') ownerEmail = rows[i][1];
+      if (String(rows[i][0]) === 'ownerName') ownerName = rows[i][1];
+    }
+  }
+
   sheet.clear();
   sheet.appendRow(['type', 'value1', 'value2']);
+  if (ownerEmail) sheet.appendRow(['ownerEmail', ownerEmail]);
+  if (ownerName)  sheet.appendRow(['ownerName', ownerName]);
   if (obj.persona !== undefined) sheet.appendRow(['persona', obj.persona, '']);
   if (Array.isArray(obj.classes)) {
-    obj.classes.forEach(c => sheet.appendRow(['class', c[0], c[1]]));
+    for (var j = 0; j < obj.classes.length; j++) {
+      var c = obj.classes[j];
+      sheet.appendRow(['class', c[0], c[1]]);
+    }
   }
   removeCacheValue_('settings_' + teacherCode);
 }
