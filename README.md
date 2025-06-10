@@ -219,6 +219,8 @@ npm test      # execute Jest test suite
 
 デプロイした Web アプリの URL（末尾が `/exec` のもの）からアクセスしているか確認してください。HTML ファイルを直接開いた場合、`google.script.run` が利用できないためデータを読み込めません。スプレッドシートの編集権限がある場合でも、必ず Web アプリとして実行されている URL を使用してください。
 
+また、URL が正しくてもクラスの名簿から自分の情報が削除されていると、クエストを取得できず同様に「ロード中」のままになる場合があります。クラスを再度確認し、必要に応じて担当の教師へ連絡してください。
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
