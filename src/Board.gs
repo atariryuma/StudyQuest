@@ -1,32 +1,32 @@
-const BOARD_FETCH_LIMIT = 30;
+var BOARD_FETCH_LIMIT = 30;
 
 function listBoard(teacherCode) {
   console.time('listBoard');
-  const cacheKey = 'board_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'board_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) { console.timeEnd('listBoard'); return cached; }
 
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('listBoard'); return []; }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (!sheet) {
     console.timeEnd('listBoard');
     return [{ name: "お知らせ", answer: `「${CONSTS.SHEET_SUBMISSIONS}」シートが見つかりません。` }];
   }
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listBoard'); return []; }
-  const lastCol = Math.min(sheet.getLastColumn(), 13);
-  const numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
-  const startRow = lastRow - numRows + 1;
-  const data = sheet.getRange(startRow, 1, numRows, lastCol).getValues().reverse();
-  const result = data.map(row => ({
+  var lastCol = Math.min(sheet.getLastColumn(), 13);
+  var numRows = Math.min(BOARD_FETCH_LIMIT, lastRow - 1);
+  var startRow = lastRow - numRows + 1;
+  var data = sheet.getRange(startRow, 1, numRows, lastCol).getValues().reverse();
+  var result = data.map(function(row){ return {
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
     totalXp: row[9],
     level: row[10],
     trophies: row[11]
-  }));
+  }; });
   putCacheValue_(cacheKey, result, 30);
   console.timeEnd('listBoard');
   return result;
@@ -38,27 +38,27 @@ function listBoard(teacherCode) {
  */
 function listTaskBoard(teacherCode, taskId) {
   console.time('listTaskBoard');
-  const cacheKey = 'taskBoard_' + teacherCode + '_' + taskId;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'taskBoard_' + teacherCode + '_' + taskId;
+  var cached = getCacheValue_(cacheKey);
   if (cached) { console.timeEnd('listTaskBoard'); return cached; }
 
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('listTaskBoard'); return []; }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (!sheet) { console.timeEnd('listTaskBoard'); return []; }
 
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listTaskBoard'); return []; }
-  const lastCol = Math.min(sheet.getLastColumn(), 13);
-  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  var lastCol = Math.min(sheet.getLastColumn(), 13);
+  var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
-  const filtered = data.filter(r => String(r[1]) === String(taskId));
-  filtered.sort((a, b) => new Date(b[4]) - new Date(a[4]));
+  var filtered = data.filter(function(r){ return String(r[1]) === String(taskId); });
+  filtered.sort(function(a, b){ return new Date(b[4]) - new Date(a[4]); });
 
-  const uniq = new Set();
-  const rows = [];
-  for (let i = 0; i < filtered.length; i++) {
-    const r = filtered[i];
+  var uniq = new Set();
+  var rows = [];
+  for (var i = 0; i < filtered.length; i++) {
+    var r = filtered[i];
     if (!uniq.has(r[0])) {
       uniq.add(r[0]);
       rows.push(r);
@@ -66,14 +66,14 @@ function listTaskBoard(teacherCode, taskId) {
     }
   }
 
-  const result = rows.map(row => ({
+  var result = rows.map(function(row){ return {
     studentId: row[0],
     answer: row[7],
     earnedXp: row[8],
     totalXp: row[9],
     level: row[10],
     trophies: row[11]
-  }));
+  }; });
 
   putCacheValue_(cacheKey, result, 30);
   console.timeEnd('listTaskBoard');
@@ -86,29 +86,29 @@ function listTaskBoard(teacherCode, taskId) {
  */
 function getStatistics(teacherCode) {
   console.time('getStatistics');
-  const cacheKey = 'stats_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'stats_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) { console.timeEnd('getStatistics'); return cached; }
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     console.timeEnd('getStatistics');
     return { taskCount: 0, studentCount: 0 };
   }
-  const taskSheet    = ss.getSheetByName(CONSTS.SHEET_TASKS);
-  const studentSheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
-  const taskCount    = taskSheet ? Math.max(0, taskSheet.getLastRow() - 1) : 0;
+  var taskSheet    = ss.getSheetByName(CONSTS.SHEET_TASKS);
+  var studentSheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var taskCount    = taskSheet ? Math.max(0, taskSheet.getLastRow() - 1) : 0;
 
-  let studentCount = 0;
+  var studentCount = 0;
   if (studentSheet) {
-    const lastRow = studentSheet.getLastRow();
+    var lastRow = studentSheet.getLastRow();
     if (lastRow > 1) {
-      const ids = studentSheet.getRange(2, 1, lastRow - 1, 1).getValues();
-      const unique = new Set(ids.flat().filter(v => v !== '' && v !== null && v !== undefined));
+      var ids = studentSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      var unique = new Set(ids.flat().filter(function(v){ return v !== '' && v !== null && v !== undefined; }));
       studentCount = unique.size;
     }
   }
 
-  const result = { taskCount, studentCount };
+  var result = { taskCount: taskCount, studentCount: studentCount };
   putCacheValue_(cacheKey, result, 60);
   console.timeEnd('getStatistics');
   return result;

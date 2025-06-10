@@ -7,28 +7,28 @@
 function bulkAppend_(sheet, rows) {
   if (!sheet || !rows || rows.length === 0) return;
   if (typeof sheet.getRange === 'function' && typeof sheet.getLastRow === 'function') {
-    const start = sheet.getLastRow() + 1;
+    var start = sheet.getLastRow() + 1;
     sheet.getRange(start, 1, rows.length, rows[0].length).setValues(rows);
   } else if (typeof sheet.appendRow === 'function') {
-    rows.forEach(r => sheet.appendRow(r));
+    rows.forEach(function(r){ sheet.appendRow(r); });
   }
 }
 function getStudentRowMap_(teacherCode, sheet) {
-  const cacheKey = 'studentRowMap_' + teacherCode;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'studentRowMap_' + teacherCode;
+  var cached = getCacheValue_(cacheKey);
   if (cached) return cached;
   if (!sheet) {
-    const ss = getSpreadsheetByTeacherCode(teacherCode);
+    var ss = getSpreadsheetByTeacherCode(teacherCode);
     if (!ss) return {};
     sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
     if (!sheet) return {};
   }
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
-  const values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-  const map = {};
-  for (let i = 0; i < values.length; i++) {
-    const id = String(values[i][0] || '').trim();
+  var values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  var map = {};
+  for (var i = 0; i < values.length; i++) {
+    var id = String(values[i][0] || '').trim();
     if (id) map[id] = i + 2;
   }
   putCacheValue_(cacheKey, map, 300);
@@ -39,41 +39,41 @@ function findStudentSheet_(ss, studentId) {
   studentId = String(studentId || '').trim();
   if (!ss || !studentId) return null;
 
-  const prefix = (ss && typeof ss.getId === 'function') ? ss.getId() : '';
-  const cacheKey = 'studentSheet_' + prefix + '_' + studentId;
-  const cached = getCacheValue_(cacheKey);
+  var prefix = (ss && typeof ss.getId === 'function') ? ss.getId() : '';
+  var cacheKey = 'studentSheet_' + prefix + '_' + studentId;
+  var cached = getCacheValue_(cacheKey);
   if (cached) {
-    const sh = ss.getSheetByName(cached);
+    var sh = ss.getSheetByName(cached);
     if (sh) return sh;
   }
 
-  const normalize = (id) => {
+  var normalize = function(id) {
     return String(id || '')
       .replace(/[\u2010-\u2015\uff0d]/g, '-') // various hyphen chars
-      .replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFF10 + 48)) // full-width digits
+      .replace(/[\uff10-\uff19]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFF10 + 48); }) // full-width digits
       .replace(/\s+/g, '')
       .toUpperCase();
   };
 
-  const target = normalize(studentId);
-  const direct = ss.getSheetByName(CONSTS.STUDENT_SHEET_PREFIX + target);
+  var target = normalize(studentId);
+  var direct = ss.getSheetByName(CONSTS.STUDENT_SHEET_PREFIX + target);
   if (direct) return direct;
 
-  const parts = target.split('-');
+  var parts = target.split('-');
   if (parts.length !== 3) return null;
-  const [grade, classroom, number] = parts;
+  var [grade, classroom, number] = parts;
 
-  let candidate = null;
-  let maxRows = -1;
-  ss.getSheets().forEach(sh => {
-    const name = sh.getName();
+  var candidate = null;
+  var maxRows = -1;
+  ss.getSheets().forEach(function(sh) {
+    var name = sh.getName();
     if (!name.startsWith(CONSTS.STUDENT_SHEET_PREFIX)) return;
-    let idPart = name.substring(CONSTS.STUDENT_SHEET_PREFIX.length);
+    var idPart = name.substring(CONSTS.STUDENT_SHEET_PREFIX.length);
     idPart = normalize(idPart);
-    const ps = idPart.split('-');
+    var ps = idPart.split('-');
     if (ps.length !== 3) return;
     if (ps[0] === grade && ps[1] === classroom && ps[2] === number) {
-      const rows = sh.getLastRow();
+      var rows = sh.getLastRow();
       if (rows > maxRows) {
         candidate = sh;
         maxRows = rows;
@@ -82,9 +82,9 @@ function findStudentSheet_(ss, studentId) {
   });
 
   if (candidate) {
-    const newName = CONSTS.STUDENT_SHEET_PREFIX + target;
+    var newName = CONSTS.STUDENT_SHEET_PREFIX + target;
     if (candidate.getName() !== newName) {
-      const existing = ss.getSheetByName(newName);
+      var existing = ss.getSheetByName(newName);
       if (existing && existing !== candidate) {
         if (existing.getLastRow() > candidate.getLastRow()) {
           candidate = existing;
@@ -111,22 +111,22 @@ function initStudent(teacherCode, grade, classroom, number) {
   grade      = String(grade).trim();
   classroom  = String(classroom).trim();
   number     = String(number).trim();
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) {
     throw new Error('教師コードが正しくありません。');
   }
-  const studentListSheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var studentListSheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!studentListSheet) {
     throw new Error(`システムエラー: 「${CONSTS.SHEET_STUDENTS}」シートが見つかりません。`);
   }
 
-  const studentId = `${grade}-${classroom}-${number}`; // e.g. "6-1-1"
+  var studentId = `${grade}-${classroom}-${number}`; // e.g. "6-1-1"
   
   // 生徒一覧に未登録なら追加 / 旧ID のままなら更新
-  const rowMap = getStudentRowMap_(teacherCode, studentListSheet);
-  let studentRowIndex = rowMap[studentId] || -1;
-  const isNew = (studentRowIndex === -1);
-  const now = new Date();
+  var rowMap = getStudentRowMap_(teacherCode, studentListSheet);
+  var studentRowIndex = rowMap[studentId] || -1;
+  var isNew = (studentRowIndex === -1);
+  var now = new Date();
   if (isNew) {
     studentListSheet.appendRow([
       studentId,
@@ -147,19 +147,19 @@ function initStudent(teacherCode, grade, classroom, number) {
     if (String(studentListSheet.getRange(studentRowIndex, 1).getValue()) !== studentId) {
       studentListSheet.getRange(studentRowIndex, 1).setValue(studentId);
     }
-    const current = studentListSheet.getRange(studentRowIndex, 7).getValue();
+    var current = studentListSheet.getRange(studentRowIndex, 7).getValue();
     recordStudentLogin_(studentListSheet, studentRowIndex, current);
   }
 
   if (isNew) {
     // 既存タスクを Submissions シートにも空行として登録
-    const subsSheet  = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
-    const tasksSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
+    var subsSheet  = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+    var tasksSheet = ss.getSheetByName(CONSTS.SHEET_TASKS);
     if (subsSheet && tasksSheet) {
-      const last = tasksSheet.getLastRow();
+      var last = tasksSheet.getLastRow();
       if (last >= 2) {
-        const rows = tasksSheet.getRange(2, 1, last - 1, 8).getValues();
-        const appendRows = [];
+        var rows = tasksSheet.getRange(2, 1, last - 1, 8).getValues();
+        var appendRows = [];
         rows.forEach(function(r) {
           if (String(r[6] || '').toLowerCase() === 'closed') return;
           if (String(r[7] || '') === '1') return;
@@ -210,8 +210,8 @@ function registerStudentToClass(info) {
  */
 function recordStudentLogin_(sheet, row, current) {
   if (!sheet || row <= 1) return;
-  const now   = new Date();
-  const count = Number(current || 0) + 1;
+  var now   = new Date();
+  var count = Number(current || 0) + 1;
   sheet.getRange(row, 6, 1, 2).setValues([[now, count]]); // F列, G列
 }
 
@@ -221,14 +221,14 @@ function recordStudentLogin_(sheet, row, current) {
  */
 function updateStudentLogin(teacherCode, studentId) {
   studentId = String(studentId || '').trim();
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return false;
-  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return false;
-  const rowMap = getStudentRowMap_(teacherCode, sheet);
-  const row = rowMap[studentId];
+  var rowMap = getStudentRowMap_(teacherCode, sheet);
+  var row = rowMap[studentId];
   if (!row) return false;
-  const current = sheet.getRange(row, 7).getValue();
+  var current = sheet.getRange(row, 7).getValue();
   recordStudentLogin_(sheet, row, current);
   return true;
 }
@@ -237,16 +237,16 @@ function addStudentXp(teacherCode, studentId, amount) {
   amount = Number(amount) || 0;
   if (!amount) return false;
   studentId = String(studentId || '').trim();
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return false;
-  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return false;
-  const rowMap = getStudentRowMap_(teacherCode, sheet);
-  const row = rowMap[studentId];
+  var rowMap = getStudentRowMap_(teacherCode, sheet);
+  var row = rowMap[studentId];
   if (!row) return false;
-  const total = Number(sheet.getRange(row, 8).getValue()) || 0;
-  const newTotal = total + amount;
-  const level = calcLevelFromXp_(newTotal);
+  var total = Number(sheet.getRange(row, 8).getValue()) || 0;
+  var newTotal = total + amount;
+  var level = calcLevelFromXp_(newTotal);
   sheet.getRange(row, 8, 1, 2).setValues([[newTotal, level]]);
   return true;
 }
@@ -254,18 +254,18 @@ function addStudentXp(teacherCode, studentId, amount) {
 function getStudentHistory(teacherCode, studentId) {
   console.time('getStudentHistory');
   studentId = String(studentId || '').trim();
-  const cacheKey = 'history_' + teacherCode + '_' + studentId;
-  const cached = getCacheValue_(cacheKey);
+  var cacheKey = 'history_' + teacherCode + '_' + studentId;
+  var cached = getCacheValue_(cacheKey);
   if (cached) { console.timeEnd('getStudentHistory'); return cached; }
 
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('getStudentHistory'); return []; }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (!sheet) { console.timeEnd('getStudentHistory'); return []; }
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('getStudentHistory'); return []; }
-  const data = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
-  const rows = [];
+  var data = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
+  var rows = [];
   for (var i = 0; i < data.length; i++) {
     var r = data[i];
     if (String(r[0]) !== studentId) continue;
@@ -276,14 +276,14 @@ function getStudentHistory(teacherCode, studentId) {
   return rows;
 }
 function listStudents(teacherCode) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return [];
-  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return [];
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
-  return rows.map(r => ({
+  var rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  return rows.map(function(r){ return {
     id: r[0],
     grade: r[1],
     class: r[2],
@@ -293,27 +293,27 @@ function listStudents(teacherCode) {
     loginCount: r[6],
     totalXp: r[7],
     level: r[8]
-  }));
+  }; });
 }
 
 function getClassStatistics(teacherCode) {
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) return {};
-  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) return {};
-  const lastRow = sheet.getLastRow();
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
-  const rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
-  const stats = {};
-  rows.forEach(r => {
-    const key = `${r[1]}-${r[2]}`;
+  var rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  var stats = {};
+  rows.forEach(function(r){
+    var key = `${r[1]}-${r[2]}`;
     if (!stats[key]) stats[key] = { count: 0, totalXp: 0, avgLevel: 0 };
     stats[key].count++;
     stats[key].totalXp += Number(r[7] || 0);
     stats[key].avgLevel += Number(r[8] || 0);
   });
-  Object.keys(stats).forEach(k => {
-    const s = stats[k];
+  Object.keys(stats).forEach(function(k){
+    var s = stats[k];
     s.avgLevel = s.count > 0 ? s.avgLevel / s.count : 0;
   });
   return stats;
@@ -326,18 +326,18 @@ function getClassStatistics(teacherCode) {
 function registerStudentsFromCsv(teacherCode, csvText) {
   console.time('registerStudentsFromCsv');
   if (!csvText) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'no data' }; }
-  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  var ss = getSpreadsheetByTeacherCode(teacherCode);
   if (!ss) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'no sheet' }; }
-  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  var sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
   if (!sheet) { console.timeEnd('registerStudentsFromCsv'); return { status: 'error', message: 'missing sheet' }; }
 
-  const rows = Utilities.parseCsv(csvText);
-  const map = getStudentRowMap_(teacherCode, sheet);
-  const now = new Date();
-  const append = [];
-  rows.forEach(r => {
+  var rows = Utilities.parseCsv(csvText);
+  var map = getStudentRowMap_(teacherCode, sheet);
+  var now = new Date();
+  var append = [];
+  rows.forEach(function(r){
     if (r.length < 4) return;
-    const id = String(r[0] || '').trim();
+    var id = String(r[0] || '').trim();
     if (!id || map[id]) return;
     append.push([id, r[1], r[2], r[3], now, now, 1, 0, 1, '']);
     map[id] = true;

@@ -1,30 +1,30 @@
 function setupInitialTeacher(secretKey) {
-  const props = PropertiesService.getScriptProperties();
-  const stored = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
+  var props = PropertiesService.getScriptProperties();
+  var stored = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
   if (!stored || secretKey !== stored) {
     return { status: "error", message: "invalid_key" };
   }
 
-  const email = Session.getEffectiveUser().getEmail();
+  var email = Session.getEffectiveUser().getEmail();
   if (props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email)) {
     return { status: "error", message: "already_exists" };
   }
 
   // Step2: register user in Global_Users if missing
   if (typeof getGlobalDb_ === 'function') {
-    const globalDb = getGlobalDb_();
+    var globalDb = getGlobalDb_();
     if (globalDb) {
-      const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+      var userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
       if (userSheet) {
-        const last = userSheet.getLastRow();
-        let exists = false;
+        var last = userSheet.getLastRow();
+        var exists = false;
         if (last >= 2) {
-          const emails = userSheet.getRange(2, 1, last - 1, 1).getValues().flat();
-          exists = emails.some(e => String(e).trim().toLowerCase() === email.toLowerCase());
+          var emails = userSheet.getRange(2, 1, last - 1, 1).getValues().flat();
+          exists = emails.some(function(e){ return String(e).trim().toLowerCase() === email.toLowerCase(); });
         }
         if (!exists) {
-          const handle = String(email).split('@')[0];
-          const now = new Date();
+          var handle = String(email).split('@')[0];
+          var now = new Date();
           userSheet.getRange(last + 1, 1, 1, 10).setValues([[
             email,
             handle,
@@ -42,9 +42,9 @@ function setupInitialTeacher(secretKey) {
     }
   }
 
-  const teacherCode = Utilities.getUuid().substring(0, 6).toUpperCase();
-  const folder = DriveApp.createFolder(CONSTS.FOLDER_NAME_PREFIX + teacherCode);
-  const ss = SpreadsheetApp.create('StudyQuest_DB_' + teacherCode);
+  var teacherCode = Utilities.getUuid().substring(0, 6).toUpperCase();
+  var folder = DriveApp.createFolder(CONSTS.FOLDER_NAME_PREFIX + teacherCode);
+  var ss = SpreadsheetApp.create('StudyQuest_DB_' + teacherCode);
   DriveApp.getFileById(ss.getId()).moveTo(folder);
 
   // create student CSV template in the teacher folder
@@ -55,7 +55,7 @@ function setupInitialTeacher(secretKey) {
   } catch (_) {}
 
   // Step4: create sheets with headers
-  const sheetDefs = [
+  var sheetDefs = [
     { name: 'Enrollments', headers: ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'] },
     { name: CONSTS.SHEET_STUDENTS, headers: ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID'] },
     { name: 'Tasks', headers: ['TaskID','ClassID','Subject','Question','Type','Choices','AllowSelfEval','CreatedAt','Persona','Status','draft','Difficulty','TimeLimit','XPBase','CorrectAnswer'] },
@@ -66,13 +66,13 @@ function setupInitialTeacher(secretKey) {
     { name: 'Settings', headers: ['type','value1','value2'] },
     { name: 'TOC', headers: ['Sheet','Description'] }
   ];
-  sheetDefs.forEach(def => {
-    const sh = ss.insertSheet(def.name);
+  sheetDefs.forEach(function(def) {
+    var sh = ss.insertSheet(def.name);
     sh.appendRow(def.headers);
   });
 
   // record owner email in Settings sheet
-  const settings = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
+  var settings = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
   if (settings) settings.appendRow(['ownerEmail', email]);
 
   props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, teacherCode);
@@ -84,9 +84,9 @@ function setupInitialTeacher(secretKey) {
 // Authentication and user login helpers per StudyQuest spec v4.3
 
 function handleTeacherLogin() {
-  const email = Session.getEffectiveUser().getEmail();
-  const props = PropertiesService.getScriptProperties();
-  const code = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
+  var email = Session.getEffectiveUser().getEmail();
+  var props = PropertiesService.getScriptProperties();
+  var code = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (code) {
     return { status: 'ok', teacherCode: code };
   }
@@ -94,9 +94,9 @@ function handleTeacherLogin() {
 }
 
 function loginAsTeacher() {
-  const email = Session.getEffectiveUser().getEmail();
-  const props = PropertiesService.getScriptProperties();
-  const teacherCode = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
+  var email = Session.getEffectiveUser().getEmail();
+  var props = PropertiesService.getScriptProperties();
+  var teacherCode = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
   if (teacherCode) {
     return { status: 'ok', teacherCode: teacherCode };
   }

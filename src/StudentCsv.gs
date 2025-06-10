@@ -19,9 +19,9 @@ function getStudentTemplateCsv() {
  */
 function createStudentTemplateFile_(folder, teacherCode) {
   try {
-    const csv = getStudentTemplateCsv();
-    const file = folder.createFile('student_template.csv', csv, MimeType.CSV);
-    const props = PropertiesService.getScriptProperties();
+    var csv = getStudentTemplateCsv();
+    var file = folder.createFile('student_template.csv', csv, MimeType.CSV);
+    var props = PropertiesService.getScriptProperties();
     props.setProperty('templateCsv_' + teacherCode, file.getId());
     return file.getId();
   } catch (e) {
