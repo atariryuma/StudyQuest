@@ -3,15 +3,11 @@ const vm = require('vm');
 const path = require('path');
 
 function loadGemini(context) {
-  const consts = fs.readFileSync(path.join(__dirname, '../src/consts.gs'), 'utf8');
-  vm.runInNewContext(consts, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Gemini.gs'), 'utf8');
   vm.runInNewContext(code, context);
 }
 
 function loadTeacher(context) {
-  const consts = fs.readFileSync(path.join(__dirname, '../src/consts.gs'), 'utf8');
-  vm.runInNewContext(consts, context);
   const utils = fs.readFileSync(path.join(__dirname, '../src/Utils.gs'), 'utf8');
   vm.runInNewContext(utils, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Teacher.gs'), 'utf8');

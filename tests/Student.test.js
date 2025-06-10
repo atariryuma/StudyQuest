@@ -3,8 +3,6 @@ const vm = require('vm');
 const path = require('path');
 
 function loadStudent(context) {
-  const consts = fs.readFileSync(path.join(__dirname, '../src/consts.gs'), 'utf8');
-  vm.runInNewContext(consts, context);
   const utils = fs.readFileSync(path.join(__dirname, '../src/Utils.gs'), 'utf8');
   vm.runInNewContext(utils, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Student.gs'), 'utf8');
