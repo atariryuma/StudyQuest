@@ -256,23 +256,38 @@
 
   function loadStudentData(code) {
     showLoadingOverlay();
-    if (google && google.script && google.script.run && typeof google.script.run.loadStudentData === 'function') {
-      google.script.run
-        .withSuccessHandler(data => {
-          state.userInfo = data.userInfo || null;
-          state.tasks = data.tasks || { uncompleted: [], completed: [] };
-          state.chatHistory = data.chatHistory || [];
-          updateProfileHeader();
-          renderLists(state.tasks.uncompleted || [], state.chatHistory);
-          hideLoadingOverlay();
-        })
-        .withFailureHandler(e => {
-          alert('データ取得に失敗しました: ' + e.message);
-          hideLoadingOverlay();
-        })
-        .loadStudentData(code);
+    if (google && google.script && google.script.run) {
+      if (typeof google.script.run.loadStudentData === 'function') {
+        google.script.run
+          .withSuccessHandler(data => {
+            state.userInfo = data.userInfo || null;
+            state.tasks = data.tasks || { uncompleted: [], completed: [] };
+            state.chatHistory = data.chatHistory || [];
+            updateProfileHeader();
+            renderLists(state.tasks.uncompleted || [], state.chatHistory);
+            hideLoadingOverlay();
+          })
+          .withFailureHandler(e => {
+            alert('データ取得に失敗しました: ' + e.message);
+            hideLoadingOverlay();
+          })
+          .loadStudentData(code);
+      } else if (typeof google.script.run.initStudent === 'function') {
+        google.script.run
+          .withSuccessHandler(() => {
+            loadTasks();
+            loadXp();
+          })
+          .withFailureHandler(e => {
+            alert('初期化に失敗しました: ' + e.message);
+            hideLoadingOverlay();
+          })
+          .initStudent(teacherCode, grade, classroom, number);
+      } else {
+        document.getElementById('loadingOverlay').textContent = 'Webアプリからアクセスしてください';
+      }
     } else {
-      initStudent();
+      document.getElementById('loadingOverlay').textContent = 'Webアプリからアクセスしてください';
     }
   }
 
