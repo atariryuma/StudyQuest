@@ -105,80 +105,87 @@ function loginAsTeacher() {
 
 function loginAsStudent(teacherCode) {
   teacherCode = String(teacherCode || '').trim();
-  const email = Session.getEffectiveUser().getEmail();
+  var email = Session.getEffectiveUser().getEmail();
 
-  if (!teacherCode) {
-    const props = PropertiesService.getScriptProperties();
-    const keys = (typeof props.getKeys === 'function') ? props.getKeys() : [];
-    const codes = keys.filter(k => k.indexOf(CONSTS.PROP_TEACHER_SSID_PREFIX) === 0).map(k => k.substring(CONSTS.PROP_TEACHER_SSID_PREFIX.length));
-    const classes = [];
-    codes.forEach(code => {
-      const db = getTeacherDb_(code);
-      if (!db) return;
-      const sheet = db.getSheetByName('Enrollments');
-      if (!sheet) return;
-      const last = sheet.getLastRow();
-      if (last < 2) return;
-      const emails = sheet.getRange(2,1,last-1,1).getValues().flat();
-      const found = emails.some(function(e) { return String(e).trim().toLowerCase() === email.toLowerCase(); });
-      if (found) {
-        var tName = getTeacherName_(code);
-        classes.push({ teacherCode: code, className: tName || code, teacherName: tName || code });
-      }
-    });
-    if (classes.length) {
-      try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
-    }
-    return { enrolledClasses: classes };
-  }
-
-  const teacherDb = getTeacherDb_(teacherCode);
-  const globalDb = getGlobalDb_();
-  if (!teacherDb || !globalDb) return { status: 'error', message: 'invalid_teacher' };
-  const enroll = teacherDb.getSheetByName('Enrollments');
-  if (!enroll) return { status: 'error', message: 'not_found_in_class' };
-  const last = enroll.getLastRow();
-  if (last < 2) return { status: 'error', message: 'not_found_in_class' };
-  const rows = enroll.getRange(2,1,last-1,enroll.getLastColumn()).getValues();
-  let classData = null;
-  for (let i=0;i<rows.length;i++) {
-    if (String(rows[i][0]).trim().toLowerCase() === email.toLowerCase()) {
-      classData = {
-        userEmail: rows[i][0],
-        classRole: rows[i][1],
-        grade: rows[i][2],
-        class: rows[i][3],
-        number: rows[i][4],
-        enrolledAt: rows[i][5]
-      };
-      break;
-    }
-  }
-  if (!classData) return { status: 'error', message: 'not_found_in_class' };
-  const userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+  var globalDb = getGlobalDb_();
+  if (!globalDb) return { status: 'error', message: 'missing_global' };
+  var userSheet = globalDb.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!userSheet) return { status: 'error', message: 'missing_global' };
-  const uLast = userSheet.getLastRow();
-  let globalData = null;
-  if (uLast >= 2) {
-    const uRows = userSheet.getRange(2,1,uLast-1,userSheet.getLastColumn()).getValues();
-    for (let i=0;i<uRows.length;i++) {
-      if (String(uRows[i][0]).trim().toLowerCase() === email.toLowerCase()) {
+  var gLast = userSheet.getLastRow();
+  var globalData = null;
+  if (gLast >= 2) {
+    var gRows = userSheet.getRange(2,1,gLast-1,userSheet.getLastColumn()).getValues();
+    for (var i=0; i<gRows.length; i++) {
+      if (String(gRows[i][0]).trim().toLowerCase() === email.toLowerCase()) {
         globalData = {
-          email: uRows[i][0],
-          name: uRows[i][1],
-          role: uRows[i][2],
-          globalXp: uRows[i][3],
-          globalLevel: uRows[i][4],
-          globalCoins: uRows[i][5],
-          equippedTitle: uRows[i][6]
+          email: gRows[i][0],
+          name: gRows[i][1],
+          role: gRows[i][2],
+          globalXp: gRows[i][3],
+          globalLevel: gRows[i][4],
+          globalCoins: gRows[i][5],
+          equippedTitle: gRows[i][6]
         };
         break;
       }
     }
   }
   if (!globalData) {
-    globalData = { email: email, name: '', role: 'student', globalXp:0, globalLevel:1, globalCoins:0, equippedTitle:'' };
+    return { status: 'error', message: 'not_registered' };
   }
+
+  if (!teacherCode) {
+    var props = PropertiesService.getScriptProperties();
+    var keys = (typeof props.getKeys === 'function') ? props.getKeys() : [];
+    var codes = keys.filter(function(k){ return k.indexOf(CONSTS.PROP_TEACHER_SSID_PREFIX) == 0; }).map(function(k){ return k.substring(CONSTS.PROP_TEACHER_SSID_PREFIX.length); });
+    var classes = [];
+    for (var c=0; c<codes.length; c++) {
+      var code = codes[c];
+      var db = getTeacherDb_(code);
+      if (!db) continue;
+      var sheet = db.getSheetByName('Enrollments');
+      if (!sheet) continue;
+      var last = sheet.getLastRow();
+      if (last < 2) continue;
+      var emails = sheet.getRange(2,1,last-1,1).getValues().flat();
+      var found = false;
+      for (var e=0; e<emails.length; e++) {
+        if (String(emails[e]).trim().toLowerCase() === email.toLowerCase()) { found = true; break; }
+      }
+      if (found) {
+        var tName = getTeacherName_(code);
+        classes.push({ teacherCode: code, className: tName || code, teacherName: tName || code });
+      }
+    }
+    if (classes.length) {
+      try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
+    }
+    return { enrolledClasses: classes };
+  }
+
+  var teacherDb = getTeacherDb_(teacherCode);
+  if (!teacherDb) return { status: 'error', message: 'invalid_teacher' };
+  var enroll = teacherDb.getSheetByName('Enrollments');
+  if (!enroll) return { status: 'error', message: 'not_found_in_class' };
+  var last = enroll.getLastRow();
+  if (last < 2) return { status: 'error', message: 'not_found_in_class' };
+  var rows = enroll.getRange(2,1,last-1,enroll.getLastColumn()).getValues();
+  var classData = null;
+  for (var i2=0; i2<rows.length; i2++) {
+    if (String(rows[i2][0]).trim().toLowerCase() === email.toLowerCase()) {
+      classData = {
+        userEmail: rows[i2][0],
+        classRole: rows[i2][1],
+        grade: rows[i2][2],
+        class: rows[i2][3],
+        number: rows[i2][4],
+        enrolledAt: rows[i2][5]
+      };
+      break;
+    }
+  }
+  if (!classData) return { status: 'error', message: 'not_found_in_class' };
+
   var sid = classData.grade + '-' + classData.class + '-' + classData.number;
   var bonus = null;
   try { if (typeof processLoginBonus === 'function') bonus = processLoginBonus(email, teacherCode, sid); } catch (_) {}

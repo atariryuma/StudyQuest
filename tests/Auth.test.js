@@ -104,11 +104,29 @@ test('loginAsStudent without teacherCode lists classes', () => {
     processLoginBonus: jest.fn()
   };
   loadAuth(context);
+  const userSheet = { getLastRow: jest.fn(() => 2), getLastColumn: jest.fn(() => 7), getRange: jest.fn(() => ({ getValues: () => [['stud@example.com']] })) };
+  const globalDb = { getSheetByName: jest.fn(() => userSheet) };
+  context.getGlobalDb_ = jest.fn(() => globalDb);
   context.getTeacherDb_ = jest.fn(code => code === 'TC1' ? teacherDb1 : teacherDb2);
   const res = context.loginAsStudent();
   expect(Array.isArray(res.enrolledClasses)).toBe(true);
   expect(res.enrolledClasses.length).toBe(1);
   expect(res.enrolledClasses[0].teacherCode).toBe('TC1');
+});
+
+test('loginAsStudent returns error when not registered', () => {
+  const userSheet = { getLastRow: jest.fn(() => 1), getLastColumn: jest.fn(() => 7), getRange: jest.fn(() => ({ getValues: () => [] })) };
+  const globalDb = { getSheetByName: jest.fn(() => userSheet) };
+  const context = {
+    PropertiesService: { getScriptProperties: () => ({ getKeys: () => [], getProperty: k => k === 'Global_Master_DB' ? 'gid' : null }) },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'none@example.com' }) },
+    processLoginBonus: jest.fn()
+  };
+  loadAuth(context);
+  context.getGlobalDb_ = jest.fn(() => globalDb);
+  context.getTeacherDb_ = jest.fn(() => null);
+  const res = context.loginAsStudent();
+  expect(res).toEqual({ status: 'error', message: 'not_registered' });
 });
 
 test('setupInitialTeacher creates resources and stores ids', () => {
