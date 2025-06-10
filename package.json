@@ -1,6 +1,6 @@
 {
   "name": "studyquest",
-  "version": "1.0.226",
+  "version": "1.0.227",
   "private": true,
   "scripts": {
     "deploy": "clasp push --force --no-open",
