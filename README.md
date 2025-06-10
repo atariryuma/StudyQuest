@@ -40,7 +40,7 @@
     * 本リポジトリをクローンし、`clasp` を使ってご自身のGoogleアカウントにApps Scriptプロジェクトをデプロイします。
 
 2.  **グローバルDBの初期化:**
-    * Apps Script エディタで `initGlobalDb` を実行し、`StudyQuest_Global_Master_DB` スプレッドシートを作成します。
+    * Apps Script エディタで **Setup.gs** の `initGlobalDb` を実行し、`StudyQuest_Global_Master_DB` スプレッドシートを作成します。
     * 生成されたスプレッドシートIDは `Global_Master_DB` プロパティに保存されます。
     * 旧バージョンから移行する場合、スクリプトプロパティ `GLOBAL_DB_ID` が残っていれば手動で削除してください。
     * 作成後、実行したユーザーが編集権限を持ち、`Global_Users` シートに `admin` として登録されます。

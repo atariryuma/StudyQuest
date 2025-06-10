@@ -2,7 +2,7 @@
 
 このリポジトリをコピーしてご利用いただく方向けに、最初に一度だけ実行する初期設定手順をまとめました。
 
-1. Apps Script エディタを開き、`quickStudyQuestSetup` 関数を実行します。
+1. Apps Script エディタで **Setup.gs** の `quickStudyQuestSetup` 関数を実行します。
 2. Google ドライブのマイドライブ直下に **StudyQuest** フォルダが自動作成されます。
 3. フォルダ内に以下が配置されます。
    - このスクリプトファイル一式
