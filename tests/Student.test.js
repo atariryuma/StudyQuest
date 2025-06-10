@@ -90,7 +90,7 @@ test('initStudent adds placeholder rows to Submissions', () => {
   context.initStudent('ABC', 1, 1, 1);
   expect(subsSheet.appendRow).toHaveBeenCalled();
   const row = subsSheet.appendRow.mock.calls[0][0];
-  expect(row.length).toBe(13);
+  expect(row.length).toBe(14);
   expect(row).toEqual([
     '1-1-1',
     't1',
@@ -99,6 +99,7 @@ test('initStudent adds placeholder rows to Submissions', () => {
     '', '', '', '',
     0, 0, 0,
     '',
+    0,
     0
   ]);
 });

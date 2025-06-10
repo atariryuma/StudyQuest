@@ -19,7 +19,7 @@
 
 | シート名 | 主な列 |
 | --- | --- |
-| Global_Users | Email, HandleName, Role, Global_TotalXP, Global_Level, Global_Coins, EquippedTitle, CreatedAt, LastGlobalLogin, LoginStreak |
+| Global_Users | Email, HandleName, Role, Global_TotalXP, Global_Level, Global_Coins, EquippedTitle, CreatedAt, LastGlobalLogin, LoginStreak, TotalLikesGiven, TotalLikesReceived |
 | Global_Trophies_Log | UserTrophyID, UserEmail, TrophyID, AwardedAt |
 | Global_Items_Inventory | UserItemID, UserEmail, ItemID, Quantity, AcquiredAt |
 
@@ -28,9 +28,9 @@
 | シート名 | 主な列 |
 | --- | --- |
 | Enrollments | UserEmail, ClassRole, Grade, Class, Number, EnrolledAt |
-| Students | StudentID, Grade, Class, Number, FirstLogin, LastLogin, LoginCount, TotalXP, Level, LastTrophyID |
+| Students | StudentID, Grade, Class, Number, FirstLogin, LastLogin, LoginCount, TotalXP, Level, LastTrophyID, TotalLikes |
 | Tasks | TaskID, Title, Subject, Question, Type, Choices, Difficulty, TimeLimit, XpBase, Status, CreatedAt, CorrectAnswer, Explanation, IsAiGenerated |
-| Submissions | SubmissionID, UserEmail, TaskID, Answer, EarnedXP, Bonuses, SubmittedAt, AiSummary |
+| Submissions | SubmissionID, UserEmail, TaskID, Answer, EarnedXP, Bonuses, SubmittedAt, AiSummary, LikeScore |
 | Trophies | TrophyID, Name, Description, IconURL, Condition |
 | Items | ItemID, Name, Type, Price, Effect |
 | Leaderboard | Rank, UserEmail, HandleName, Level, TotalXP, UpdatedAt |
@@ -50,6 +50,8 @@
 | CreatedAt | ユーザー登録日時 |
 | LastGlobalLogin | 直近のログイン日時 |
 | LoginStreak | 連続ログイン日数 |
+| TotalLikesGiven | 送信したいいね数 |
+| TotalLikesReceived | 受け取ったいいね数 |
 
 #### Global_Trophies_Log
 | 列 | 意味 |
@@ -91,6 +93,7 @@
 | TotalXP | 獲得XP合計 |
 | Level | 現在のレベル |
 | LastTrophyID | 直近に獲得したトロフィーID |
+| TotalLikes | 累計いいね数 |
 
 #### Tasks
 | 列 | 意味 |
@@ -121,6 +124,7 @@
 | Bonuses | 付与ボーナス |
 | SubmittedAt | 提出日時 |
 | AiSummary | AI要約 (自由回答時) |
+| LikeScore | いいねポイント |
 
 #### Trophies
 | 列 | 意味 |

@@ -51,7 +51,7 @@ function initGlobalDb() {
   var sheets = ss.getSheets();
   if (sheets && sheets[0]) {
     sheets[0].setName(CONSTS.SHEET_GLOBAL_USERS);
-    sheets[0].appendRow(['Email','HandleName','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak']);
+    sheets[0].appendRow(['Email','HandleName','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak','TotalLikesGiven','TotalLikesReceived']);
     sheets[0].setTabColor && sheets[0].setTabColor('4285f4');
   }
   var trophy = ss.insertSheet(CONSTS.SHEET_GLOBAL_TROPHIES_LOG);
@@ -79,7 +79,7 @@ function ensureAdminUser_(ss) {
   if (!exists) {
     const handle = String(email).split('@')[0];
     const now = new Date();
-    sheet.getRange(last + 1, 1, 1, 10).setValues([[
+    sheet.getRange(last + 1, 1, 1, 12).setValues([[
       email,
       handle,
       'admin',
@@ -89,7 +89,9 @@ function ensureAdminUser_(ss) {
       '',
       now,
       now,
-      1
+      1,
+      0,
+      0
     ]]);
   }
 }

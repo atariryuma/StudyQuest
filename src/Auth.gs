@@ -25,7 +25,7 @@ function setupInitialTeacher(secretKey) {
         if (!exists) {
           var handle = String(email).split('@')[0];
           var now = new Date();
-          userSheet.getRange(last + 1, 1, 1, 10).setValues([[
+          userSheet.getRange(last + 1, 1, 1, 12).setValues([[
             email,
             handle,
             'teacher',
@@ -35,7 +35,9 @@ function setupInitialTeacher(secretKey) {
             '',
             now,
             now,
-            1
+            1,
+            0,
+            0
           ]]);
         }
       }
@@ -57,9 +59,10 @@ function setupInitialTeacher(secretKey) {
   // Step4: create sheets with headers
   var sheetDefs = [
     { name: 'Enrollments', headers: ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'] },
-    { name: CONSTS.SHEET_STUDENTS, headers: ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID'] },
+    { name: CONSTS.SHEET_STUDENTS, headers: ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID','TotalLikes'] },
     { name: 'Tasks', headers: ['TaskID','ClassID','Subject','Question','Type','Choices','AllowSelfEval','CreatedAt','Persona','Status','draft','Difficulty','TimeLimit','XPBase','CorrectAnswer'] },
-    { name: 'Submissions', headers: ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status'] },
+    { name: 'Submissions', headers: ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status','LikeScore'] },
+    { name: 'Likes', headers: ['LikeID','TaskID','StudentID','LikedBy','Value','CreatedAt'] },
     { name: 'Trophies', headers: ['TrophyID','Name','Description','IconURL','Condition'] },
     { name: 'Items', headers: ['ItemID','Name','Type','Price','Effect'] },
     { name: 'Leaderboard', headers: ['Rank','UserEmail','HandleName','Level','TotalXP','UpdatedAt'] },

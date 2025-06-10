@@ -6,6 +6,7 @@ var CONSTS = (function() {
     SHEET_STUDENTS: 'Students',
     SHEET_TROPHIES: 'Trophies',
     SHEET_ITEMS: 'Items',
+    SHEET_LIKES: 'Likes',
     SHEET_AI_FEEDBACK: 'AI_Log',
     SHEET_SETTINGS: 'Settings',
     STUDENT_SHEET_PREFIX: '生徒_',
