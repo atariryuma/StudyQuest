@@ -338,10 +338,6 @@
                             <textarea id="question" rows="3" placeholder="ここに問題文を入力します。" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600"></textarea>
                         </div>
                         <div>
-                            <label class="block text-sm mb-1 text-gray-400">正答</label>
-                            <input id="correctAnswer" type="text" placeholder="例: A" class="w-full p-2 bg-gray-800/80 rounded-md border border-gray-600">
-                        </div>
-                        <div>
                             <label class="block text-sm mb-1 text-gray-400">回答タイプ</label>
                             <div class="flex gap-2 text-sm">
                                 <label class="p-2 bg-gray-800/80 rounded-md border border-gray-600 has-[:checked]:bg-pink-600/50 has-[:checked]:border-pink-400 cursor-pointer"><input type="radio" name="ansType" value="text" class="sr-only" checked> テキスト回答</label>
@@ -584,7 +580,6 @@
       document.getElementById('timeLimit').addEventListener('change', saveDraft);
       document.getElementById('xpBase').addEventListener('change', saveDraft);
       document.getElementById('status').addEventListener('change', saveDraft);
-      document.getElementById('correctAnswer').addEventListener('input', saveDraft);
       document.getElementById('single-register-btn').addEventListener('click', openSingleRegisterModal);
       document.getElementById('delete-student-btn').addEventListener('click', openDeleteStudentModal);
       const bulkBtn = document.getElementById('bulk-register-btn');
@@ -657,7 +652,6 @@
           const isText = e.target.value === 'text';
           document.getElementById('aiToolsSection').classList.remove('hidden');
           document.getElementById('choiceTool').classList.toggle('hidden', isText);
-          document.getElementById('correctAnswer').parentElement.classList.toggle('hidden', !isText);
           if (!isText) {
             const cnt = parseInt(document.getElementById('choiceCount').value, 10) || 1;
             renderOptionInputs(Array(cnt).fill(''));
@@ -671,7 +665,6 @@
         const isText = radio.value === 'text';
         document.getElementById('aiToolsSection').classList.remove('hidden');
         document.getElementById('choiceTool').classList.toggle('hidden', isText);
-        document.getElementById('correctAnswer').parentElement.classList.toggle('hidden', !isText);
         if (!isText) {
           const cnt = parseInt(document.getElementById('choiceCount').value, 10) || 1;
           renderOptionInputs(Array(cnt).fill(''));
@@ -824,7 +817,6 @@
         const diffBonusMap = { easy: 20, medium: 30, hard: 50 };
         const xpFinal = xpBase + (diffBonusMap[difficulty] || 0);
         const status = document.getElementById('status').value;
-        const correctAnswerInput = document.getElementById('correctAnswer').value.trim();
         const self = document.getElementById('selfEval').checked;
         const checkedRadio = document.querySelector('input[name="ansType"]:checked');
         if (!checkedRadio) {
@@ -854,7 +846,7 @@
         const makePayload = cls => {
           const base = { classId: cls, title, subject, question: q, type: ansType, difficulty, timeLimit, xpBase: xpFinal, status };
           if (ansType === 'text') {
-            base.correctAnswer = correctAnswerInput;
+            base.correctAnswer = '';
             return base;
           }
           const textInputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
@@ -1055,7 +1047,6 @@
           document.getElementById('timeLimit').value = d.timeLimit || '';
           document.getElementById('xpBase').value = d.xpBase || '100';
           if (d.status) document.getElementById('status').value = d.status;
-          if (d.correctAnswer) document.getElementById('correctAnswer').value = d.correctAnswer;
         } catch (_) {}
       }
 
@@ -1067,8 +1058,7 @@
           difficulty: document.getElementById('difficulty').value,
           timeLimit: document.getElementById('timeLimit').value,
           xpBase: document.getElementById('xpBase').value,
-          status: document.getElementById('status').value,
-          correctAnswer: document.getElementById('correctAnswer').value
+          status: document.getElementById('status').value
         };
         try {
           localStorage.setItem('taskDraft', JSON.stringify(draft));
@@ -1136,7 +1126,6 @@
         document.getElementById('subject').value = '';
         document.getElementById('question').value = '';
         document.getElementById('status').value = 'open';
-        document.getElementById('correctAnswer').value = '';
         const textRadio = document.querySelector('input[name="ansType"][value="text"]');
         if (textRadio) textRadio.checked = true;
         document.getElementById('aiToolsSection').classList.remove('hidden');
@@ -1199,7 +1188,6 @@
         document.getElementById('subject').value = data.subject || '';
         document.getElementById('question').value = data.question || '';
         document.getElementById('status').value = task.closed ? 'closed' : 'open';
-        document.getElementById('correctAnswer').value = data.correctAnswer || '';
         const radio = document.querySelector(`input[name="ansType"][value="${data.type}"]`);
         if (radio) radio.checked = true;
         document.getElementById('aiToolsSection').classList.remove('hidden');
