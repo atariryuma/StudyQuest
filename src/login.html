@@ -31,9 +31,6 @@
         <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
         <p class="text-gray-400 text-sm mt-1">冒険の準備をしよう！</p>
       </div>
-      <button class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 mb-4" onclick="history.back();">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>戻る
-      </button>
       <div id="stage1" class="grid grid-cols-2 gap-4 mb-4">
         <button id="choose-teacher" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500">教師</button>
         <button id="choose-student" class="game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500">生徒</button>
@@ -47,7 +44,9 @@
           </div>
           <div class="flex gap-2 justify-center">
             <button id="secret-key-submit-btn" type="submit" class="game-btn bg-pink-600 text-white px-4 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex-1">セットアップ実行</button>
-            <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex-1">戻る</button>
+            <button id="back-to-login-btn" type="button" class="game-btn bg-gray-600 text-white px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-500 flex-1">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            </button>
           </div>
         </form>
         <div id="devLoginSection" class="mt-4 p-4 border-2 border-dashed border-yellow-500 rounded-lg hidden">
@@ -59,6 +58,9 @@
       <div id="studentSection" class="space-y-4 hidden">
         <button id="student-login-btn" class="game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500 w-full">生徒としてログイン</button>
       </div>
+      <button id="reselect-btn" class="game-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-bold border-gray-800 hover:bg-gray-700 w-full mt-4 hidden">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      </button>
     </section>
   </main>
 
@@ -146,6 +148,7 @@
     const stage1 = document.getElementById('stage1');
     const teacherSec = document.getElementById('teacherSection');
     const studentSec = document.getElementById('studentSection');
+    const reselectBtn = document.getElementById('reselect-btn');
     const devLoginSection = document.getElementById('devLoginSection');
     const devLoginBtn = document.getElementById('devLoginBtn');
     const devToggleArea = document.getElementById('devToggleArea');
@@ -157,10 +160,12 @@
     document.getElementById('choose-teacher').addEventListener('click', () => {
       stage1.classList.add('hidden');
       teacherSec.classList.remove('hidden');
+      reselectBtn.classList.remove('hidden');
     });
     document.getElementById('choose-student').addEventListener('click', () => {
       stage1.classList.add('hidden');
       studentSec.classList.remove('hidden');
+      reselectBtn.classList.remove('hidden');
     });
 
     teacherBtn.addEventListener('click', () => {
@@ -234,6 +239,15 @@
         secretForm.classList.add('hidden');
         teacherBtn.disabled = false;
       }
+    });
+
+    reselectBtn.addEventListener('click', () => {
+      stage1.classList.remove('hidden');
+      teacherSec.classList.add('hidden');
+      studentSec.classList.add('hidden');
+      secretForm.classList.add('hidden');
+      teacherBtn.disabled = false;
+      reselectBtn.classList.add('hidden');
     });
 
     function onTeacherLoginResponse(res) {
