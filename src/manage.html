@@ -1355,6 +1355,7 @@
         }
         showToast(msg);
         loadDashboardData(teacherCode);
+        loadClassOptions();
       }
 
       function onSingleRegisterSuccess() {
@@ -1362,6 +1363,7 @@
         closeSingleRegisterModal();
         showToast('生徒を登録しました');
         loadDashboardData(teacherCode);
+        loadClassOptions();
       }
 
       function onDeleteSuccess(res) {
