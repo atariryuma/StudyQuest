@@ -624,7 +624,7 @@
         const cls = clsRadio ? clsRadio.value : '';
         const subject = document.getElementById('subject').value.trim();
         const q = document.getElementById('question').value.trim();
-        const draftPayload = JSON.stringify({ classId: cls, subject, question: q });
+        const draftPayload = { classId: cls, subject, question: q };
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
 
         aiCredits--;
@@ -659,7 +659,7 @@
         const subject = document.getElementById('subject').value.trim();
         const clsRadio = document.querySelector('input[name="taskClassCheckbox"]:checked');
         const cls = clsRadio ? clsRadio.value : '';
-        const draftPayload = JSON.stringify({ classId: cls, subject, question });
+        const draftPayload = { classId: cls, subject, question };
         google.script.run.withSuccessHandler(id => { draftTaskId = id; }).saveDraftTask(teacherCode, draftPayload);
         container.innerHTML = `Geminiが質問を生成中... <i data-lucide="loader-circle" class="inline-block animate-spin"></i>`;
         renderIcons(document);
@@ -735,7 +735,7 @@
         // ペイロードをタイプ別に組み立て
         const makePayload = cls => {
           if (ansType === 'text') {
-            return JSON.stringify({ classId: cls, subject, question: q, type: 'text' });
+            return { classId: cls, subject, question: q, type: 'text' };
           }
           const inputs = Array.from(document.querySelectorAll('#optionInputs input[type="text"]'))
                               .map(inp => inp.value.trim());
@@ -743,13 +743,13 @@
             alert('すべての選択肢を入力してください。');
             return null;
           }
-          return JSON.stringify({
+          return {
             classId: cls,
             subject,
             question: q,
             type: ansType,
             choices: inputs
-          });
+          };
         };
         let completed = 0;
         const total = classIds.length;
