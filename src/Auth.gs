@@ -4,18 +4,71 @@ function setupInitialTeacher(secretKey) {
   if (!stored || secretKey !== stored) {
     return { status: "error", message: "invalid_key" };
   }
+
   const email = Session.getEffectiveUser().getEmail();
-  if (props.getProperty("teacherCode_" + email)) {
+  if (props.getProperty('teacherCode_' + email)) {
     return { status: "error", message: "already_exists" };
   }
-  const teacherCode = Utilities.getUuid().substring(0,6).toUpperCase();
-  const folder = DriveApp.createFolder("StudyQuest_" + teacherCode);
-  const ss = SpreadsheetApp.create("StudyQuest_DB_" + teacherCode);
+
+  // Step2: register user in Global_Users if missing
+  if (typeof getGlobalDb_ === 'function') {
+    const globalDb = getGlobalDb_();
+    if (globalDb) {
+      const userSheet = globalDb.getSheetByName('Global_Users');
+      if (userSheet) {
+        const last = userSheet.getLastRow();
+        let exists = false;
+        if (last >= 2) {
+          const emails = userSheet.getRange(2, 1, last - 1, 1).getValues().flat();
+          exists = emails.some(e => String(e).trim().toLowerCase() === email.toLowerCase());
+        }
+        if (!exists) {
+          const handle = String(email).split('@')[0];
+          const now = new Date();
+          userSheet.getRange(last + 1, 1, 1, 10).setValues([[
+            email,
+            handle,
+            'teacher',
+            0,
+            0,
+            0,
+            '',
+            now,
+            now,
+            1
+          ]]);
+        }
+      }
+    }
+  }
+
+  const teacherCode = Utilities.getUuid().substring(0, 6).toUpperCase();
+  const folder = DriveApp.createFolder('StudyQuest_' + teacherCode);
+  const ss = SpreadsheetApp.create('StudyQuest_DB_' + teacherCode);
   DriveApp.getFileById(ss.getId()).moveTo(folder);
-  const settings = ss.insertSheet("Settings");
-  settings.appendRow(["ownerEmail", email]);
-  props.setProperty("teacherCode_" + email, teacherCode);
-  props.setProperty("ssId_" + teacherCode, ss.getId());
+
+  // Step4: create sheets with headers
+  const sheetDefs = [
+    { name: 'Enrollments', headers: ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'] },
+    { name: 'Tasks', headers: ['TaskID','Title','Subject','Question','Type','Choices','Difficulty','TimeLimit','XpBase','Status','CreatedAt','CorrectAnswer','Explanation','IsAiGenerated'] },
+    { name: 'Submissions', headers: ['SubmissionID','UserEmail','TaskID','Answer','EarnedXP','Bonuses','SubmittedAt','AiSummary'] },
+    { name: 'Trophies', headers: ['TrophyID','Name','Description','IconURL','Condition'] },
+    { name: 'Items', headers: ['ItemID','Name','Type','Price','Effect'] },
+    { name: 'Leaderboard', headers: ['Rank','UserEmail','HandleName','Level','TotalXP','UpdatedAt'] },
+    { name: 'Settings', headers: ['Key','Value'] },
+    { name: 'TOC', headers: ['Sheet','Description'] }
+  ];
+  sheetDefs.forEach(def => {
+    const sh = ss.insertSheet(def.name);
+    sh.appendRow(def.headers);
+  });
+
+  // record owner email in Settings sheet
+  const settings = ss.getSheetByName('Settings');
+  if (settings) settings.appendRow(['ownerEmail', email]);
+
+  props.setProperty('teacherCode_' + email, teacherCode);
+  props.setProperty('ssId_' + teacherCode, ss.getId());
   props.setProperty(teacherCode, folder.getId());
   return { status: "ok", teacherCode: teacherCode };
 }
