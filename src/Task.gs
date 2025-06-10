@@ -289,15 +289,14 @@ function getRecommendedTask(teacherCode, studentId) {
     });
   }
 
-  const studentSheet = findStudentSheet_(ss, studentId);
-  const answeredIds      = [];
-  if (studentSheet) {
-    const data = studentSheet.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-      const rowTaskId  = data[i][1]; // 2列目: 課題ID
-      const answerText = data[i][3]; // 4列目: 回答
-      if (rowTaskId && answerText && answerText.toString().trim() !== '') {
-        answeredIds.push(rowTaskId);
+  const answeredIds = [];
+  const subsSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
+  if (subsSheet && subsSheet.getLastRow() > 1) {
+    const data = subsSheet.getRange(2, 1, subsSheet.getLastRow() - 1, 13).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      if (row[0] === studentId && row[4]) {
+        answeredIds.push(row[1]);
       }
     }
   }
@@ -329,22 +328,13 @@ function submitAnswer(teacherCode, studentId, taskId, answer,
   if (!ss) {
     throw new Error('回答送信エラー: 教師の設定ファイルが見つかりません。');
   }
-  const studentSheet = findStudentSheet_(ss, studentId);
-  if (!studentSheet) {
-    throw new Error(`回答送信エラー: 生徒「${studentId}」の専用シートが見つかりません。`);
-  }
-
-  // 常に新規行追加
   const taskMap = getTaskMap_(teacherCode);
   const info = taskMap[taskId];
   const questionText = info ? info.questionText : '';
   const startTime  = startAt ? new Date(startAt) : new Date();
   const submitTime = submitAt ? new Date(submitAt) : new Date();
-  studentSheet.appendRow([submitTime, taskId, questionText, answer,
-                          earnedXp, totalXp, level, trophies || '', attemptCount]);
   removeCacheValue_('history_' + teacherCode + '_' + studentId);
 
-  // 全体ログにも追記
   const globalAnswerSheet = ss.getSheetByName(CONSTS.SHEET_SUBMISSIONS);
   if (globalAnswerSheet) {
     let questionSummary = qSummary || questionText;
