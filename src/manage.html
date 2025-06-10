@@ -533,7 +533,7 @@
           google.script.run
             .withSuccessHandler(res => { resultEl.textContent = res; })
             .withFailureHandler(err => { resultEl.textContent = '失敗: ' + err.message; })
-            .callGeminiAPI_GAS(prompt, persona);
+            .callGeminiAPI_GAS(prompt, persona, teacherCode);
         });
       }
       document.getElementById('single-register-btn').addEventListener('click', openSingleRegisterModal);
@@ -971,7 +971,7 @@
             document.getElementById('apiStatus').classList.remove('hidden');
             debug('saveGeminiSettings failed: ' + err.message);
           })
-          .setGeminiSettings(teacherCode, undefined, persona);
+          .setGeminiSettings(teacherCode, persona);
       }
 
         function loadSubjectHistory() {

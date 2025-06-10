@@ -57,10 +57,11 @@
 
 Gemini APIを利用する機能を有効化するには、スクリプトプロパティ`geminiApiKey`にAPIキーを保存します。
 
-1. Apps Scriptエディタのコンソールで`setGlobalGeminiApiKey('YOUR_KEY')`を実行します。
+1. Apps Scriptエディタのコンソールで`setGlobalGeminiApiKey('YOUR_KEY')`を実行します。（初回のみ）
 2. もしくは、`PropertiesService.getScriptProperties()`から`geminiApiKey`プロパティを手動で設定します。
 
-`setGlobalGeminiApiKey`はキーを自動的にBase64エンコードして保存します。手動で設定する場合も同じくBase64化した文字列を保存してください。
+`setGlobalGeminiApiKey`はキーを自動的にBase64エンコードして保存します。運用中に`setGeminiSettings`からキーを変更することはできません。
+また、Gemini APIの呼び出しは教師コードごとに1日20回までに制限されています。
 
 ---
 
