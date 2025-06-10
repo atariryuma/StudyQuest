@@ -28,8 +28,12 @@ function createTask(teacherCode, taskObj, selfEval) {
         selfEval,
         new Date(),
         parsed.persona || '',
+        parsed.status || '',
         '',
-        ''
+        parsed.difficulty || '',
+        parsed.timeLimit || '',
+        parsed.xpBase || '',
+        parsed.correctAnswer || ''
       ];
     });
     bulkAppend_(taskSheet, rows);
@@ -54,8 +58,12 @@ function createTask(teacherCode, taskObj, selfEval) {
     selfEval,
     new Date(),
     parsed && parsed.persona || '',
+    parsed && parsed.status || '',
     '',
-    ''
+    parsed && parsed.difficulty || '',
+    parsed && parsed.timeLimit || '',
+    parsed && parsed.xpBase || '',
+    parsed && parsed.correctAnswer || ''
   ]);
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
@@ -79,13 +87,22 @@ function listTasks(teacherCode) {
   if (!sheet) { console.timeEnd('listTasks'); return []; }
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) { console.timeEnd('listTasks'); return []; }
-  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
   const result = data.filter(function(r){ return String(r[10] || '') !== '1'; })
                      .reverse()
                      .map(row => ({
     id: row[0],
     classId: row[1],
-    q: JSON.stringify({ subject: row[2], question: row[3], type: row[4], choices: JSON.parse(row[5] || '[]') }),
+    q: JSON.stringify({
+      subject: row[2],
+      question: row[3],
+      type: row[4],
+      choices: JSON.parse(row[5] || '[]'),
+      difficulty: row[11] || '',
+      timeLimit: row[12] || '',
+      xpBase: row[13] || '',
+      correctAnswer: row[14] || ''
+    }),
     selfEval: row[6],
     date: Utilities.formatDate(new Date(row[7]), 'JST', 'yyyy/MM/dd HH:mm'),
     persona: row[8] || '',
@@ -108,13 +125,17 @@ function getTaskMap_(teacherCode) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return {};
 
-  const rows = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  const rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
   const map = {};
   rows.forEach(row => {
     if (String(row[10] || '') === '1') return; // skip draft rows
     var qText = row[3] || '';
     var qObj = { subject: row[2], question: row[3], type: row[4], choices: [] };
     try { qObj.choices = JSON.parse(row[5] || '[]'); } catch (_) { qObj.choices = []; }
+    qObj.difficulty = row[11] || '';
+    qObj.timeLimit = row[12] || '';
+    qObj.xpBase = row[13] || '';
+    qObj.correctAnswer = row[14] || '';
     var qStr = JSON.stringify(qObj);
     map[row[0]] = {
       classId: row[1],
@@ -172,7 +193,7 @@ function duplicateTask(teacherCode, taskId) {
   if (!sheet) return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
-  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === taskId) {
       const newId = Utilities.getUuid();
@@ -183,7 +204,12 @@ function duplicateTask(teacherCode, taskId) {
       const choices = data[i][5];
       const selfEval = data[i][6];
       const persona = data[i][8] || '';
-      sheet.appendRow([newId, classId, subject, question, type, choices, selfEval, new Date(), persona, '', '']);
+      const status = data[i][9] || '';
+      const difficulty = data[i][11] || '';
+      const timeLimit = data[i][12] || '';
+      const xpBase = data[i][13] || '';
+      const correctAnswer = data[i][14] || '';
+      sheet.appendRow([newId, classId, subject, question, type, choices, selfEval, new Date(), persona, status, '', difficulty, timeLimit, xpBase, correctAnswer]);
       removeCacheValue_('tasks_' + teacherCode);
       removeCacheValue_('taskmap_' + teacherCode);
       removeCacheValue_('stats_' + teacherCode);
@@ -404,7 +430,7 @@ function saveDraftTask(teacherCode, taskObj) {
   var obj = taskObj || {};
   var classId = obj.classId || '';
   var choices = Array.isArray(obj.choices) ? JSON.stringify(obj.choices) : '';
-  sheet.appendRow([id, classId, obj.subject || '', obj.question || '', obj.type || '', choices, '', new Date(), '', '', 1]);
+  sheet.appendRow([id, classId, obj.subject || '', obj.question || '', obj.type || '', choices, '', new Date(), '', obj.status || '', 1, obj.difficulty || '', obj.timeLimit || '', obj.xpBase || '', obj.correctAnswer || '']);
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   return id;
@@ -421,7 +447,7 @@ function deleteDraftTask(teacherCode, taskId) {
   if (!sheet) return;
   const last = sheet.getLastRow();
   if (last < 2) return;
-  const data = sheet.getRange(2, 1, last - 1, 11).getValues();
+  const data = sheet.getRange(2, 1, last - 1, 15).getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === taskId && String(data[i][10] || '') === '1') {
       sheet.deleteRow(i + 2);

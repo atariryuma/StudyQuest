@@ -155,7 +155,7 @@ test('initTeacher tasks sheet header includes draft column', () => {
   context.generateTeacherCode = jest.fn(() => 'ABC123');
   context.initTeacher();
   const header = inserted['Tasks'].appendRow.mock.calls[0][0];
-  expect(header[header.length-1]).toBe('draft');
+  expect(header[header.length-1]).toBe('CorrectAnswer');
 });
 
 test('initTeacher creates Items sheet with correct header', () => {
