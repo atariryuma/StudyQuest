@@ -42,7 +42,21 @@ function createTask(teacherCode, taskObj, selfEval) {
 
   const taskId = Utilities.getUuid();
   const classId = parsed && parsed.classId ? parsed.classId : '';
-  taskSheet.appendRow([taskId, classId, payloadAsJson, selfEval, new Date(), '', '', '']);
+  var choices = Array.isArray(parsed && parsed.choices) ?
+                JSON.stringify(parsed.choices) : '';
+  taskSheet.appendRow([
+    taskId,
+    classId,
+    parsed && parsed.subject || '',
+    parsed && parsed.question || '',
+    parsed && parsed.type || 'text',
+    choices,
+    selfEval,
+    new Date(),
+    parsed && parsed.persona || '',
+    '',
+    ''
+  ]);
   removeCacheValue_('tasks_' + teacherCode);
   removeCacheValue_('taskmap_' + teacherCode);
   removeCacheValue_('stats_' + teacherCode);
