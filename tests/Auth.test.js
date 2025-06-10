@@ -111,8 +111,17 @@ test('setupInitialTeacher creates resources and stores ids', () => {
   const props = { teacherPasscode: 'changeme' };
   const folder = { getId: jest.fn(() => 'fid') };
   const moveTarget = { moveTo: jest.fn() };
-  const settingsSheet = { appendRow: jest.fn() };
-  const ss = { getId: jest.fn(() => 'sid'), insertSheet: jest.fn(() => settingsSheet) };
+  const sheetMap = {};
+  const insertSheet = jest.fn(name => {
+    const sh = { appendRow: jest.fn() };
+    sheetMap[name] = sh;
+    return sh;
+  });
+  const ss = { getId: jest.fn(() => 'sid'), insertSheet, getSheetByName: jest.fn(name => sheetMap[name]) };
+
+  const userRange = { getValues: jest.fn(() => []), setValues: jest.fn() };
+  const userSheet = { getLastRow: jest.fn(() => 1), getRange: jest.fn(() => userRange) };
+  const globalDb = { getSheetByName: jest.fn(() => userSheet) };
   const context = {
     PropertiesService: { getScriptProperties: () => ({
       getProperty: k => props[k],
@@ -127,6 +136,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
     Utilities: { getUuid: jest.fn(() => 'abc123xyz') }
   };
   loadAuth(context);
+  context.getGlobalDb_ = jest.fn(() => globalDb);
   const res = context.setupInitialTeacher('changeme');
   expect(res.status).toBe('ok');
   expect(res.teacherCode).toBe('ABC123');
@@ -134,7 +144,15 @@ test('setupInitialTeacher creates resources and stores ids', () => {
   expect(props['teacherCode_teacher@example.com']).toBe('ABC123');
   expect(props['ssId_ABC123']).toBe('sid');
   expect(props['ABC123']).toBe('fid');
+  expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 10);
+  expect(userRange.setValues).toHaveBeenCalled();
+  const settingsSheet = sheetMap['Settings'];
+  expect(settingsSheet.appendRow).toHaveBeenCalledWith(['Key','Value']);
   expect(settingsSheet.appendRow).toHaveBeenCalledWith(['ownerEmail', 'teacher@example.com']);
+  const sheetNames = Object.keys(sheetMap);
+  ['Enrollments','Tasks','Submissions','Trophies','Items','Leaderboard','Settings','TOC'].forEach(name => {
+    expect(sheetNames).toContain(name);
+  });
   expect(moveTarget.moveTo).toHaveBeenCalledWith(folder);
 });
 
