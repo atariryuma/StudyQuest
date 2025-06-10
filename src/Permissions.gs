@@ -1,12 +1,12 @@
 // Drive permission helpers
 
 function grantTeacherAccess(email) {
-  const fileId = PropertiesService.getScriptProperties()
+  var fileId = PropertiesService.getScriptProperties()
     .getProperty(CONSTS.PROP_GLOBAL_MASTER_DB);
   if (!fileId || !email) {
     return { status: 'error', message: 'missing_params' };
   }
-  const resource = {
+  var resource = {
     role: 'writer',
     type: 'user',
     emailAddress: email
@@ -20,19 +20,19 @@ function grantStudentAccess(teacherCode, email) {
   if (!teacherCode || !email) {
     return { status: 'error', message: 'missing_params' };
   }
-  const props = PropertiesService.getScriptProperties();
-  const teacherDbId = props.getProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode);
-  const globalDbId  = props.getProperty(CONSTS.PROP_GLOBAL_MASTER_DB);
+  var props = PropertiesService.getScriptProperties();
+  var teacherDbId = props.getProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode);
+  var globalDbId  = props.getProperty(CONSTS.PROP_GLOBAL_MASTER_DB);
   if (!teacherDbId || !globalDbId) {
     return { status: 'error', message: 'missing_db' };
   }
-  const writer = {
+  var writer = {
     role: 'writer',
     type: 'user',
     emailAddress: email
   };
   Drive.Permissions.create(writer, teacherDbId, { sendNotificationEmails: false });
-  const reader = {
+  var reader = {
     role: 'reader',
     type: 'user',
     emailAddress: email

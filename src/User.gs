@@ -38,6 +38,9 @@ function registerUsersFromCsv(teacherCode, csvData) {
     const number = r[4] || '';
     userAppend.push([email, name, 'student', 0, 1, 0, '', now, now, 1]);
     enrollAppend.push([email, 'student', grade, cls, number, now]);
+    if (typeof grantStudentAccess === 'function') {
+      try { grantStudentAccess(teacherCode, email); } catch (e) {}
+    }
     existingMap[emailLower] = 'student';
     seen[emailLower] = true;
     created++;
@@ -91,6 +94,9 @@ function registerSingleStudent(teacherCode, studentData) {
     userSheet.getRange(userSheet.getLastRow()+1,1,1,10).setValues([[email, studentData.name || '', 'student', 0, 1, 0, '', now, now, 1]]);
   }
   enrollSheet.getRange(enrollSheet.getLastRow()+1,1,1,6).setValues([[email, 'student', studentData.grade || '', studentData.class || '', studentData.number || '', now]]);
+  if (typeof grantStudentAccess === 'function') {
+    try { grantStudentAccess(teacherCode, email); } catch (e) {}
+  }
 
   if (typeof loadTeacherSettings_ === 'function' && typeof saveTeacherSettings_ === 'function') {
     var g = String(studentData.grade || '');
