@@ -109,7 +109,10 @@ test('loginAsStudent without teacherCode lists classes', () => {
 
 test('setupInitialTeacher creates resources and stores ids', () => {
   const props = { teacherPasscode: 'changeme' };
-  const folder = { getId: jest.fn(() => 'fid') };
+  const folder = {
+    getId: jest.fn(() => 'fid'),
+    createFile: jest.fn(() => ({ getId: jest.fn(() => 'tplid') }))
+  };
   const moveTarget = { moveTo: jest.fn() };
   const sheetMap = {};
   const insertSheet = jest.fn(name => {
@@ -133,7 +136,8 @@ test('setupInitialTeacher creates resources and stores ids', () => {
       getFileById: jest.fn(() => moveTarget)
     },
     SpreadsheetApp: { create: jest.fn(() => ss) },
-    Utilities: { getUuid: jest.fn(() => 'abc123xyz') }
+    Utilities: { getUuid: jest.fn(() => 'abc123xyz') },
+    MimeType: { CSV: 'text/csv' }
   };
   loadAuth(context);
   context.getGlobalDb_ = jest.fn(() => globalDb);
@@ -144,6 +148,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
   expect(props['teacherCode_teacher@example.com']).toBe('ABC123');
   expect(props['ssId_ABC123']).toBe('sid');
   expect(props['ABC123']).toBe('fid');
+  expect(props['templateCsv_ABC123']).toBe('tplid');
   expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 10);
   expect(userRange.setValues).toHaveBeenCalled();
   const settingsSheet = sheetMap['Settings'];
@@ -154,6 +159,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
     expect(sheetNames).toContain(name);
   });
   expect(moveTarget.moveTo).toHaveBeenCalledWith(folder);
+  expect(folder.createFile).toHaveBeenCalledWith('student_template.csv', expect.any(String), 'text/csv');
 });
 
 test('setupInitialTeacher validates secret and duplication', () => {

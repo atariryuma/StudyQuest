@@ -47,6 +47,15 @@ function setupInitialTeacher(secretKey) {
   const ss = SpreadsheetApp.create('StudyQuest_DB_' + teacherCode);
   DriveApp.getFileById(ss.getId()).moveTo(folder);
 
+  // create student CSV template in the teacher folder
+  try {
+    const csv = (typeof getStudentTemplateCsv === 'function')
+      ? getStudentTemplateCsv()
+      : 'Email,Name,Grade,Class,Number\n';
+    const tpl = folder.createFile('student_template.csv', csv, MimeType.CSV);
+    props.setProperty('templateCsv_' + teacherCode, tpl.getId());
+  } catch (_) {}
+
   // Step4: create sheets with headers
   const sheetDefs = [
     { name: 'Enrollments', headers: ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'] },
