@@ -14,9 +14,13 @@ if (typeof LockService === 'undefined') {
   var LockService = { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) };
 }
 
-function processLoginBonus(userEmail) {
-  userEmail = String(userEmail || '').trim();
-  if (!userEmail) return;
+function processLoginBonus(userEmail, teacherCode, studentId) {
+  userEmail   = String(userEmail || '').trim();
+  teacherCode = String(teacherCode || '').trim();
+  studentId   = String(studentId || '').trim();
+  if (!userEmail) return { added: 0, already: false };
+  var diffDays = 0;
+  var added = 0;
   const lock = LockService.getScriptLock();
   try {
     if (lock.waitLock) lock.waitLock(5000);
@@ -33,7 +37,7 @@ function processLoginBonus(userEmail) {
     const now = new Date();
     const lastLogin = new Date(sheet.getRange(row, 9).getValue());
     let streak = Number(sheet.getRange(row, 10).getValue()) || 1;
-    const diffDays = Math.floor((now - lastLogin) / 86400000);
+    diffDays = Math.floor((now - lastLogin) / 86400000);
     if (diffDays === 1) {
       streak += 1;
     } else if (diffDays > 1) {
@@ -41,13 +45,20 @@ function processLoginBonus(userEmail) {
     }
     sheet.getRange(row, 9, 1, 2).setValues([[now, streak]]);
     if (diffDays !== 0) {
-      const bonus = 5 + (streak % 7);
-      const coins = Number(sheet.getRange(row, 6).getValue()) || 0;
-      sheet.getRange(row, 6).setValue(coins + bonus);
+      added = 50;
+      var totalXp = Number(sheet.getRange(row, 4).getValue()) || 0;
+      totalXp += added;
+      var lvl = calcLevelFromXp_(totalXp);
+      sheet.getRange(row, 4, 1, 2).setValues([[totalXp, lvl]]);
     }
   } finally {
     if (lock.releaseLock) lock.releaseLock();
   }
+  if (added && teacherCode && studentId) {
+    try { if (typeof updateStudentLogin === 'function') updateStudentLogin(teacherCode, studentId); } catch (_) {}
+    try { if (typeof addStudentXp === 'function') addStudentXp(teacherCode, studentId, added); } catch (_) {}
+  }
+  return { added: added, already: diffDays === 0 };
 }
 
 function checkAndAwardTrophies(userEmail, context) {

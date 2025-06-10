@@ -317,6 +317,24 @@ function updateStudentLogin(teacherCode, studentId) {
   return true;
 }
 
+function addStudentXp(teacherCode, studentId, amount) {
+  amount = Number(amount) || 0;
+  if (!amount) return false;
+  studentId = String(studentId || '').trim();
+  const ss = getSpreadsheetByTeacherCode(teacherCode);
+  if (!ss) return false;
+  const sheet = ss.getSheetByName(CONSTS.SHEET_STUDENTS);
+  if (!sheet) return false;
+  const rowMap = getStudentRowMap_(teacherCode, sheet);
+  const row = rowMap[studentId];
+  if (!row) return false;
+  const total = Number(sheet.getRange(row, 8).getValue()) || 0;
+  const newTotal = total + amount;
+  const level = calcLevelFromXp_(newTotal);
+  sheet.getRange(row, 8, 1, 2).setValues([[newTotal, level]]);
+  return true;
+}
+
 function getStudentHistory(teacherCode, studentId) {
   console.time('getStudentHistory');
   studentId = String(studentId || '').trim();
