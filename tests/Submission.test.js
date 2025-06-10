@@ -3,8 +3,6 @@ const vm = require('vm');
 const path = require('path');
 
 function loadSubmission(context) {
-  const consts = fs.readFileSync(path.join(__dirname, '../src/consts.gs'), 'utf8');
-  vm.runInNewContext(consts, context);
   const code = fs.readFileSync(path.join(__dirname, '../src/Submission.gs'), 'utf8');
   vm.runInNewContext(code, context);
 }
