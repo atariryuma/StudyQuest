@@ -8,9 +8,29 @@ if (typeof logError_ !== 'function') {
   function logError_() {}
 }
 
-function callGeminiAPI_GAS(prompt, persona) {
-  const base = String(persona || '').trim();
-  const finalPrompt = base ? base + '\n' + prompt : prompt;
+function callGeminiAPI_GAS(prompt, persona, teacherCode) {
+  var base = String(persona || '').trim();
+  var finalPrompt = base ? base + '\n' + prompt : prompt;
+  teacherCode = teacherCode || '';
+
+  if (teacherCode) {
+    var props = PropertiesService.getScriptProperties();
+    var key = 'geminiUsage_' + teacherCode;
+    var info = props.getProperty(key) || '';
+    var today = String(new Date().toDateString());
+    var usage;
+    try { usage = JSON.parse(info || '{}'); } catch (_) { usage = {}; }
+    if (usage.date !== today) {
+      usage.date = today;
+      usage.count = 0;
+    }
+    if (usage.count >= 20) {
+      return 'AI使用回数が上限に達しました';
+    }
+    usage.count = (usage.count || 0) + 1;
+    props.setProperty(key, JSON.stringify(usage));
+    try { logToSpreadsheet({ teacherCode: teacherCode, feedback: finalPrompt }); } catch (e) {}
+  }
 
   const apiKey = getGlobalGeminiApiKey(); // APIキーはPropertiesServiceから取得することを推奨
   if (!apiKey) {
@@ -82,11 +102,11 @@ function logToSpreadsheet(logData) {
  * generateFollowupFromAnswer(answerText, persona):
  * 指定された回答を基に理解を深める質問例を生成
  */
-function generateFollowupFromAnswer(answerText, persona) {
+function generateFollowupFromAnswer(answerText, persona, teacherCode) {
   answerText = String(answerText || '').trim();
   if (!answerText) return '';
   const prompt = `次の生徒の回答を基に理解を深めるための質問を2つ箇条書きで提示してください。\n回答:「${answerText}」`;
-  return callGeminiAPI_GAS(prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona, teacherCode);
 }
 
 /**
@@ -98,7 +118,7 @@ function generateProblemPrompt(teacherCode, subject, question, persona) {
   question = String(question || '').trim();
   if (!subject && !question) return '';
   const prompt = `教科「${subject}」で使用する課題として「${question}」に関する問題文を1つ提案してください。`;
-  return callGeminiAPI_GAS(prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona, teacherCode);
 }
 
 /**
@@ -111,7 +131,7 @@ function generateChoicePrompt(teacherCode, question, type, count, persona) {
   count = Number(count) || 1;
   if (!question) return '';
   const prompt = `「${question}」の回答例として${type}を${count}個箇条書きで提示してください。`;
-  return callGeminiAPI_GAS(prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona, teacherCode);
 }
 
 /**
@@ -122,7 +142,7 @@ function generateDeepeningPrompt(teacherCode, question, persona) {
   question = String(question || '').trim();
   if (!question) return '';
   const prompt = `「${question}」について生徒へ更に考えさせる短い質問を2つ箇条書きで提案してください。`;
-  return callGeminiAPI_GAS(prompt, persona);
+  return callGeminiAPI_GAS(prompt, persona, teacherCode);
 }
 
 /**

@@ -327,7 +327,8 @@ test('saveTeacherSettings persists values correctly and global key handling', ()
   expect(loaded.persona).toBe('P1');
   expect(loaded.classes).toEqual([[1, 'A']]);
   // test global key functions
-  context.setGeminiSettings('ABC', 'xyz', 'P2');
+  context.setGlobalGeminiApiKey('xyz');
+  context.setGeminiSettings('ABC', 'P2');
   expect(props['geminiApiKey']).toBe(Buffer.from('xyz').toString('base64'));
   const settings = context.getGeminiSettings('ABC');
   expect(settings.apiKey).toBe('xyz');

@@ -462,8 +462,7 @@ function getClassIdMap(teacherCode) {
   return map;
 }
 
-function setGeminiSettings(teacherCode, apiKey, persona) {
-  if (apiKey !== undefined) setGlobalGeminiApiKey(apiKey);
+function setGeminiSettings(teacherCode, persona) {
   const data = loadTeacherSettings_(teacherCode);
   if (persona !== undefined) data.persona = persona;
   saveTeacherSettings_(teacherCode, data);
