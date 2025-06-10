@@ -1,19 +1,17 @@
 function initGlobalDb() {
   const props = PropertiesService.getScriptProperties();
-  const propName = (typeof CONSTS !== 'undefined' && CONSTS.PROP_GLOBAL_MASTER_DB) ? CONSTS.PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
-  const existing = props.getProperty(CONSTS.PROP_GLOBAL_DB_ID);
+  const propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
+  const existing = props.getProperty(propName);
   if (existing) {
     try {
       SpreadsheetApp.openById(existing);
-      if (typeof props.setProperty === 'function') props.setProperty(propName, existing);
       return { status: 'exists', id: existing };
     } catch (e) {
-      props.deleteProperty(CONSTS.PROP_GLOBAL_DB_ID);
+      props.deleteProperty(propName);
     }
   }
   const ss = SpreadsheetApp.create('StudyQuest_Global_Master_DB');
   if (typeof props.setProperty === 'function') {
-    props.setProperty(CONSTS.PROP_GLOBAL_DB_ID, ss.getId());
     props.setProperty(propName, ss.getId());
   }
 

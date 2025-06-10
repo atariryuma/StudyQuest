@@ -30,7 +30,7 @@ test('initGlobalDb creates sheets and stores id', () => {
   loadGlobal(context);
   const result = context.initGlobalDb();
   expect(result.status).toBe('created');
-  expect(props.GLOBAL_DB_ID).toBe('gid');
+  expect(props.Global_Master_DB).toBe('gid');
   expect(userSheet.setName).toHaveBeenCalledWith('Global_Users');
   expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_Global_Master_DB');
   expect(ssStub.insertSheet).toHaveBeenCalledWith('Global_Trophies_Log');
@@ -38,7 +38,7 @@ test('initGlobalDb creates sheets and stores id', () => {
 });
 
 test('initGlobalDb returns existing when already created', () => {
-  const props = { GLOBAL_DB_ID: 'gid' };
+  const props = { Global_Master_DB: 'gid' };
   const context = {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k], deleteProperty: k => delete props[k] }) },
     SpreadsheetApp: {
