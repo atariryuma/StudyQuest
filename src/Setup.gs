@@ -1,3 +1,31 @@
+function quickStudyQuestSetup() {
+  var root = DriveApp.getRootFolder();
+  var folder = null;
+  var it = root.getFoldersByName('StudyQuest');
+  if (it.hasNext()) {
+    folder = it.next();
+  } else {
+    folder = root.createFolder('StudyQuest');
+  }
+
+  try {
+    DriveApp.getFileById(ScriptApp.getScriptId()).moveTo(folder);
+  } catch (e) {}
+
+  var res = initGlobalDb();
+
+  var doc = DocumentApp.create('StudyQuest_Setup_Guide');
+  var body = doc.getBody();
+  body.appendParagraph('StudyQuest セットアップガイド').setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  body.appendParagraph('このフォルダにはアプリのスクリプトとグローバルデータベースが保存されます。');
+  body.appendParagraph('教師は初回ログイン時に自動で教師用データベースが作成されます。');
+  body.appendParagraph('グローバルデータベースは全教師で共有し、生徒は読み取り専用で利用します。');
+
+  DriveApp.getFileById(doc.getId()).moveTo(folder);
+
+  return res;
+}
+
 function initGlobalDb() {
   var props = PropertiesService.getScriptProperties();
   var propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
@@ -46,7 +74,7 @@ function ensureAdminUser_(ss) {
   let exists = false;
   if (last >= 2) {
     const emails = sheet.getRange(2, 1, last - 1, 1).getValues().flat();
-    exists = emails.some(e => String(e).trim().toLowerCase() === email.toLowerCase());
+    exists = emails.some(function(e) { return String(e).trim().toLowerCase() === email.toLowerCase(); });
   }
   if (!exists) {
     const handle = String(email).split('@')[0];
