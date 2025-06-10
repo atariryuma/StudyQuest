@@ -46,6 +46,32 @@ function registerUsersFromCsv(teacherCode, csvData) {
     userSheet.getRange(userSheet.getLastRow()+1,1,userAppend.length,userAppend[0].length).setValues(userAppend);
   if (enrollAppend.length)
     enrollSheet.getRange(enrollSheet.getLastRow()+1,1,enrollAppend.length,enrollAppend[0].length).setValues(enrollAppend);
+  if (enrollAppend.length && typeof loadTeacherSettings_ === 'function' && typeof saveTeacherSettings_ === 'function') {
+    var classMap = {};
+    enrollAppend.forEach(function(r) {
+      var g = String(r[2] || '');
+      var c = String(r[3] || '');
+      if (g && c) classMap[g + '-' + c] = [g, c];
+    });
+    var settings = loadTeacherSettings_(teacherCode);
+    var added = false;
+    var existing = settings.classes || [];
+    Object.keys(classMap).forEach(function(key) {
+      var pair = classMap[key];
+      var found = existing.some(function(p) {
+        return String(p[0]) === pair[0] && String(p[1]) === pair[1];
+      });
+      if (!found) {
+        existing.push(pair);
+        added = true;
+      }
+    });
+    if (added) {
+      settings.classes = existing;
+      saveTeacherSettings_(teacherCode, settings);
+      if (typeof removeCacheValue_ === 'function') removeCacheValue_('classmap_' + teacherCode);
+    }
+  }
   return { status: 'success', created: created, enrolled: enrollAppend.length, duplicates: duplicates };
 }
 
@@ -65,6 +91,22 @@ function registerSingleStudent(teacherCode, studentData) {
     userSheet.getRange(userSheet.getLastRow()+1,1,1,10).setValues([[email, studentData.name || '', 'student', 0, 1, 0, '', now, now, 1]]);
   }
   enrollSheet.getRange(enrollSheet.getLastRow()+1,1,1,6).setValues([[email, 'student', studentData.grade || '', studentData.class || '', studentData.number || '', now]]);
+
+  if (typeof loadTeacherSettings_ === 'function' && typeof saveTeacherSettings_ === 'function') {
+    var g = String(studentData.grade || '');
+    var c = String(studentData.class || '');
+    if (g && c) {
+      var settings = loadTeacherSettings_(teacherCode);
+      var exists = (settings.classes || []).some(function(p) {
+        return String(p[0]) === g && String(p[1]) === c;
+      });
+      if (!exists) {
+        settings.classes.push([g, c]);
+        saveTeacherSettings_(teacherCode, settings);
+        if (typeof removeCacheValue_ === 'function') removeCacheValue_('classmap_' + teacherCode);
+      }
+    }
+  }
   return { status: 'ok' };
 }
 
