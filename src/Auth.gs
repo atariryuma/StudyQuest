@@ -206,12 +206,15 @@ function getTeacherName_(teacherCode) {
     if (!set) return '';
     var last = set.getLastRow();
     var email = '';
+    var ownerName = '';
     if (last >= 2) {
       var vals = set.getRange(2, 1, last - 1, 2).getValues();
       for (var i = 0; i < vals.length; i++) {
-        if (String(vals[i][0]) === 'ownerEmail') { email = vals[i][1]; break; }
+        if (String(vals[i][0]) === 'ownerName') ownerName = vals[i][1];
+        else if (String(vals[i][0]) === 'ownerEmail') email = vals[i][1];
       }
     }
+    if (ownerName) return ownerName;
     if (!email) return '';
     var gdb = getGlobalDb_();
     if (!gdb) return '';
@@ -242,14 +245,39 @@ function updateTeacherName(name) {
   var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
   if (!sheet) return { status: 'error', message: 'sheet_not_found' };
   var last = sheet.getLastRow();
+  var updated = false;
   if (last >= 2) {
     var vals = sheet.getRange(2, 1, last - 1, sheet.getLastColumn()).getValues();
     for (var i = 0; i < vals.length; i++) {
       if (String(vals[i][0]).trim().toLowerCase() === email.toLowerCase()) {
         sheet.getRange(i + 2, 2).setValue(name);
-        return { status: 'ok' };
+        updated = true;
+        break;
       }
     }
   }
-  return { status: 'error', message: 'user_not_found' };
+  if (!updated) return { status: 'error', message: 'user_not_found' };
+
+  var props = PropertiesService.getScriptProperties();
+  var code = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
+  if (code) {
+    var ss = getSpreadsheetByTeacherCode(code);
+    if (ss) {
+      var setSheet = ensureSettingsSheet_(ss);
+      var sLast = setSheet.getLastRow();
+      var found = false;
+      if (sLast >= 2) {
+        var sVals = setSheet.getRange(2, 1, sLast - 1, 2).getValues();
+        for (var j = 0; j < sVals.length; j++) {
+          if (String(sVals[j][0]) === 'ownerName') {
+            setSheet.getRange(j + 2, 2).setValue(name);
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found) setSheet.appendRow(['ownerName', name]);
+    }
+  }
+  return { status: 'ok' };
 }
