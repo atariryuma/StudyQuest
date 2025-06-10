@@ -12,3 +12,7 @@ test('getStudentTemplateCsv returns header row', () => {
 test('getStudentTemplateCsv returns header row', () => {
   expect(getStudentTemplateCsv()).toBe('Email,Name,Grade,Class,Number\n');
 });
+
+test('getStudentTemplateCsv returns header row', () => {
+  expect(getStudentTemplateCsv()).toBe('Email,Name,Grade,Class,Number\n');
+});
