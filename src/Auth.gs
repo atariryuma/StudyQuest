@@ -57,6 +57,7 @@ function setupInitialTeacher(secretKey) {
   // Step4: create sheets with headers
   const sheetDefs = [
     { name: 'Enrollments', headers: ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'] },
+    { name: CONSTS.SHEET_STUDENTS, headers: ['StudentID','Grade','Class','Number','FirstLogin','LastLogin','LoginCount','TotalXP','Level','LastTrophyID'] },
     { name: 'Tasks', headers: ['TaskID','Title','Subject','Question','Type','Choices','Difficulty','TimeLimit','XpBase','Status','CreatedAt','CorrectAnswer','Explanation','IsAiGenerated'] },
     { name: 'Submissions', headers: ['SubmissionID','UserEmail','TaskID','Answer','EarnedXP','Bonuses','SubmittedAt','AiSummary'] },
     { name: 'Trophies', headers: ['TrophyID','Name','Description','IconURL','Condition'] },
@@ -175,6 +176,8 @@ function loginAsStudent(teacherCode) {
   if (!globalData) {
     globalData = { email: email, name: '', role: 'student', globalXp:0, globalLevel:1, globalCoins:0, equippedTitle:'' };
   }
-  try { if (typeof processLoginBonus === 'function') processLoginBonus(email); } catch (_) {}
-  return { status:'ok', userInfo:{ globalData: globalData, classData: classData } };
+  var sid = classData.grade + '-' + classData.class + '-' + classData.number;
+  var bonus = null;
+  try { if (typeof processLoginBonus === 'function') bonus = processLoginBonus(email, teacherCode, sid); } catch (_) {}
+  return { status:'ok', userInfo:{ globalData: globalData, classData: classData }, loginBonus: bonus };
 }
