@@ -16,7 +16,7 @@ const SHEET_SETTINGS  = 'Settings';
 const STUDENT_SHEET_PREFIX  = '生徒_'; // 生徒_<ID> 形式の個別シートを想定
 const FOLDER_NAME_PREFIX    = 'StudyQuest_';
 const PROP_GLOBAL_MASTER_DB = 'Global_Master_DB';
-const SQ_VERSION           = 'v1.0.191';
+const SQ_VERSION           = 'v1.0.192';
 // Global DB sheet names
 const SHEET_GLOBAL_USERS        = 'Global_Users';
 const SHEET_GLOBAL_TROPHIES_LOG = 'Global_Trophies_Log';
@@ -27,19 +27,7 @@ const SHEET_GLOBAL_ITEMS        = 'Global_Items_Inventory';
 function doGet(e) {
   console.time('doGet');
   if (e && e.parameter && e.parameter.download === 'student_template.csv') {
-    const code = e.parameter.teacher || '';
-    let csv = getStudentTemplateCsv();
-    try {
-      const props = PropertiesService.getScriptProperties();
-      const fid = props.getProperty(code);
-      if (fid) {
-        const folder = DriveApp.getFolderById(fid);
-        const files = folder.getFilesByName('student_template.csv');
-        if (files.hasNext()) {
-          csv = files.next().getBlob().getDataAsString();
-        }
-      }
-    } catch (_) {}
+    const csv = getStudentTemplateCsv();
     console.timeEnd('doGet');
     return ContentService
       .createTextOutput(csv)
@@ -84,7 +72,14 @@ function getCurrentUser() {
   return { email: email };
 }
 
+/**
+ * CSVテンプレート文字列を返す
+ */
+function getStudentTemplateCsv() {
+  return 'Email,Name,Grade,Class,Number\n';
+}
+
 // Export for testing in Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getSqVersion };
+  module.exports = { getSqVersion, getStudentTemplateCsv };
 }
