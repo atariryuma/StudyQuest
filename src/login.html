@@ -2,20 +2,34 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>StudyQuest - Login</title>
+  <title>StudyQuest - ログイン画面</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="styles.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.259.0/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.395.0/dist/umd/lucide.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <style>
+    body { font-family: 'DotGothic16', sans-serif; background-color: #1a1b26; overflow: hidden; }
+    #particleCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+    .glass-panel { background: rgba(26, 27, 38, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .game-btn { transition: all 0.2s ease; border-bottom-width: 4px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
+    .game-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
+    .game-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    input, select { background-color: rgba(20, 21, 30, 0.8); border: 1px solid #4a4f8a; }
+    input:focus, select:focus { outline: none; --tw-ring-color: #f472b6; box-shadow: 0 0 0 2px var(--tw-ring-color); border-color: #f472b6; }
+  </style>
 </head>
-<body class="bg-[#1a1b26] text-gray-200 font-sans">
-  <div class="particle-bg"></div>
+<body class="bg-[#1a1b26] text-gray-200">
+  <canvas id="particleCanvas"></canvas>
   <main class="min-h-screen flex items-center justify-center p-4">
     <section id="loginBox" class="glass-panel rounded-2xl p-8 w-full max-w-md shadow-2xl text-center">
       <div class="mb-6">
         <i data-lucide="swords" class="w-12 h-12 text-pink-400 mx-auto mb-2"></i>
-        <h1 class="text-3xl font-bold tracking-widest font-retro">StudyQuest</h1>
+        <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
+        <p class="text-gray-400 text-sm mt-1">冒険の準備をしよう！</p>
       </div>
       <div class="grid grid-cols-2 gap-4 mb-4">
         <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500">教師としてログイン</button>
@@ -24,7 +38,7 @@
       <form id="teacher-secret-form" class="space-y-2 mt-4 hidden">
         <div class="relative">
           <i data-lucide="key-round" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-          <input id="secret-key-input" type="password" placeholder="共通秘密キーを入力" class="w-full pl-10 p-2 rounded bg-gray-800/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500" />
+          <input id="secret-key-input" type="password" placeholder="合言葉" class="w-full pl-10 p-2 rounded bg-gray-800/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500" />
         </div>
         <div class="flex gap-2 justify-center">
           <button id="secret-key-submit-btn" type="submit" class="game-btn bg-pink-600 text-white px-4 py-2 rounded-lg font-bold border-pink-800 hover:bg-pink-500 flex-1">セットアップ実行</button>
@@ -45,9 +59,8 @@
   <div id="firstMessage" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-panel modal rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
       <p class="mb-2">🎉 初回ログインありがとうございます！</p>
-      <p class="mb-2">これから Google Drive 上に</p>
-      <p class="mb-2"><strong>「StudyQuest_<span id="newCodeSpan"></span>」</strong>フォルダを作成します。</p>
-      <p class="mb-4">生徒の皆さんには「教師コード（<span id="newCodeSpan2"></span>）」をお伝えください。</p>
+      <p class="mb-2">Google Drive にデータベース「StudyQuest_<span id="newCodeSpan"></span>」を作成しました。</p>
+      <p class="mb-4">教師コード: <span id="newCodeSpan2"></span></p>
       <button id="closeFirstMsg" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">了解しました</button>
     </div>
   </div>
@@ -58,6 +71,50 @@
       <button id="closeWelcome" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">OK</button>
     </div>
   </div>
+
+  <script>
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.3;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+          this.reset();
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < 80; i++) particles.push(new Particle());
+    }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    initParticles();
+    animateParticles();
+  </script>
 
   <script>
     if (window.lucide) window.lucide.createIcons();
