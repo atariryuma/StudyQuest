@@ -44,9 +44,11 @@ test('registerUsersFromCsv creates new users and enrollments', () => {
   loadUser(context);
   context.getTeacherDb_ = () => teacherDb;
   context.getGlobalDb_ = () => globalDb;
-  const csv = 'alice@example.com,Alice,1,A,1\nbob@example.com,Bob,1,A,2';
+  const csv = 'Email,Name,Grade,Class,Number\n' +
+              'alice@example.com,Alice,1,A,1\n' +
+              'bob@example.com,Bob,1,A,2';
   const res = context.registerUsersFromCsv('TC', csv);
-  expect(res).toEqual({ status:'success', created:2, enrolled:2 });
+  expect(res).toEqual({ status:'success', created:2, enrolled:2, duplicates: [] });
   expect(userRows.length).toBe(3);
   expect(enrollRows.length).toBe(3);
   expect(userRows[1][0]).toBe('alice@example.com');
@@ -90,12 +92,14 @@ test('registerUsersFromCsv skips existing users', () => {
   loadUser(context);
   context.getTeacherDb_ = () => teacherDb;
   context.getGlobalDb_ = () => globalDb;
-  const csv = 'alice@example.com,Alice,1,A,1\ncharlie@example.com,Charlie,1,B,3';
+  const csv = 'Email,Name,Grade,Class,Number\n' +
+              'alice@example.com,Alice,1,A,1\n' +
+              'charlie@example.com,Charlie,1,B,3';
   const res = context.registerUsersFromCsv('TC', csv);
-  expect(res).toEqual({ status:'success', created:1, enrolled:2 });
+  expect(res).toEqual({ status:'success', created:1, enrolled:1, duplicates: ['alice@example.com'] });
   expect(userRows.length).toBe(3);
   expect(userRows[2][0]).toBe('charlie@example.com');
-  expect(enrollRows.length).toBe(3);
+  expect(enrollRows.length).toBe(2);
 });
 
 test('registerSingleStudent adds user and enrollment', () => {

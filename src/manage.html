@@ -1355,7 +1355,11 @@
       function onBulkRegisterSuccess(res) {
         hideLoadingOverlay();
         closeCsvUploadModal();
-        showToast(`新規${res.created}名、クラスへ${res.enrolled}名を登録しました`);
+        let msg = `新規${res.created}名、クラスへ${res.enrolled}名を登録しました`;
+        if (res.duplicates && res.duplicates.length) {
+          msg += `\n重複アドレス: ${res.duplicates.join(', ')}`;
+        }
+        showToast(msg);
         loadDashboardData(teacherCode);
       }
 
