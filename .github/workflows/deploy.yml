@@ -83,15 +83,20 @@ jobs:
           --versionNumber "$VNUM" \
           --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
 
-    # 12. Bump patch for next dev cycle & push
+    # 12. Commit build artefacts & bump patch for next dev cycle
     - if: success()
       run: |
         set -eux
         git config user.name github-actions
         git config user.email github-actions@github.com
 
+        # ① まず今回のビルド分をコミット
         git add src/Code.gs
-        npm version patch -m "chore: bump to %s [skip ci]"
+        git commit -m "build: embed v${{ steps.ver.outputs.VERSION }} [skip ci]" --no-verify
 
+        # ② ここでワークツリーがクリーンになったので npm version OK
+        npm version patch -m "chore: bump to %s [skip ci]" --no-verify
+
+        # ③ Push タグ＋コミット
         git pull --rebase --autostash origin main
         git push --follow-tags --force-with-lease
