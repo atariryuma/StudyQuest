@@ -1,3 +1,5 @@
++jest.mock('../src/shared/escapeHtml.js', () => (s) => s);
+
 const { JSDOM } = require('jsdom');
 const escapeHtml = require('../src/shared/escapeHtml.js');
 
