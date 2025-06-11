@@ -25,7 +25,7 @@ function doGet(e) {
   template.version     = getSqVersion();
   var result = template
     .evaluate()
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN)
     .setTitle('StudyQuest');
   console.timeEnd('doGet');
   return result;
