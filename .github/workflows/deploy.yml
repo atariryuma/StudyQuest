@@ -60,16 +60,15 @@ jobs:
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # ★ 追加ブロック: 旧 escapeHtml.js (.js) があれば削除 ---------------- #
-    - name: Delete remote escapeHtml.js if present
+    # ── delete remote escapeHtml.* before push
+    - name: Delete remote escapeHtml.* if present
       run: |
         set -eux
-        # .type=="SERVER_JS" が .js ファイル。 .GS は "SERVER_GS"
-        FILE_ID=$(clasp files:list --json \
-                  | jq -r '.[] | select(.name=="escapeHtml" and .type=="SERVER_JS") | .id')
-        if [ -n "$FILE_ID" ]; then
-          clasp files:delete "$FILE_ID"
-        fi
+        clasp files:list --json \
+          | jq -r '.[] | select(.name=="escapeHtml") | .id' \
+          | while read -r ID; do
+              clasp files:delete "$ID"
+            done
 
     # ------------------------------------------------------------------ #
     # push & version
