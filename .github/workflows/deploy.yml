@@ -1,6 +1,9 @@
 # .github/workflows/deploy-gas-app.yml
 name: deploy-gas-app
 
+################################################################################
+# 基本設定
+################################################################################
 concurrency:
   group: deploy-gas-app
   cancel-in-progress: false
@@ -15,7 +18,7 @@ on:
       - '.github/workflows/**'
 
 permissions:
-  contents: write
+  contents: write          # CI が main に通常 push するための最小権限
 
 env:
   NODE_VERSION: 20
@@ -29,6 +32,9 @@ jobs:
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
+    ############################################################################
+    # 1. Checkout & Node
+    ############################################################################
     - uses: actions/checkout@v4
       with:
         persist-credentials: true
@@ -39,38 +45,42 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
 
+    ############################################################################
+    # 2. Install deps & run tests
+    ############################################################################
     - run: npm ci
 
-    # ── version 取得
     - id: pkg_ver
       run: |
         VERSION=$(jq -r .version package.json)
         echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
-    # ── build version を埋め込み
     - run: sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
 
-    # ── Unit tests
     - run: npm test
 
-    # ── clasp & jq
+    ############################################################################
+    # 3. Install clasp & jq, set auth
+    ############################################################################
     - run: |
         npm i -g @google/clasp@${{ env.CLASP_VERSION }}
         sudo apt-get update -y && sudo apt-get install -y jq
 
-    # ── clasp auth
     - run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # ── push & create version
-    - run: |
+    ############################################################################
+    # 4. GAS デプロイ (clasp push は force 必須)
+    ############################################################################
+    - name: Push to GAS & create new version
+      run: |
         set -eux
         clasp push --force
         clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
 
-    # ── update Web-App deployment（既存 ID がある場合）
-    - if: env.DEPLOYMENT_ID != ''
+    - name: Update existing Web-App deployment
+      if: env.DEPLOYMENT_ID != ''
       run: |
         set -eux
         VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
@@ -78,16 +88,26 @@ jobs:
           --versionNumber "$VNUM" \
           --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)"
 
-    # ── commit build artefacts & bump patch
-    - if: success()
+    ############################################################################
+    # 5. GitHub へ通常 push（force なし）
+    ############################################################################
+    - name: Commit artefacts & bump patch
+      if: success()
       run: |
         set -eux
-        git config user.name github-actions
-        git config user.email github-actions@github.com
+        git config user.name  "github-actions"
+        git config user.email "github-actions@github.com"
 
-        git add -A   # .claspignore も含めて変更すべて
-        git commit -m "build: embed v${{ steps.pkg_ver.outputs.VERSION }} [skip ci]" --no-verify
+        # 変更があればコミット
+        git add -A
+        git diff --cached --quiet || \
+          git commit -m "build: embed v${{ steps.pkg_ver.outputs.VERSION }} [skip ci]" --no-verify
 
+        # 次サイクル用に patch を +1
         npm version patch -m "chore: bump to %s [skip ci]" --no-verify
+
+        # リモートを取り込みつつ線形履歴を維持
         git pull --rebase --autostash origin main
-        git push --follow-tags --force-with-lease
+
+        # 通常 push（force 無し）
+        git push --follow-tags
