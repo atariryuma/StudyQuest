@@ -1,100 +1,126 @@
-# .github/workflows/deploy-gas-webapp.yml
-name: deploy-gas-webapp
+# .github/workflows/deploy-gas-app.yml
+name: deploy-gas-app
 
-# ── 同一ブランチでは直列実行（途中でキャンセルしない）
+################################################################################
+# 基本設定
+################################################################################
 concurrency:
-  group: deploy-gas-webapp
-  cancel-in-progress: false
+  group: deploy-gas-app
+  cancel-in-progress: false              # 同ブランチ並列実行を防止
 
 on:
   push:
-    branches: [ main ]
-    paths:
+    branches: [ main ]                   # ← 適宜変更
+    paths:                               # 関連ファイルに変更があったときのみ
       - 'src/**'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/**'
 
 permissions:
-  contents: write   # 自動コミット用
+  contents: write                        # 自動コミット／タグ追加に必要
+
+env:                                     # 共通で使う環境変数
+  NODE_VERSION: 20                       # Node.js バージョン
+  CLASP_VERSION: latest                  # clasp のバージョン
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}   # clasp 認証情報(JSON)
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }} # 既存デプロイ ID（任意）
 
     steps:
-    # 1. Checkout
+    ############################################################################
+    # 1. チェックアウト
+    ############################################################################
     - uses: actions/checkout@v4
       with:
         persist-credentials: true
         fetch-depth: 1
 
-    # 2. Node.js + npm キャッシュ
+    ############################################################################
+    # 2. Node セットアップ & npm ci
+    ############################################################################
     - uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: ${{ env.NODE_VERSION }}
         cache: npm
-
-    # 3. Install dependencies
     - run: npm ci
 
-    # 4. Get package version（シェルブロックでクォート崩れを防止）
-    - id: ver
+    ############################################################################
+    # 3. バージョン取得
+    ############################################################################
+    - id: pkg_ver
       run: |
-        VERSION=$(node -p "require('./package.json').version")
+        VERSION=$(jq -r .version package.json)        # jq が最速
         echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
-    # 5. Inject build version into Code.gs
-    - run: sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
+    ############################################################################
+    # 4. ビルド番号を Apps Script ソースに埋め込む
+    #    例: Code.gs 内の __BUILD_VERSION__ を v1.2.3 に置換
+    ############################################################################
+    - run: |
+        sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
 
-    # 6. Unit tests
+    ############################################################################
+    # 5. テスト（Jest 想定）
+    ############################################################################
     - run: npm test
 
-    # 7. Tools (clasp & jq)
+    ############################################################################
+    # 6. clasp + jq インストール
+    ############################################################################
     - run: |
-        npm i -g @google/clasp@latest
+        npm i -g @google/clasp@${{ env.CLASP_VERSION }}
         sudo apt-get update -y && sudo apt-get install -y jq
 
-    # 8. clasp auth
+    ############################################################################
+    # 7. clasp 認証ファイル配置
+    ############################################################################
     - run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # 9. 重複ファイル衝突を事前に回避（例：escapeHtml.js が生成物の場合）
-    - run: |
-        if [ -f "src/shared/escapeHtml.js" ]; then
-          rm -f src/shared/escapeHtml.js
-        fi
+    ############################################################################
+    # 8. オプション: 重複ファイルの自動除去
+    #    ※ 生成物が同名で衝突する場合のみ有効化
+    ############################################################################
+    # - run: |
+    #     rm -f src/shared/escapeHtml.js
 
-    # 10. Push to GAS & create new version
+    ############################################################################
+    # 9. push → バージョン発行
+    ############################################################################
     - run: |
         set -eux
         clasp push --force
-        clasp version "v${{ steps.ver.outputs.VERSION }}"
+        clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
 
-    # 11. Update existing Web-App deployment
-    - run: |
+    ############################################################################
+    # 10. 既存 Web アプリのデプロイ更新（DEPLOYMENT_ID がある場合）
+    ############################################################################
+    - if: env.DEPLOYMENT_ID != ''
+      run: |
         set -eux
-        VNUM=$(clasp versions | grep -E '^[0-9]+' | awk '{print $1}' | sort -nr | head -n1)
+        VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
         clasp update-deployment "$DEPLOYMENT_ID" \
           --versionNumber "$VNUM" \
-          --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
+          --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)"
 
-    # 12. Commit build artefacts & bump patch for next dev cycle
+    ############################################################################
+    # 11. ビルド成果コミット & 次サイクルのパッチバンプ
+    ############################################################################
     - if: success()
       run: |
         set -eux
         git config user.name github-actions
         git config user.email github-actions@github.com
-    
-        git add -A   # ← ここを変更
-        git commit -m "build: embed v${{ steps.ver.outputs.VERSION }} [skip ci]" --no-verify
-    
+
+        git add -A                                          # 変更・削除を全て
+        git commit -m "build: embed v${{ steps.pkg_ver.outputs.VERSION }} [skip ci]" --no-verify
+
         npm version patch -m "chore: bump to %s [skip ci]" --no-verify
-    
         git pull --rebase --autostash origin main
         git push --follow-tags --force-with-lease
-
