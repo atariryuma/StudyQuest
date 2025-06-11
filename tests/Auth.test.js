@@ -153,6 +153,7 @@ test('setupInitialTeacher creates resources and stores ids', () => {
       setProperty: (k,v)=>{ props[k]=v; }
     }) },
     Session: { getEffectiveUser: () => ({ getEmail: () => 'teacher@example.com' }) },
+    ContactsApp: { getContact: jest.fn(() => ({ getFullName: () => 'T Name' })) },
     DriveApp: {
       createFolder: jest.fn(() => folder),
       getFileById: jest.fn(() => moveTarget)
@@ -172,10 +173,26 @@ test('setupInitialTeacher creates resources and stores ids', () => {
   expect(props['ABC123']).toBe('fid');
   expect(props['templateCsv_ABC123']).toBe('tplid');
   expect(userSheet.getRange).toHaveBeenCalledWith(2, 1, 1, 12);
-  expect(userRange.setValues).toHaveBeenCalled();
+  expect(userRange.setValues).toHaveBeenCalledWith([
+    [
+      'teacher@example.com',
+      'T Name',
+      'teacher',
+      0,
+      0,
+      0,
+      '',
+      expect.anything(),
+      expect.anything(),
+      1,
+      0,
+      0
+    ]
+  ]);
   const settingsSheet = sheetMap['Settings'];
   expect(settingsSheet.appendRow).toHaveBeenCalledWith(['type','value1','value2']);
   expect(settingsSheet.appendRow).toHaveBeenCalledWith(['ownerEmail', 'teacher@example.com']);
+  expect(settingsSheet.appendRow).toHaveBeenCalledWith(['ownerName', 'T Name']);
   const sheetNames = Object.keys(sheetMap);
   ['Enrollments','Tasks','Submissions','Trophies','Items','Leaderboard','Settings','TOC'].forEach(name => {
     expect(sheetNames).toContain(name);
