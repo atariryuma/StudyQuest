@@ -32,9 +32,10 @@
         <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
         <p class="text-gray-400 text-sm mt-1">冒険の準備をしよう！</p>
       </div>
-      <div id="stage1" class="grid grid-cols-2 gap-4 mb-4">
+      <div id="stage1" class="grid grid-cols-3 gap-4 mb-4">
         <button id="choose-teacher" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500">教師</button>
         <button id="choose-student" class="game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500">生徒</button>
+        <button id="choose-admin" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500">admin</button>
       </div>
       <div id="teacherSection" class="space-y-4 hidden">
         <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500 w-full">教師としてログイン</button>
@@ -142,6 +143,7 @@
 
     const teacherBtn = document.getElementById('teacher-login-btn');
     const studentBtn = document.getElementById('student-login-btn');
+    const adminBtn = document.getElementById('choose-admin');
     const secretForm = document.getElementById('teacher-secret-form');
     const stage1 = document.getElementById('stage1');
     const teacherSec = document.getElementById('teacherSection');
@@ -182,6 +184,16 @@
         .loginAsStudent();
     });
 
+    if (adminBtn) {
+      adminBtn.addEventListener('click', () => {
+        showLoadingOverlay();
+        google.script.run
+          .withSuccessHandler(onAdminSetup)
+          .withFailureHandler(onLoginFailure)
+          .quickStudyQuestSetup();
+      });
+    }
+
     if (devLoginBtn) {
       devLoginBtn.addEventListener('click', () => {
         showLoadingOverlay();
@@ -220,10 +232,17 @@
       const key = document.getElementById('secret-key-input').value.trim();
       if (!key) return;
       showLoadingOverlay();
-      google.script.run
-        .withSuccessHandler(onSetupSuccess)
-        .withFailureHandler(onLoginFailure)
-        .setupInitialTeacher(key);
+      if (key.toLowerCase() === 'admin') {
+        google.script.run
+          .withSuccessHandler(onAdminSetup)
+          .withFailureHandler(onLoginFailure)
+          .quickStudyQuestSetup();
+      } else {
+        google.script.run
+          .withSuccessHandler(onSetupSuccess)
+          .withFailureHandler(onLoginFailure)
+          .setupInitialTeacher(key);
+      }
     });
 
     document.getElementById('back-to-login-btn').addEventListener('click', () => {
@@ -273,6 +292,15 @@
       hideLoadingOverlay();
       if (res && res.status === 'ok') {
         showTeacherMessage(res.teacherCode, true);
+      } else {
+        showError('セットアップに失敗しました');
+      }
+    }
+
+    function onAdminSetup(res) {
+      hideLoadingOverlay();
+      if (res && (res.status === 'created' || res.status === 'exists')) {
+        alert(res.status === 'created' ? 'Global DB created!' : 'Already exists');
       } else {
         showError('セットアップに失敗しました');
       }
