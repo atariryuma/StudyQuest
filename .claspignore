@@ -1,1 +1,1 @@
-echo 'src/shared/escapeHtml.js' >> .claspignore
+src/shared/escapeHtml.js
