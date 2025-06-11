@@ -32,13 +32,13 @@
         <h1 class="text-3xl font-bold tracking-widest">StudyQuest</h1>
         <p class="text-gray-400 text-sm mt-1">冒険の準備をしよう！</p>
       </div>
-      <div id="stage1" class="grid grid-cols-3 gap-4 mb-4">
+      <div id="stage1" class="grid grid-cols-2 gap-4 mb-4">
         <button id="choose-teacher" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500">教師</button>
         <button id="choose-student" class="game-btn bg-cyan-600 text-white p-3 rounded-lg font-bold border-cyan-800 hover:bg-cyan-500">生徒</button>
-        <button id="choose-admin" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500">admin</button>
       </div>
       <div id="teacherSection" class="space-y-4 hidden">
-        <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500 w-full">教師としてログイン</button>
+        <button id="teacher-login-btn" class="game-btn bg-purple-600 text-white p-3 rounded-lg font-bold border-purple-800 hover:bg-purple-500 w-full">教師として始める</button>
+        <button id="admin-start-btn" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">管理者として始める</button>
         <form id="teacher-secret-form" class="space-y-2 hidden">
           <div class="relative">
             <i data-lucide="key-round" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
@@ -93,6 +93,15 @@
     <div class="glass-panel modal rounded-2xl p-6 w-full max-w-md text-center shadow-2xl">
       <p id="welcomeText" class="mb-4"></p>
       <button id="closeWelcome" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">OK</button>
+    </div>
+  </div>
+
+  <div id="adminMessage" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel modal rounded-2xl p-6 w-full max-w-md text-center shadow-2xl">
+      <p class="mb-2">🎉 グローバルデータベースを作成しました！</p>
+      <p class="mb-2">秘密キー: <span id="adminPassSpan"></span></p>
+      <p class="mb-4 text-sm break-all">ログインURL: <span id="adminUrlSpan"></span></p>
+      <button id="closeAdminMsg" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">OK</button>
     </div>
   </div>
 
@@ -151,8 +160,8 @@
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev","/exec") ?>';
 
     const teacherBtn = document.getElementById('teacher-login-btn');
+    const adminStartBtn = document.getElementById('admin-start-btn');
     const studentBtn = document.getElementById('student-login-btn');
-    const adminBtn = document.getElementById('choose-admin');
     const secretForm = document.getElementById('teacher-secret-form');
     const stage1 = document.getElementById('stage1');
     const teacherSec = document.getElementById('teacherSection');
@@ -197,13 +206,18 @@
         .loginAsStudent();
     });
 
-    if (adminBtn) {
-      adminBtn.addEventListener('click', () => {
+    if (adminStartBtn) {
+      adminStartBtn.addEventListener('click', () => {
+        const key = prompt('教師用データベース作成の共通秘密キーを入力してください');
+        if (!key || !/^[0-9A-Za-z]+$/.test(key)) {
+          alert('半角英数字で入力してください');
+          return;
+        }
         showLoadingOverlay();
         google.script.run
           .withSuccessHandler(onAdminSetup)
           .withFailureHandler(onLoginFailure)
-          .quickStudyQuestSetup();
+          .quickStudyQuestSetup(key);
       });
     }
 
@@ -244,16 +258,8 @@
       e.preventDefault();
       const key = document.getElementById('secret-key-input').value.trim();
       if (!key) return;
-      if (key.toLowerCase() === 'admin') {
-        showLoadingOverlay();
-        google.script.run
-          .withSuccessHandler(onAdminSetup)
-          .withFailureHandler(onLoginFailure)
-          .quickStudyQuestSetup();
-      } else {
-        pendingSetupKey = key;
-        confirmModal.classList.remove('hidden');
-      }
+      pendingSetupKey = key;
+      confirmModal.classList.remove('hidden');
     });
 
     confirmYes.addEventListener('click', () => {
@@ -324,7 +330,13 @@
     function onAdminSetup(res) {
       hideLoadingOverlay();
       if (res && (res.status === 'created' || res.status === 'exists')) {
-        alert(res.status === 'created' ? 'Global DB created!' : 'Already exists');
+        document.getElementById('adminPassSpan').textContent = res.passcode || '';
+        document.getElementById('adminUrlSpan').textContent = SCRIPT_URL + '?page=login';
+        const m = document.getElementById('adminMessage');
+        m.classList.remove('hidden');
+        document.getElementById('closeAdminMsg').onclick = () => {
+          m.classList.add('hidden');
+        };
       } else {
         showError('セットアップに失敗しました');
       }

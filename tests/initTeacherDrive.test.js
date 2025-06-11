@@ -13,7 +13,7 @@ function loadTeacher(context) {
 
 
 test('initTeacher returns existing code if already stored', () => {
-  const props = { ABC123: 'fid' };
+  const props = { ABC123: 'fid', teacherPasscode: 'PASS' };
   const context = {
     PropertiesService: {
       getScriptProperties: () => ({
@@ -32,6 +32,6 @@ test('initTeacher returns existing code if already stored', () => {
   loadTeacher(context);
   context.detectTeacherFolderOnDrive_ = jest.fn(() => null);
   context.findLatestFolderByName_ = jest.fn(() => ({ getDateCreated: () => new Date() }));
-  const result = context.initTeacher();
+  const result = context.initTeacher('PASS');
   expect(result).toEqual({ status: 'ok', teacherCode: 'ABC123' });
 });

@@ -1,5 +1,15 @@
-function quickStudyQuestSetup() {
+function quickStudyQuestSetup(passcode) {
   var props = PropertiesService.getScriptProperties();
+  var storedPass = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
+  if (!storedPass) {
+    passcode = String(passcode || '').trim();
+    if (!passcode || !passcode.match(/^[0-9A-Za-z]+$/)) {
+      return { status: 'error', message: 'invalid_passcode' };
+    }
+    props.setProperty(CONSTS.PROP_TEACHER_PASSCODE, passcode);
+  } else {
+    passcode = storedPass;
+  }
   var driveId = props.getProperty(CONSTS.PROP_GLOBAL_DRIVE_ID);
   if (!driveId) {
     driveId = createSharedDrive_('StudyQuest');
@@ -31,6 +41,7 @@ function quickStudyQuestSetup() {
     DriveApp.getFileById(doc.getId()).moveTo(root);
   } catch (e) {}
 
+  res.passcode = passcode;
   return res;
 }
 

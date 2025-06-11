@@ -12,7 +12,7 @@ function loadTeacher(context) {
 }
 
 test('initTeacher creates StudyQuest_DB when none exists', () => {
-  const props = {};
+  const props = { teacherPasscode: 'PASS' };
   const dummyRange = {
     setFontWeight: jest.fn().mockReturnThis(),
     setFontSize: jest.fn().mockReturnThis(),
@@ -81,7 +81,7 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  const result = context.initTeacher();
+  const result = context.initTeacher('PASS');
   expect(result.status).toBe('new');
   expect(result.teacherCode).toBe('ABC123');
   expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB_teacher_ABC123');
@@ -178,7 +178,8 @@ test('initTeacher tasks sheet header includes draft column', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  context.initTeacher();
+  props.teacherPasscode = 'PASS';
+  context.initTeacher('PASS');
   const header = inserted['Tasks'].appendRow.mock.calls[0][0];
   expect(header[header.length-1]).toBe('CorrectAnswer');
 });
@@ -245,7 +246,8 @@ test('initTeacher creates Items sheet with correct header', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  context.initTeacher();
+  props.teacherPasscode = 'PASS';
+  context.initTeacher('PASS');
   const header = inserted['Items'].appendRow.mock.calls[0][0];
   expect(header).toEqual(['ItemID','Name','Type','Price','Effect']);
 });
@@ -312,7 +314,8 @@ test('initTeacher submissions sheet header matches README order', () => {
   loadTeacher(context);
   context.getSpreadsheetByTeacherCode = () => ssStub;
   context.generateTeacherCode = jest.fn(() => 'ABC123');
-  context.initTeacher();
+  props.teacherPasscode = 'PASS';
+  context.initTeacher('PASS');
   const header = inserted['Submissions'].appendRow.mock.calls[0][0];
   const expected = ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status','LikeScore'];
   expect(header).toEqual(expected);

@@ -98,12 +98,8 @@ function initTeacher(passcode) {
   var prefix = email.split('@')[0];
   var props = PropertiesService.getScriptProperties();
   var storedPass = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
-  if (storedPass) {
-    if (storedPass !== passcode) {
-      return { status: 'error', message: 'パスコードが違います。' };
-    }
-  } else {
-    props.setProperty(CONSTS.PROP_TEACHER_PASSCODE, passcode);
+  if (!storedPass || storedPass !== passcode) {
+    return { status: 'error', message: 'パスコードが違います。' };
   }
 
   var stored = props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email);
