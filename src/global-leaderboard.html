@@ -10,7 +10,7 @@
   <script>
     fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
       .then(r=>r.text()).then(t=>{const s=document.createElement('script');s.innerHTML=t;document.head.appendChild(s);s.onload=()=>{ if(window.lucide){ window.lucide.createIcons(); } }});
-    const SCRIPT_URL = '<?!= scriptUrl ?>';
+    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
   </script>
 </head>
 <body class="bg-[#1a1b26] text-gray-200 font-sans min-h-screen p-4">
