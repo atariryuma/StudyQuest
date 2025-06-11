@@ -30,8 +30,8 @@
 | --- | --- |
 | Enrollments | UserEmail, ClassRole, Grade, Class, Number, EnrolledAt |
 | Students | StudentID, Grade, Class, Number, FirstLogin, LastLogin, LoginCount, TotalXP, Level, LastTrophyID, TotalLikes |
-| Tasks | TaskID, Title, Subject, Question, Type, Choices, Difficulty, TimeLimit, XpBase, Status, CreatedAt, CorrectAnswer, Explanation, IsAiGenerated |
-| Submissions | SubmissionID, UserEmail, TaskID, Answer, EarnedXP, Bonuses, SubmittedAt, AiSummary, LikeScore |
+| Tasks | TaskID, ClassID, Subject, Question, Type, Choices, AllowSelfEval, CreatedAt, Persona, Status, draft, Difficulty, TimeLimit, XPBase, CorrectAnswer |
+| Submissions | StudentID, TaskID, Question, StartedAt, SubmittedAt, ProductURL, QuestionSummary, AnswerSummary, EarnedXP, TotalXP, Level, Trophy, Status, LikeScore |
 | Likes | LikeID, TaskID, StudentID, LikedBy, Value, CreatedAt |
 | Trophies | TrophyID, Name, Description, IconURL, Condition |
 | Items | ItemID, Name, Type, Price, Effect |
@@ -101,31 +101,37 @@
 | 列 | 意味 |
 | --- | --- |
 | TaskID | 課題ID |
-| Title | タイトル |
+| ClassID | クラスID |
 | Subject | 教科・カテゴリ |
 | Question | 問題文 |
 | Type | question形式 (choice/free等) |
 | Choices | 選択肢(JSON) |
+| AllowSelfEval | 自己評価許可 |
+| CreatedAt | 作成日時 |
+| Persona | ペルソナ |
+| Status | draft/open/closed |
+| draft | 下書きフラグ |
 | Difficulty | 難易度 |
 | TimeLimit | 制限時間(秒) |
-| XpBase | 基本XP |
-| Status | draft/open/closed |
-| CreatedAt | 作成日時 |
+| XPBase | 基本XP |
 | CorrectAnswer | 正答 |
-| Explanation | 解説 |
-| IsAiGenerated | AI生成フラグ |
 
 #### Submissions
 | 列 | 意味 |
 | --- | --- |
-| SubmissionID | 提出ID |
-| UserEmail | 回答者メール |
+| StudentID | 生徒ID |
 | TaskID | 課題ID |
-| Answer | 回答内容 |
-| EarnedXP | 得たXP |
-| Bonuses | 付与ボーナス |
+| Question | 問題文 |
+| StartedAt | 開始日時 |
 | SubmittedAt | 提出日時 |
-| AiSummary | AI要約 (自由回答時) |
+| ProductURL | 成果物URL |
+| QuestionSummary | 問題概要 |
+| AnswerSummary | 回答概要 |
+| EarnedXP | 付与XP |
+| TotalXP | 累積XP |
+| Level | レベル |
+| Trophy | トロフィー |
+| Status | ステータス |
 | LikeScore | いいねポイント |
 
 #### Likes
