@@ -20,6 +20,12 @@
 * **健全な競争:** クラス内のランキングで友達と競い合い、モチベーションを高めることができます。
 * **リアクション機能:** 回答ボードで友達の投稿に「いいね」を送れます。
 
+## 🗂 ドキュメント構成
+
+- [`README.md`](README.md) — プロジェクトの概要とクイックスタート。
+- [`docs/`](docs/) — 詳細なセットアップ手順などのガイド類を配置します。
+- [`DEV_GUIDE.md`](DEV_GUIDE.md) — スプレッドシート構成や API 仕様など、開発者向けのリファレンス。
+
 ---
 
 ## 🔧 アーキテクチャ概要
@@ -36,6 +42,8 @@
 ---
 
 ## 🚀 セットアップと使い方
+
+より詳細な手順は [`docs/setup-guide-ja.md`](docs/setup-guide-ja.md) を参照してください。
 
 1.  **リポジトリのクローンとデプロイ:**
     * 本リポジトリをクローンし、`clasp` を使ってご自身のGoogleアカウントにApps Scriptプロジェクトをデプロイします。
@@ -188,6 +196,8 @@ graph TD
 まずは `Issues` を確認して、気軽に参加してみてください。
 
 ## Development Setup
+
+開発に参加する際は、詳細なAPI仕様やコーディング規約をまとめた [`DEV_GUIDE.md`](DEV_GUIDE.md) も確認してください。
 
 Tests require Node.js dependencies. You can install them by running the
 following script or using `npm install` directly:

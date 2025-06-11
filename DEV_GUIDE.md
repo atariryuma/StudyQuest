@@ -1,4 +1,4 @@
-# StudyQuest Developer Reference v1.0
+# StudyQuest Developer Guide v1.0
 
 > \*\*Audience \*\*: Apps Script / Front‑End engineers contributing to the StudyQuest code‑base.
 > \*\*Scope \*\*: Server‑side GAS modules, Spreadsheet schema, front‑end APIs and deployment pipeline.
