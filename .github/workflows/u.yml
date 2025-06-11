@@ -1,7 +1,0 @@
-# ─────────────────────────────────────────────
-# .claspignore を src/ に作成してコミット
-# ─────────────────────────────────────────────
-echo 'shared/escapeHtml.js' > src/.claspignore  # ① ignore を書く
-git add src/.claspignore                        # ② ステージ
-git commit -m "fix: place .claspignore under src"  # ③ コミット
-git push origin main                            # ④ プッシュ
