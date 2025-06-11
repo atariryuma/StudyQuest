@@ -1,5 +1,5 @@
 const { JSDOM } = require('jsdom');
-const escapeHtml = require('./escapeHtml.js');
+const escapeHtml = require('./escapeHtml.test.js');
 
 function renderLeaderboard(data, doc) {
   const tbody = doc.querySelector('#leaderboardTable tbody');
