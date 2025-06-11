@@ -9,56 +9,56 @@ function loadSetup(context) {
   vm.runInNewContext(code, context);
 }
 
-test('quickStudyQuestSetup picks editable folder', () => {
-  const folder1 = { createFile: jest.fn(() => { throw new Error('ro'); }) };
-  const folder2 = { createFile: jest.fn(() => ({ setTrashed: jest.fn() })) };
-  const iterator = {
-    list: [folder1, folder2],
-    hasNext() { return this.list.length > 0; },
-    next() { return this.list.shift(); }
-  };
-  const root = {
-    getFoldersByName: jest.fn(() => iterator),
-    createFolder: jest.fn()
-  };
+test('quickStudyQuestSetup creates shared drive and moves files', () => {
+  const props = {};
+  const driveCreate = jest.fn(() => ({ id: 'did' }));
+  const permCreate = jest.fn();
+  const folder = {};
+  const file = { moveTo: jest.fn() };
   const context = {
-    DriveApp: {
-      getRootFolder: () => root,
-      getFileById: jest.fn(() => ({ moveTo: jest.fn() }))
-    },
-    DocumentApp: { create: jest.fn(() => ({ getBody: () => ({ appendParagraph: jest.fn(() => ({ setHeading: jest.fn() })) }), getId: () => 'd' })), ParagraphHeading: { HEADING1: 'H1' } },
-    ScriptApp: { getScriptId: () => 'sid' }
+    PropertiesService: { getScriptProperties: () => ({
+      getProperty: k => props[k],
+      setProperty: (k,v) => { props[k] = v; }
+    }) },
+    Drive: { Drives: { create: driveCreate }, Permissions: { create: permCreate } },
+    DriveApp: { getFolderById: jest.fn(() => folder), getFileById: jest.fn(() => file) },
+    DocumentApp: { create: jest.fn(() => ({ getBody: () => ({ appendParagraph: jest.fn(() => ({ setHeading: jest.fn() })) }), getId: () => 'doc' })), ParagraphHeading: { HEADING1: 'H1' } },
+    ScriptApp: { getScriptId: () => 'sid' },
+    Utilities: { getUuid: jest.fn(() => 'uuid') },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'owner@example.com' }) }
   };
   loadSetup(context);
-  context.initGlobalDb = jest.fn(() => ({ status: 'ok' }));
+  context.initGlobalDb = jest.fn(() => ({ status: 'ok', id: 'gid' }));
   const res = context.quickStudyQuestSetup();
-  expect(root.createFolder).not.toHaveBeenCalled();
+  expect(driveCreate).toHaveBeenCalledWith({ name: 'StudyQuest' }, 'uuid');
+  expect(props.Global_Drive_ID).toBe('did');
+  expect(context.initGlobalDb).toHaveBeenCalledWith('did');
+  expect(context.DriveApp.getFileById).toHaveBeenCalledWith('sid');
+  expect(file.moveTo).toHaveBeenCalledWith(folder);
   expect(res.status).toBe('ok');
 });
 
-test('quickStudyQuestSetup creates new folder when none writable', () => {
-  const folder1 = { createFile: jest.fn(() => { throw new Error('ro'); }) };
-  const iterator = {
-    list: [folder1],
-    hasNext() { return this.list.length > 0; },
-    next() { return this.list.shift(); }
-  };
-  const createdFolder = {};
-  const root = {
-    getFoldersByName: jest.fn(() => iterator),
-    createFolder: jest.fn(() => createdFolder)
-  };
+test('quickStudyQuestSetup uses existing drive', () => {
+  const props = { Global_Drive_ID: 'did' };
+  const driveCreate = jest.fn();
+  const folder = {};
+  const file = { moveTo: jest.fn() };
   const context = {
-    DriveApp: {
-      getRootFolder: () => root,
-      getFileById: jest.fn(() => ({ moveTo: jest.fn() }))
-    },
-    DocumentApp: { create: jest.fn(() => ({ getBody: () => ({ appendParagraph: jest.fn(() => ({ setHeading: jest.fn() })) }), getId: () => 'd' })), ParagraphHeading: { HEADING1: 'H1' } },
-    ScriptApp: { getScriptId: () => 'sid' }
+    PropertiesService: { getScriptProperties: () => ({
+      getProperty: k => props[k],
+      setProperty: (k,v)=>{ props[k]=v; }
+    }) },
+    Drive: { Drives: { create: driveCreate }, Permissions: { create: jest.fn() } },
+    DriveApp: { getFolderById: jest.fn(() => folder), getFileById: jest.fn(() => file) },
+    DocumentApp: { create: jest.fn(() => ({ getBody: () => ({ appendParagraph: jest.fn(() => ({ setHeading: jest.fn() })) }), getId: () => 'doc' })), ParagraphHeading: { HEADING1: 'H1' } },
+    ScriptApp: { getScriptId: () => 'sid' },
+    Utilities: { getUuid: jest.fn() },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'owner@example.com' }) }
   };
   loadSetup(context);
-  context.initGlobalDb = jest.fn(() => ({ status: 'ok' }));
+  context.initGlobalDb = jest.fn(() => ({ status: 'ok', id: 'gid' }));
   const res = context.quickStudyQuestSetup();
-  expect(root.createFolder).toHaveBeenCalledWith('StudyQuest');
+  expect(driveCreate).not.toHaveBeenCalled();
+  expect(context.initGlobalDb).toHaveBeenCalledWith('did');
   expect(res.status).toBe('ok');
 });

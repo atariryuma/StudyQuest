@@ -1,39 +1,40 @@
 function quickStudyQuestSetup() {
-  var root = DriveApp.getRootFolder();
-  var folder = null;
-  var it = root.getFoldersByName('StudyQuest');
-  while (it.hasNext()) {
-    var f = it.next();
-    try {
-      // 編集できないフォルダはスキップ
-      f.createFile('sq_tmp', '').setTrashed(true);
-      folder = f;
-      break;
-    } catch (e) {}
+  var props = PropertiesService.getScriptProperties();
+  var driveId = props.getProperty(CONSTS.PROP_GLOBAL_DRIVE_ID);
+  if (!driveId) {
+    driveId = createSharedDrive_('StudyQuest');
+    if (driveId && typeof props.setProperty === 'function') {
+      props.setProperty(CONSTS.PROP_GLOBAL_DRIVE_ID, driveId);
+    }
   }
-  if (!folder) {
-    folder = root.createFolder('StudyQuest');
+  var root = null;
+  try {
+    root = DriveApp.getFolderById(driveId);
+  } catch (e) {
+    root = DriveApp.getRootFolder();
   }
 
   try {
-    DriveApp.getFileById(ScriptApp.getScriptId()).moveTo(folder);
+    DriveApp.getFileById(ScriptApp.getScriptId()).moveTo(root);
   } catch (e) {}
 
-  var res = initGlobalDb();
+  var res = initGlobalDb(driveId);
 
   var doc = DocumentApp.create('StudyQuest_Setup_Guide');
   var body = doc.getBody();
   body.appendParagraph('StudyQuest セットアップガイド').setHeading(DocumentApp.ParagraphHeading.HEADING1);
-  body.appendParagraph('このフォルダにはアプリのスクリプトとグローバルデータベースが保存されます。');
+  body.appendParagraph('このドライブにはアプリのスクリプトとグローバルデータベースが保存されます。');
   body.appendParagraph('教師は初回ログイン時に自動で教師用データベースが作成されます。');
   body.appendParagraph('グローバルデータベースは全教師で共有し、生徒は読み取り専用で利用します。');
 
-  DriveApp.getFileById(doc.getId()).moveTo(folder);
+  try {
+    DriveApp.getFileById(doc.getId()).moveTo(root);
+  } catch (e) {}
 
   return res;
 }
 
-function initGlobalDb() {
+function initGlobalDb(driveId) {
   var props = PropertiesService.getScriptProperties();
   var propName = (typeof PROP_GLOBAL_MASTER_DB !== 'undefined') ? PROP_GLOBAL_MASTER_DB : 'Global_Master_DB';
   var existing = props.getProperty(propName);
@@ -47,6 +48,9 @@ function initGlobalDb() {
     }
   }
   var ss = SpreadsheetApp.create('StudyQuest_Global_Master_DB');
+  if (driveId) {
+    try { DriveApp.getFileById(ss.getId()).moveTo(DriveApp.getFolderById(driveId)); } catch (e) {}
+  }
   if (typeof props.setProperty === 'function') {
     props.setProperty(propName, ss.getId());
   }
@@ -101,4 +105,15 @@ function ensureAdminUser_(ss) {
       0
     ]]);
   }
+}
+
+function createSharedDrive_(name) {
+  var requestId = Utilities.getUuid();
+  var drive = Drive.Drives.create({ name: name }, requestId);
+  var domain = Session.getEffectiveUser().getEmail().split('@')[1];
+  try {
+    var perm = { type: 'domain', role: 'fileOrganizer', domain: domain };
+    Drive.Permissions.create(perm, drive.id, { sendNotificationEmails: false, supportsAllDrives: true });
+  } catch (e) {}
+  return drive.id;
 }

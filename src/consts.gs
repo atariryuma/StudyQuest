@@ -12,6 +12,7 @@ var CONSTS = (function() {
     STUDENT_SHEET_PREFIX: '生徒_',
     FOLDER_NAME_PREFIX: 'StudyQuest_',
     PROP_GLOBAL_MASTER_DB: 'Global_Master_DB',
+    PROP_GLOBAL_DRIVE_ID: 'Global_Drive_ID',
     SHEET_GLOBAL_USERS: 'Global_Users',
     SHEET_GLOBAL_TROPHIES_LOG: 'Global_Trophies_Log',
     SHEET_GLOBAL_ITEMS: 'Global_Items_Inventory',
