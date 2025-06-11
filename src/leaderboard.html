@@ -25,7 +25,7 @@
     <tbody></tbody>
   </table>
   <script>
-    <?!= include('shared/escapeHtml.html'); ?>
+    <?!= include('escapeHtml.html'); ?>
     const params=new URLSearchParams(location.search);
     const teacher=params.get('teacher')||'';
     function renderLeaderboard(data){
