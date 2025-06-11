@@ -1,6 +1,5 @@
 # .github/workflows/deploy-gas-app.yml
 name: deploy-gas-app
-
 concurrency:
   group: deploy-gas-app
   cancel-in-progress: false
@@ -29,77 +28,55 @@ jobs:
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
+    # ── 1. checkout & node
     - uses: actions/checkout@v4
-      with:
-        persist-credentials: true
-        fetch-depth: 1
+      with: { persist-credentials: true, fetch-depth: 1 }
 
     - uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: npm
+      with: { node-version: ${{ env.NODE_VERSION }}, cache: npm }
 
     - run: npm ci
 
-    - id: pkg_ver
+    # ── 2. embed build-version & test
+    - id: ver
       run: |
-        VERSION=$(jq -r .version package.json)
-        echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-
-    - run: sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
+        echo VERSION=$(jq -r .version package.json) >> $GITHUB_OUTPUT
+    - run: sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
     - run: npm test
 
-    # ------------------------------------------------------------------ #
-    # ここから GAS 用セットアップ
-    # ------------------------------------------------------------------ #
+    # ── 3. clasp & jq
     - run: |
         npm i -g @google/clasp@${{ env.CLASP_VERSION }}
         sudo apt-get update -y && sudo apt-get install -y jq
-
     - run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    - name: Delete remote escapeHtml.* if present
-      run: |
-        set -eux
-        clasp files:list --json \
-          | jq -r '.[] | select(.name=="escapeHtml") | .id' \
-          | while read -r ID; do
-              # v3 以降なら: clasp files:delete "$ID" --yes
-              echo y | clasp files:delete "$ID"
-            done
-
-    # ------------------------------------------------------------------ #
-    # push & version
-    # ------------------------------------------------------------------ #
-    - name: Push to GAS & create new version
+    # ── 4. push & version
+    - name: Push to GAS & tag version
       run: |
         set -eux
         clasp push --force
-        clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
+        clasp version "v${{ steps.ver.outputs.VERSION }}"
 
+    # ── 5. update web-app deployment
     - if: env.DEPLOYMENT_ID != ''
       run: |
         set -eux
         VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
         clasp update-deployment "$DEPLOYMENT_ID" \
           --versionNumber "$VNUM" \
-          --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)"
+          --description "v${{ steps.ver.outputs.VERSION }} (auto)"
 
-    # ------------------------------------------------------------------ #
-    # GitHub へ通常 push
-    # ------------------------------------------------------------------ #
+    # ── 6. commit artefacts & bump patch (通常 push)
     - if: success()
       run: |
         set -eux
-        git config user.name  "github-actions"
-        git config user.email "github-actions@github.com"
-
+        git config user.name  github-actions
+        git config user.email github-actions@github.com
         git add -A
         git diff --cached --quiet || \
-          git commit -m "build: embed v${{ steps.pkg_ver.outputs.VERSION }} [skip ci]" --no-verify
-
+          git commit -m "build: embed v${{ steps.ver.outputs.VERSION }} [skip ci]" --no-verify
         npm version patch -m "chore: bump to %s [skip ci]" --no-verify
         git pull --rebase --autostash origin main
         git push --follow-tags
