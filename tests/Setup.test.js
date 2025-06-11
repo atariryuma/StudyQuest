@@ -29,13 +29,14 @@ test('quickStudyQuestSetup creates shared drive and moves files', () => {
   };
   loadSetup(context);
   context.initGlobalDb = jest.fn(() => ({ status: 'ok', id: 'gid' }));
-  const res = context.quickStudyQuestSetup();
+  const res = context.quickStudyQuestSetup('PASS');
   expect(driveCreate).toHaveBeenCalledWith({ name: 'StudyQuest' }, 'uuid');
   expect(props.Global_Drive_ID).toBe('did');
   expect(context.initGlobalDb).toHaveBeenCalledWith('did');
   expect(context.DriveApp.getFileById).toHaveBeenCalledWith('sid');
   expect(file.moveTo).toHaveBeenCalledWith(folder);
   expect(res.status).toBe('ok');
+  expect(res.passcode).toBe('PASS');
 });
 
 test('quickStudyQuestSetup uses existing drive', () => {
@@ -57,8 +58,9 @@ test('quickStudyQuestSetup uses existing drive', () => {
   };
   loadSetup(context);
   context.initGlobalDb = jest.fn(() => ({ status: 'ok', id: 'gid' }));
-  const res = context.quickStudyQuestSetup();
+  const res = context.quickStudyQuestSetup('PASS');
   expect(driveCreate).not.toHaveBeenCalled();
   expect(context.initGlobalDb).toHaveBeenCalledWith('did');
   expect(res.status).toBe('ok');
+  expect(res.passcode).toBe('PASS');
 });
