@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -65,7 +64,7 @@ jobs:
           echo "Valid JSON received"
           
           # escapeHtml関連のファイルIDを取得・削除
-          echo "$FILES_JSON" | jq -r '.[] | select(.name | test("(shared/)?escapeHtml\\.(js|html)$")) | "\(.name):\(.id)"' | \
+          echo "$FILES_JSON" | jq -r '.[] | select(.name | test("escapeHtml|shared/escapeHtml")) | "\(.name):\(.id)"' | \
           while IFS=: read -r NAME ID; do
             if [ -n "$ID" ] && [ "$ID" != "null" ]; then
               echo "Found file to delete: $NAME (ID: $ID)"
@@ -77,7 +76,7 @@ jobs:
           echo "Attempting alternative cleanup method..."
           
           # 代替方法：通常のリストから解析
-          clasp files:list 2>/dev/null | grep -E "(escapeHtml\\.(js|html)|shared/escapeHtml\\.(js|html))" | \
+          clasp files:list 2>/dev/null | grep -E "(escapeHtml|shared/escapeHtml)" | \
           while read -r line; do
             echo "Found potential file to clean: $line"
             # この方法では直接削除は困難なので、警告のみ
@@ -96,17 +95,21 @@ jobs:
       run: |
         set -eux
         
-        # 過去のテスト用ファイルを削除
-        find . -name "*escapeHtml*.js" -type f -delete || true
-        rm -f shared/escapeHtml.js || true
+        # 方法1: .claspignore で除外する
+        echo "shared/escapeHtml*" >> .claspignore
+        echo "escapeHtml*" >> .claspignore
+        
+        # 方法2: ローカルの競合ファイルを削除
+        find . -name "*escapeHtml*" -type f -delete || true
+        rm -rf shared/escapeHtml* || true
         
         # 方法3: clasp pull で最新状態を取得してから push
         echo "=== Attempting clasp pull to sync ==="
         clasp pull --force || echo "clasp pull failed, continuing..."
         
         # 再度ローカルクリーンアップ
-        find . -name "*escapeHtml*.js" -type f -delete || true
-        rm -f shared/escapeHtml.js || true
+        find . -name "*escapeHtml*" -type f -delete || true
+        rm -rf shared/escapeHtml* || true
         
         # clasp push をリトライ機能付きで実行
         MAX_RETRIES=3
@@ -142,13 +145,6 @@ jobs:
         done
         
         clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
-    - if: env.DEPLOYMENT_ID != ''
-      run: |
-        set -eux
-        VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
-        clasp update-deployment "$DEPLOYMENT_ID" \
-          --versionNumber "$VNUM" \
-          --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)"
     # ------------------------------------------------------------------ #
     # GitHub へ通常 push
     # ------------------------------------------------------------------ #
