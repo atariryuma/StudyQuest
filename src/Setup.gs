@@ -2,9 +2,16 @@ function quickStudyQuestSetup() {
   var root = DriveApp.getRootFolder();
   var folder = null;
   var it = root.getFoldersByName('StudyQuest');
-  if (it.hasNext()) {
-    folder = it.next();
-  } else {
+  while (it.hasNext()) {
+    var f = it.next();
+    try {
+      // 編集できないフォルダはスキップ
+      f.createFile('sq_tmp', '').setTrashed(true);
+      folder = f;
+      break;
+    } catch (e) {}
+  }
+  if (!folder) {
     folder = root.createFolder('StudyQuest');
   }
 
