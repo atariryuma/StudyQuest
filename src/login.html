@@ -70,6 +70,16 @@
   </div>
   <div id="loadingOverlay" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 text-white z-40">ロード中…</div>
 
+  <div id="confirmSetupModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="glass-panel modal p-6 rounded-lg w-80 text-center">
+      <p class="mb-4">この操作では Google へのアクセス許可を求める画面が表示されます。続行しますか？</p>
+      <div class="flex gap-2">
+        <button id="confirmSetupYes" class="game-btn bg-pink-600 text-white flex-1 rounded-lg border-pink-800 hover:bg-pink-500">OK</button>
+        <button id="confirmSetupNo" class="game-btn bg-gray-600 text-white flex-1 rounded-lg border-gray-800 hover:bg-gray-500">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
   <div id="firstMessage" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-panel modal rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
       <p class="mb-2">🎉 初回ログインありがとうございます！</p>
@@ -152,6 +162,10 @@
     const devLoginBtn = document.getElementById('devLoginBtn');
     const devToggleArea = document.getElementById('devToggleArea');
     let devLoginRevealed = false;
+    const confirmModal = document.getElementById('confirmSetupModal');
+    const confirmYes = document.getElementById('confirmSetupYes');
+    const confirmNo = document.getElementById('confirmSetupNo');
+    let pendingSetupKey = '';
 
     const LS_TEACHER = 'sq_welcome_teacher';
     const LS_STUDENT = 'sq_welcome_student';
@@ -230,18 +244,29 @@
       e.preventDefault();
       const key = document.getElementById('secret-key-input').value.trim();
       if (!key) return;
-      showLoadingOverlay();
       if (key.toLowerCase() === 'admin') {
+        showLoadingOverlay();
         google.script.run
           .withSuccessHandler(onAdminSetup)
           .withFailureHandler(onLoginFailure)
           .quickStudyQuestSetup();
       } else {
-        google.script.run
-          .withSuccessHandler(onSetupSuccess)
-          .withFailureHandler(onLoginFailure)
-          .setupInitialTeacher(key);
+        pendingSetupKey = key;
+        confirmModal.classList.remove('hidden');
       }
+    });
+
+    confirmYes.addEventListener('click', () => {
+      confirmModal.classList.add('hidden');
+      showLoadingOverlay();
+      google.script.run
+        .withSuccessHandler(onSetupSuccess)
+        .withFailureHandler(onLoginFailure)
+        .setupInitialTeacher(pendingSetupKey);
+    });
+
+    confirmNo.addEventListener('click', () => {
+      confirmModal.classList.add('hidden');
     });
 
     document.getElementById('back-to-login-btn').addEventListener('click', () => {
