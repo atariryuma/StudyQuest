@@ -18,6 +18,5 @@ var CONSTS = (function() {
     PROP_TEACHER_PASSCODE: 'teacherPasscode',
     PROP_TEACHER_CODE_PREFIX: 'teacherCode_',
     PROP_TEACHER_SSID_PREFIX: 'ssId_',
-    PROP_GLOBAL_DB_ID: 'GLOBAL_DB_ID'
   };
 })();
