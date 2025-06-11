@@ -1,6 +1,6 @@
 
 // 共通定数は consts.gs に移動
-var SQ_VERSION = 'v1.0.247';
+var SQ_VERSION = 'v1.0.252';
 
 /**
  * doGet(e): テンプレートにパラメータを埋め込んで返す
