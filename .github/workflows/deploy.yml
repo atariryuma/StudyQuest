@@ -51,34 +51,66 @@ jobs:
       run: |
         set -eux
         
-        # まず全ファイルリストを取得
-        echo "Current files in GAS project:"
-        clasp files:list || true
+        # まず全ファイルリストを取得してデバッグ
+        echo "=== Current files in GAS project ==="
+        clasp files:list || echo "Failed to list files"
         
-        # JSON形式でファイルリストを取得し、escapeHtml関連を削除
-        FILES_JSON=$(clasp files:list --json 2>/dev/null || echo "[]")
-        echo "Files JSON: $FILES_JSON"
+        # JSON形式でファイルリストを取得
+        echo "=== Getting files in JSON format ==="
+        FILES_JSON=$(clasp files:list --json 2>&1) || FILES_JSON="[]"
+        echo "Raw files JSON output: $FILES_JSON"
         
-        # escapeHtml関連のファイルIDを取得・削除
-        echo "$FILES_JSON" | jq -r '.[] | select(.name | test("escapeHtml|shared/escapeHtml")) | .id' | \
-        while IFS= read -r ID; do
-          if [ -n "$ID" ] && [ "$ID" != "null" ]; then
-            echo "Deleting file with ID: $ID"
-            echo y | clasp files:delete "$ID" || echo "Failed to delete $ID, continuing..."
-          fi
-        done
+        # JSONが有効かチェック
+        if echo "$FILES_JSON" | jq . >/dev/null 2>&1; then
+          echo "Valid JSON received"
+          
+          # escapeHtml関連のファイルIDを取得・削除
+          echo "$FILES_JSON" | jq -r '.[] | select(.name | test("escapeHtml|shared/escapeHtml")) | "\(.name):\(.id)"' | \
+          while IFS=: read -r NAME ID; do
+            if [ -n "$ID" ] && [ "$ID" != "null" ]; then
+              echo "Found file to delete: $NAME (ID: $ID)"
+              echo y | clasp files:delete "$ID" || echo "Failed to delete $ID, continuing..."
+            fi
+          done
+        else
+          echo "Invalid JSON or clasp files:list failed"
+          echo "Attempting alternative cleanup method..."
+          
+          # 代替方法：通常のリストから解析
+          clasp files:list 2>/dev/null | grep -E "(escapeHtml|shared/escapeHtml)" | \
+          while read -r line; do
+            echo "Found potential file to clean: $line"
+            # この方法では直接削除は困難なので、警告のみ
+          done || echo "No escapeHtml files found via alternative method"
+        fi
         
-        # 少し待機してから再確認
+        # 少し待機
         sleep 3
-        echo "Files after cleanup:"
-        clasp files:list || true
+        echo "=== Files after cleanup ==="
+        clasp files:list || echo "Failed to list files after cleanup"
     
     # ------------------------------------------------------------------ #
-    # push & version （リトライ機能付き）
+    # push & version （強制的なクリーンアップ付き）
     # ------------------------------------------------------------------ #
     - name: Push to GAS & create new version
       run: |
         set -eux
+        
+        # 方法1: .claspignore で除外する
+        echo "shared/escapeHtml*" >> .claspignore
+        echo "escapeHtml*" >> .claspignore
+        
+        # 方法2: ローカルの競合ファイルを削除
+        find . -name "*escapeHtml*" -type f -delete || true
+        rm -rf shared/escapeHtml* || true
+        
+        # 方法3: clasp pull で最新状態を取得してから push
+        echo "=== Attempting clasp pull to sync ==="
+        clasp pull --force || echo "clasp pull failed, continuing..."
+        
+        # 再度ローカルクリーンアップ
+        find . -name "*escapeHtml*" -type f -delete || true
+        rm -rf shared/escapeHtml* || true
         
         # clasp push をリトライ機能付きで実行
         MAX_RETRIES=3
@@ -93,21 +125,21 @@ jobs:
             echo "clasp push failed (attempt $RETRY_COUNT/$MAX_RETRIES)"
             
             if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "Retrying after cleaning up conflicting files..."
+              echo "Trying more aggressive cleanup..."
               
-              # 再度クリーンアップ
-              clasp files:list --json 2>/dev/null || echo "[]" | \
-              jq -r '.[] | select(.name | contains("escapeHtml")) | .id' | \
-              while read -r ID; do
-                if [ -n "$ID" ]; then
-                  echo "Cleaning up file ID: $ID"
-                  echo y | clasp files:delete "$ID" || true
-                fi
-              done
+              # より積極的なクリーンアップ
+              clasp files:list 2>/dev/null | grep -i escape | head -10 || echo "No escape files found"
               
-              sleep 5
+              # .clasp.json のプロジェクトIDを確認
+              echo "Project config:"
+              cat .clasp.json || echo "No .clasp.json found"
+              
+              # 30秒待機（GAS側の同期を待つ）
+              echo "Waiting 30 seconds for GAS sync..."
+              sleep 30
             else
-              echo "Max retries reached. Exiting."
+              echo "Max retries reached. Manual intervention may be required."
+              echo "Please manually delete the 'shared/escapeHtml' file from the GAS project."
               exit 1
             fi
           fi
