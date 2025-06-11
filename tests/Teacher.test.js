@@ -84,11 +84,36 @@ test('initTeacher creates StudyQuest_DB when none exists', () => {
   const result = context.initTeacher();
   expect(result.status).toBe('new');
   expect(result.teacherCode).toBe('ABC123');
-  expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB_ABC123');
+  expect(context.SpreadsheetApp.create).toHaveBeenCalledWith('StudyQuest_DB_teacher_ABC123');
   expect(insertedNames).toEqual(expect.arrayContaining(['Trophies', 'Items']));
   const tocCalls = sheetStub.appendRow.mock.calls.map(c => c[0][0] || '');
   expect(tocCalls.some(v => v.includes('Trophies'))).toBe(true);
   expect(tocCalls.some(v => v.includes('Items'))).toBe(true);
+});
+
+test('getSpreadsheetByTeacherCode searches by prefix when ID missing', () => {
+  const props = { ABC123: 'fid' };
+  const iterator = {
+    list: [{ getName: () => 'StudyQuest_DB_teacher_ABC123', getId: () => 'sid' }],
+    hasNext() { return this.list.length > 0; },
+    next() { return this.list.shift(); }
+  };
+  const folderStub = { getFiles: jest.fn(() => iterator) };
+  const context = {
+    PropertiesService: {
+      getScriptProperties: () => ({
+        getProperty: k => props[k],
+        setProperty: (k,v)=>{ props[k]=v; }
+      })
+    },
+    DriveApp: { getFolderById: jest.fn(() => folderStub) },
+    SpreadsheetApp: { openById: jest.fn(() => ({})) }
+  };
+  loadTeacher(context);
+  const res = context.getSpreadsheetByTeacherCode('ABC123');
+  expect(context.DriveApp.getFolderById).toHaveBeenCalledWith('fid');
+  expect(context.SpreadsheetApp.openById).toHaveBeenCalledWith('sid');
+  expect(res).toBeTruthy();
 });
 
 test('initTeacher tasks sheet header includes draft column', () => {

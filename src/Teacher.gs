@@ -95,6 +95,7 @@ function initTeacher(passcode) {
     };
   }
   var email = Session.getEffectiveUser().getEmail();
+  var prefix = email.split('@')[0];
   var props = PropertiesService.getScriptProperties();
   var storedPass = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
   if (storedPass) {
@@ -150,7 +151,7 @@ function initTeacher(passcode) {
   props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, newCode);
   initializeFolders(newCode, [], folderInstance);
 
-  var ss = SpreadsheetApp.create('StudyQuest_DB_' + newCode);
+  var ss = SpreadsheetApp.create('StudyQuest_DB_' + prefix + '_' + newCode);
   props.setProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + newCode, ss.getId());
   DriveApp.getFileById(ss.getId()).moveTo(folderInstance);
 
@@ -258,7 +259,7 @@ function initTeacher(passcode) {
 /**
  * getSpreadsheetByTeacherCode(teacherCode):
  * スクリプトプロパティからフォルダ ID を取得し、
- * そのフォルダ内の StudyQuest_DB_<teacherCode> を開く
+ * そのフォルダ内の StudyQuest_DB_<prefix>_<teacherCode> を開く
  */
 function getSpreadsheetByTeacherCode(teacherCode) {
   console.time('getSpreadsheetByTeacherCode');
@@ -290,10 +291,17 @@ function getSpreadsheetByTeacherCode(teacherCode) {
   if (!folderId) { console.timeEnd('getSpreadsheetByTeacherCode'); return null; }
   try {
     var folder = DriveApp.getFolderById(folderId);
-    var targetName = 'StudyQuest_DB_' + teacherCode;
-    var files = folder.getFilesByName(targetName);
-    if (files.hasNext()) {
-      var id = files.next().getId();
+    var files = folder.getFiles();
+    var id = null;
+    while (files.hasNext()) {
+      var f = files.next();
+      var name = f.getName();
+      if (name === 'StudyQuest_DB_' + teacherCode || name.match(new RegExp('^StudyQuest_DB_.+_' + teacherCode + '$'))) {
+        id = f.getId();
+        break;
+      }
+    }
+    if (id) {
       props.setProperty(idKey, id);
       var ss = SpreadsheetApp.openById(id);
       _ssCache[teacherCode] = ss;
