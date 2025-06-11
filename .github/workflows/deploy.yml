@@ -1,106 +1,75 @@
 # .github/workflows/deploy-gas-app.yml
 name: deploy-gas-app
 
-################################################################################
-# 基本設定
-################################################################################
 concurrency:
   group: deploy-gas-app
-  cancel-in-progress: false              # 同ブランチ並列実行を防止
+  cancel-in-progress: false
 
 on:
   push:
-    branches: [ main ]                   # ← 適宜変更
-    paths:                               # 関連ファイルに変更があったときのみ
+    branches: [ main ]
+    paths:
       - 'src/**'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/**'
 
 permissions:
-  contents: write                        # 自動コミット／タグ追加に必要
+  contents: write
 
-env:                                     # 共通で使う環境変数
-  NODE_VERSION: 20                       # Node.js バージョン
-  CLASP_VERSION: latest                  # clasp のバージョン
+env:
+  NODE_VERSION: 20
+  CLASP_VERSION: latest
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}   # clasp 認証情報(JSON)
-      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }} # 既存デプロイ ID（任意）
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
-    ############################################################################
-    # 1. チェックアウト
-    ############################################################################
     - uses: actions/checkout@v4
       with:
         persist-credentials: true
         fetch-depth: 1
 
-    ############################################################################
-    # 2. Node セットアップ & npm ci
-    ############################################################################
     - uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
+
     - run: npm ci
 
-    ############################################################################
-    # 3. バージョン取得
-    ############################################################################
+    # ── version 取得
     - id: pkg_ver
       run: |
-        VERSION=$(jq -r .version package.json)        # jq が最速
+        VERSION=$(jq -r .version package.json)
         echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
-    ############################################################################
-    # 4. ビルド番号を Apps Script ソースに埋め込む
-    #    例: Code.gs 内の __BUILD_VERSION__ を v1.2.3 に置換
-    ############################################################################
-    - run: |
-        sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
+    # ── build version を埋め込み
+    - run: sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
 
-    ############################################################################
-    # 5. テスト（Jest 想定）
-    ############################################################################
+    # ── Unit tests
     - run: npm test
 
-    ############################################################################
-    # 6. clasp + jq インストール
-    ############################################################################
+    # ── clasp & jq
     - run: |
         npm i -g @google/clasp@${{ env.CLASP_VERSION }}
         sudo apt-get update -y && sudo apt-get install -y jq
 
-    ############################################################################
-    # 7. clasp 認証ファイル配置
-    ############################################################################
+    # ── clasp auth
     - run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    ############################################################################
-    # 8. オプション: 重複ファイルの自動除去
-    #    ※ 生成物が同名で衝突する場合のみ有効化
-    ############################################################################
-    # - run: |
-    #     rm -f src/shared/escapeHtml.js
-
-    ############################################################################
-    # 9. push → バージョン発行
-    ############################################################################
+    # ── push & create version
     - run: |
         set -eux
         clasp push --force
         clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
 
-    ############################################################################
-    # 10. 既存 Web アプリのデプロイ更新（DEPLOYMENT_ID がある場合）
-    ############################################################################
+    # ── update Web-App deployment（既存 ID がある場合）
     - if: env.DEPLOYMENT_ID != ''
       run: |
         set -eux
@@ -109,16 +78,14 @@ jobs:
           --versionNumber "$VNUM" \
           --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)"
 
-    ############################################################################
-    # 11. ビルド成果コミット & 次サイクルのパッチバンプ
-    ############################################################################
+    # ── commit build artefacts & bump patch
     - if: success()
       run: |
         set -eux
         git config user.name github-actions
         git config user.email github-actions@github.com
 
-        git add -A                                          # 変更・削除を全て
+        git add -A   # .claspignore も含めて変更すべて
         git commit -m "build: embed v${{ steps.pkg_ver.outputs.VERSION }} [skip ci]" --no-verify
 
         npm version patch -m "chore: bump to %s [skip ci]" --no-verify
