@@ -32,4 +32,3 @@ function archiveOldSubmissions(teacherCode, year) {
   if (keep.length) sheet.getRange(2,1,keep.length,keep[0].length).setValues(keep);
   return archive.length;
 }
-
