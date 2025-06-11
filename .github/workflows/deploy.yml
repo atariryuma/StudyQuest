@@ -1,8 +1,10 @@
-# .github/workflows/deploy-gas-app.yml
-name: deploy-gas-app
+# .github/workflows/deploy-gas-webapp.yml
+name: deploy-gas-webapp
+
+# ── 同ブランチでは常に直列実行 (cancel しない)
 concurrency:
-  group: deploy-gas-app
-  cancel-in-progress: false
+  group: deploy-gas-webapp
+
 on:
   push:
     branches: [ main ]
@@ -11,184 +13,79 @@ on:
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/**'
+
 permissions:
-  contents: write
-env:
-  NODE_VERSION: 20
-  CLASP_VERSION: latest
+  contents: write  # 自動コミットに必要
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+
     steps:
+    # 1. Checkout
     - uses: actions/checkout@v4
       with:
         persist-credentials: true
         fetch-depth: 1
+
+    # 2. Node.js + npm キャッシュ
     - uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: npm
+        node-version: '20'
+        cache: 'npm'
+
+    # 3. Install deps
     - run: npm ci
-    - id: pkg_ver
-      run: |
-        VERSION=$(jq -r .version package.json)
-        echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-    - run: sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
+
+    # 4. Get package version
+    - id: ver
+      run: echo "VERSION=$(node -p 'require(\"./package.json\").version')" >> $GITHUB_OUTPUT
+
+    # 5. Inject build version into Code.gs
+    - run: sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
+
+    # 6. Tests
     - run: npm test
-    # ------------------------------------------------------------------ #
-    # ここから GAS 用セットアップ
-    # ------------------------------------------------------------------ #
+
+    # 7. Tools (clasp & jq)
     - run: |
-        npm i -g @google/clasp@${{ env.CLASP_VERSION }}
+        npm i -g @google/clasp@latest
         sudo apt-get update -y && sudo apt-get install -y jq
+
+    # 8. clasp auth
     - run: |
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
-    - name: Clean up GAS project files
-      run: |
+
+    # 9. Push to GAS & create new version
+    - run: |
         set -eux
-        
-        # まず全ファイルリストを取得してデバッグ
-        echo "=== Current files in GAS project ==="
-        clasp files:list || echo "Failed to list files"
-        
-        # JSON形式でファイルリストを取得
-        echo "=== Getting files in JSON format ==="
-        FILES_JSON=$(clasp files:list --json 2>&1) || FILES_JSON="[]"
-        echo "Raw files JSON output: $FILES_JSON"
-        
-        # JSONが有効かチェック
-        if echo "$FILES_JSON" | jq . >/dev/null 2>&1; then
-          echo "Valid JSON received"
-          
-          # escapeHtml関連のファイルIDを取得・削除
-          echo "$FILES_JSON" | jq -r '.[] | select(.name | test("escapeHtml|shared/escapeHtml")) | "\(.name):\(.id)"' | \
-          while IFS=: read -r NAME ID; do
-            if [ -n "$ID" ] && [ "$ID" != "null" ]; then
-              echo "Found file to delete: $NAME (ID: $ID)"
-              echo y | clasp files:delete "$ID" || echo "Failed to delete $ID, continuing..."
-            fi
-          done
-        else
-          echo "Invalid JSON or clasp files:list failed"
-          echo "Attempting alternative cleanup method..."
-          
-          # 代替方法：通常のリストから解析
-          clasp files:list 2>/dev/null | grep -E "(escapeHtml|shared/escapeHtml)" | \
-          while read -r line; do
-            echo "Found potential file to clean: $line"
-            # この方法では直接削除は困難なので、警告のみ
-          done || echo "No escapeHtml files found via alternative method"
-        fi
-        
-        # 少し待機
-        sleep 3
-        echo "=== Files after cleanup ==="
-        clasp files:list || echo "Failed to list files after cleanup"
-    
-    # ------------------------------------------------------------------ #
-    # push & version （強制的なクリーンアップ付き）
-    # ------------------------------------------------------------------ #
-    - name: Push to GAS & create new version
-      run: |
+        clasp push --force
+        clasp version "v${{ steps.ver.outputs.VERSION }}"
+
+    # 10. Update existing Web-App deployment
+    - run: |
         set -eux
-        
-        # 方法1: .claspignore で除外する
-        echo "shared/escapeHtml*" >> .claspignore
-        echo "escapeHtml*" >> .claspignore
-        
-        # 方法2: ローカルの競合ファイルを削除
-        find . -name "*escapeHtml*" -type f -delete || true
-        rm -rf shared/escapeHtml* || true
-        
-        # 方法3: clasp pull で最新状態を取得してから push
-        echo "=== Attempting clasp pull to sync ==="
-        clasp pull --force || echo "clasp pull failed, continuing..."
-        
-        # 再度ローカルクリーンアップ
-        find . -name "*escapeHtml*" -type f -delete || true
-        rm -rf shared/escapeHtml* || true
-        
-        # clasp push をリトライ機能付きで実行
-        MAX_RETRIES=3
-        RETRY_COUNT=0
-        
-        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-          if clasp push --force; then
-            echo "clasp push succeeded"
-            break
-          else
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            echo "clasp push failed (attempt $RETRY_COUNT/$MAX_RETRIES)"
-            
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "Trying more aggressive cleanup..."
-              
-              # より積極的なクリーンアップ
-              clasp files:list 2>/dev/null | grep -i escape | head -10 || echo "No escape files found"
-              
-              # .clasp.json のプロジェクトIDを確認
-              echo "Project config:"
-              cat .clasp.json || echo "No .clasp.json found"
-              
-              # 30秒待機（GAS側の同期を待つ）
-              echo "Waiting 30 seconds for GAS sync..."
-              sleep 30
-            else
-              echo "Max retries reached. Manual intervention may be required."
-              echo "Please manually delete the 'shared/escapeHtml' file from the GAS project."
-              exit 1
-            fi
-          fi
-        done
-        
-        clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
-    - name: Update deployment if possible
-      if: env.DEPLOYMENT_ID != ''
-      run: |
-        set -eu  # -x は残すが、-e は一時的に無効化
-        VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
-        echo "Latest version number: $VNUM"
-        echo "Deployment ID: $DEPLOYMENT_ID"
-        
-        # まずデプロイメント情報を確認
-        echo "=== Current deployment info ==="
-        clasp deployments || echo "Failed to get deployments info"
-        
-        # デプロイメント更新を試行
-        echo "=== Attempting deployment update ==="
-        if clasp update-deployment "$DEPLOYMENT_ID" \
+        VNUM=$(clasp versions | grep -E '^[0-9]+' | awk '{print $1}' | sort -nr | head -n1)
+        clasp update-deployment "$DEPLOYMENT_ID" \
           --versionNumber "$VNUM" \
-          --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)" 2>&1; then
-          echo "✅ Deployment updated successfully"
-        else
-          EXIT_CODE=$?
-          echo "❌ Failed to update deployment (exit code: $EXIT_CODE)"
-          echo "This is often due to:"
-          echo "1. Domain restrictions (script owner domain mismatch)"
-          echo "2. Insufficient permissions"
-          echo "3. Invalid deployment ID"
-          echo ""
-          echo "The script was still pushed and versioned successfully."
-          echo "Manual deployment update may be required."
-          
-          # デプロイメント失敗は警告として扱い、ワークフローは続行
-          exit 0
-        fi
-    # ------------------------------------------------------------------ #
-    # GitHub へ通常 push
-    # ------------------------------------------------------------------ #
-    - if: success()
+          --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
+
+    # 11. Bump patch for next dev cycle & push
+    - if: ${{ success() }}
       run: |
         set -eux
-        git config user.name  "github-actions"
-        git config user.email "github-actions@github.com"
-        git add -A
-        git diff --cached --quiet || \
-          git commit -m "build: embed v${{ steps.pkg_ver.outputs.VERSION }} [skip ci]" --no-verify
-        npm version patch -m "chore: bump to %s [skip ci]" --no-verify
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
+        # Stage Code.gs も含めてバージョンコミット
+        git add src/Code.gs
+
+        npm version patch -m "chore: bump to %s [skip ci]"
+
+        # 最新リモートを取り込み、競合なく push
         git pull --rebase --autostash origin main
-        git push --follow-tags
+        git push --follow-tags --force-with-lease
