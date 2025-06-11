@@ -118,3 +118,42 @@ function isAdminUser_(email) {
   }
   return false;
 }
+
+/**
+ * getGlobalUserRowMap_(): email(lowercase) -> row index
+ * Cached for 5 minutes to speed up lookups
+ */
+function getGlobalUserRowMap_() {
+  var cacheKey = 'globalUserRowMap';
+  var cached = typeof getCacheValue_ === 'function' ? getCacheValue_(cacheKey) : null;
+  if (cached) return cached;
+  var db = getGlobalDb_();
+  if (!db) return {};
+  var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
+  if (!sheet) return {};
+  var last = sheet.getLastRow();
+  if (last < 2) return {};
+  var vals = sheet.getRange(2, 1, last - 1, 1).getValues();
+  var map = {};
+  for (var i = 0; i < vals.length; i++) {
+    var em = String(vals[i][0] || '').trim().toLowerCase();
+    if (em) map[em] = i + 2;
+  }
+  if (typeof putCacheValue_ === 'function') putCacheValue_(cacheKey, map, 300);
+  return map;
+}
+
+/**
+ * setValuesIfChanged_(range, values): diff-aware writer
+ */
+function setValuesIfChanged_(range, values) {
+  if (!range || !values || !values.length) return;
+  var old = range.getValues();
+  var diff = false;
+  for (var i = 0; i < values.length && !diff; i++) {
+    for (var j = 0; j < values[i].length; j++) {
+      if (String(old[i][j]) !== String(values[i][j])) { diff = true; break; }
+    }
+  }
+  if (diff) range.setValues(values);
+}
