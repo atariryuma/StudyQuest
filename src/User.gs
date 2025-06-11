@@ -128,7 +128,7 @@ function deleteStudentsFromClass(teacherCode, emailsToDelete) {
   var data = sheet.getRange(2,1,lastRow-1,sheet.getLastColumn()).getValues();
   var filtered = data.filter(function(r) { return emailsToDelete.indexOf(String(r[0]).trim()) < 0; });
   sheet.clear();
-  sheet.appendRow(['UserEmail','Role','Grade','Class','Number','EnrolledAt']);
+  sheet.appendRow(['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt']);
   if (filtered.length) sheet.getRange(2,1,filtered.length,filtered[0].length).setValues(filtered);
   return { status: 'ok', deletedCount: data.length - filtered.length };
 }

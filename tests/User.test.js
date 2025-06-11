@@ -16,7 +16,7 @@ test('registerUsersFromCsv creates new users and enrollments', () => {
     ['Email','HandleName','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak']
   ];
   const enrollRows = [
-    ['UserEmail','Role','Grade','Class','Number','EnrolledAt']
+    ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt']
   ];
   const userSheet = {
     getLastRow: jest.fn(() => userRows.length),
@@ -64,7 +64,7 @@ test('registerUsersFromCsv skips existing users', () => {
     ['alice@example.com','Alice','student',0,1,0,'',now,now,1]
   ];
   const enrollRows = [
-    ['UserEmail','Role','Grade','Class','Number','EnrolledAt']
+    ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt']
   ];
   const userSheet = {
     getLastRow: jest.fn(() => userRows.length),
@@ -106,7 +106,7 @@ test('registerUsersFromCsv skips existing users', () => {
 
 test('registerSingleStudent adds user and enrollment', () => {
   const userRows = [['Email','HandleName','Role','Global_TotalXP','Global_Level','Global_Coins','EquippedTitle','CreatedAt','LastGlobalLogin','LoginStreak']];
-  const enrollRows = [['UserEmail','Role','Grade','Class','Number','EnrolledAt']];
+  const enrollRows = [['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt']];
   const userSheet = {
     getLastRow: jest.fn(() => userRows.length),
     getRange: jest.fn(() => ({
@@ -133,7 +133,7 @@ test('registerSingleStudent adds user and enrollment', () => {
 
 test('deleteStudentsFromClass removes rows', () => {
   const enrollRows = [
-    ['UserEmail','Role','Grade','Class','Number','EnrolledAt'],
+    ['UserEmail','ClassRole','Grade','Class','Number','EnrolledAt'],
     ['a@example.com','student',1,1,1,new Date()],
     ['b@example.com','student',1,1,2,new Date()]
   ];

@@ -289,7 +289,7 @@ test('initTeacher submissions sheet header matches README order', () => {
   context.generateTeacherCode = jest.fn(() => 'ABC123');
   context.initTeacher();
   const header = inserted['Submissions'].appendRow.mock.calls[0][0];
-  const expected = ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status'];
+  const expected = ['StudentID','TaskID','Question','StartedAt','SubmittedAt','ProductURL','QuestionSummary','AnswerSummary','EarnedXP','TotalXP','Level','Trophy','Status','LikeScore'];
   expect(header).toEqual(expected);
 });
 
