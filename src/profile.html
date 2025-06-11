@@ -12,7 +12,7 @@
   <script>
     fetch('https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js')
       .then(r=>r.text()).then(t=>{const s=document.createElement('script');s.innerHTML=t;document.head.appendChild(s);s.onload=()=>{ if(window.lucide){ window.lucide.createIcons(); } }});
-    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
+    const SCRIPT_URL = '<?!= scriptUrl ?>';
   </script>
   <style>
     .pixel-bg{background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px;}
