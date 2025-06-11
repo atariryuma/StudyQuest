@@ -14,7 +14,7 @@
       <h1 class="text-2xl font-bold">管理ダッシュボード</h1>
       <p id="teacherName" class="text-sm text-gray-400"></p>
     </div>
-    <a href="<?!= scriptUrl.replace('/dev','/exec') ?>?page=manage&teacher=<?!= teacher ?>" target="_top" class="game-btn bg-gray-600 text-gray-200 px-3 py-1 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm">管理画面へ戻る</a>
+    <a href="<?!= scriptUrl ?>?page=manage&teacher=<?!= teacher ?>" target="_top" class="game-btn bg-gray-600 text-gray-200 px-3 py-1 rounded-lg font-bold border-gray-800 hover:bg-gray-700 text-sm">管理画面へ戻る</a>
   </header>
   <section id="stats" class="mb-4"></section>
   <section class="mb-6">
@@ -54,7 +54,7 @@
   </section>
 
   <script>
-    const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
+    const SCRIPT_URL = '<?!= scriptUrl ?>';
     const teacherCode = '<?!= teacher ?>';
 
     document.addEventListener('DOMContentLoaded', () => {
