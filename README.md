@@ -25,6 +25,13 @@
 - [`README.md`](README.md) — プロジェクトの概要とクイックスタート。
 - [`docs/`](docs/) — 詳細なセットアップ手順などのガイド類を配置します。
 - [`AGENTS.md`](AGENTS.md) — スプレッドシート構成や API 仕様など、開発者向けのリファレンス。
+### いいね機能のデータモデル
+リアクションで送られた「いいね」は以下のシートで管理されます。
+- **Teacher DB: Likes シート** — `LikeID`, `TaskID`, `StudentID`, `LikedBy`, `Value`, `CreatedAt`
+- **Teacher DB: Submissions シート** — 各提出の `LikeScore` 列に反映
+- **Teacher DB: Students シート** — `TotalLikes` 列で生徒ごとの累計を保持
+- **Global DB: Global_Users シート** — `TotalLikesGiven`, `TotalLikesReceived` を集計
+
 
 ---
 

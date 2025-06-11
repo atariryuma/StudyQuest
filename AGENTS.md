@@ -22,7 +22,7 @@
 
 | Sheet                        | PK             | Selected Columns                                                                                            |
 | ---------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Global\_Users**            | `Email`        | `HandleName, Role, Global_TotalXP, Global_Level, Global_Coins, EquippedTitle, LastGlobalLogin, LoginStreak` |
+| **Global\_Users**            | `Email`        | `HandleName, Role, Global_TotalXP, Global_Level, Global_Coins, EquippedTitle, LastGlobalLogin, LoginStreak, TotalLikesGiven, TotalLikesReceived` |
 | **Global\_Trophies\_Log**    | `UserTrophyID` | `UserEmail → Global_Users.Email`, `TrophyID`, `AwardedAt`                                                   |
 | **Global\_Items\_Inventory** | `UserItemID`   | `UserEmail`, `ItemID`, `Quantity`, `AcquiredAt`                                                             |
 
@@ -32,7 +32,8 @@
 | --------------- | --------------------------- | --------------------------------------------- |
 | **Enrollments** | `UserEmail + Grade + Class` | `ClassRole` = `student` (固定) – 先生は別途登録済み。     |
 | **Tasks**       | `TaskID`                    | `Status` ∈ {`draft`,`open`,`closed`}          |
-| **Submissions** | `SubmissionID`              | AI summary stored in `AiSummary` if free‑text |
+| **Submissions** | `SubmissionID`              | AI summary stored in `AiSummary` if free-text |
+| **Likes**       | `LikeID`                    | `TaskID`, `StudentID`, `LikedBy`, `Value`, `CreatedAt` |
 | **Trophies**    | `TrophyID`                  | JSON `Condition` を評価                          |
 | **Items**       | `ItemID`                    | `Type` ∈ {`title`,`consumable`,...}           |
 | **Leaderboard** | generated                   | 再生成用ワークシート（非永続）                               |
@@ -93,7 +94,15 @@ function generateLeaderboard(teacherCode)   // daily trigger
 ```
 
 *Daily coins*: `5 + (streak % 7)`.
+
 *Lock scope*: entire `Global_Users` row.
+### 2.5 Like.gs
+```js
+function addLike(teacherCode, taskId, targetStudentId)
+  -> {status, newScore | error}
+```
+*Adds a reaction entry and updates score columns.*
+
 
 ---
 
