@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -36,80 +37,7 @@ jobs:
         VERSION=$(jq -r .version package.json)
         echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
     - run: sed -i "s/__BUILD_VERSION__/v${{ steps.pkg_ver.outputs.VERSION }}/" src/Code.gs
-    
-    # ------------------------------------------------------------------ #
-    # テスト実行前の準備
-    # ------------------------------------------------------------------ #
-    - name: Check project structure and fix missing files
-      run: |
-        set -eux
-        
-        echo "=== Current project structure ==="
-        find src -type f -name "*.js" -o -name "*.gs" | head -20 || echo "No JS/GS files found"
-        find tests -type f -name "*.test.js" | head -10 || echo "No test files found"
-        
-        echo "=== Checking for escapeHtml references ==="
-        grep -r "escapeHtml" tests/ || echo "No escapeHtml references in tests"
-        
-        # escapeHtml.js が存在しない場合は作成
-        if [ ! -f "src/shared/escapeHtml.js" ]; then
-          echo "Creating missing escapeHtml.js file"
-          mkdir -p src/shared
-          cat > src/shared/escapeHtml.js << 'EOF'
-/**
- * HTML エスケープ関数
- * @param {string} text - エスケープするテキスト
- * @returns {string} エスケープされたテキスト
- */
-function escapeHtml(text) {
-  if (typeof text !== 'string') {
-    return text;
-  }
-  
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  };
-  
-  return text.replace(/[&<>"']/g, function(m) {
-    return map[m];
-  });
-}
-
-// Node.js環境での export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = escapeHtml;
-}
-
-// GAS環境では global に設定
-if (typeof global !== 'undefined') {
-  global.escapeHtml = escapeHtml;
-}
-EOF
-          echo "Created src/shared/escapeHtml.js"
-        else
-          echo "escapeHtml.js already exists"
-        fi
-        
-        # テストファイルの require パスを確認・修正
-        if [ -f "tests/LeaderboardDOM.test.js" ]; then
-          echo "=== Checking LeaderboardDOM.test.js ==="
-          head -10 tests/LeaderboardDOM.test.js || echo "Cannot read test file"
-          
-          # require パスが正しいか確認
-          if [ -f "src/shared/escapeHtml.js" ]; then
-            echo "escapeHtml.js found, require path should work"
-          else
-            echo "ERROR: escapeHtml.js still not found after creation"
-          fi
-        fi
-    
-    - name: Run tests
-      run: npm test
-    
+    - run: npm test
     # ------------------------------------------------------------------ #
     # ここから GAS 用セットアップ
     # ------------------------------------------------------------------ #
@@ -160,7 +88,7 @@ EOF
         sleep 3
         echo "=== Files after cleanup ==="
         clasp files:list || echo "Failed to list files after cleanup"
-
+    
     # ------------------------------------------------------------------ #
     # push & version （強制的なクリーンアップ付き）
     # ------------------------------------------------------------------ #
@@ -218,6 +146,38 @@ EOF
         done
         
         clasp version "v${{ steps.pkg_ver.outputs.VERSION }}"
+    - name: Update deployment if possible
+      if: env.DEPLOYMENT_ID != ''
+      run: |
+        set -eu  # -x は残すが、-e は一時的に無効化
+        VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
+        echo "Latest version number: $VNUM"
+        echo "Deployment ID: $DEPLOYMENT_ID"
+        
+        # まずデプロイメント情報を確認
+        echo "=== Current deployment info ==="
+        clasp deployments || echo "Failed to get deployments info"
+        
+        # デプロイメント更新を試行
+        echo "=== Attempting deployment update ==="
+        if clasp update-deployment "$DEPLOYMENT_ID" \
+          --versionNumber "$VNUM" \
+          --description "v${{ steps.pkg_ver.outputs.VERSION }} (auto)" 2>&1; then
+          echo "✅ Deployment updated successfully"
+        else
+          EXIT_CODE=$?
+          echo "❌ Failed to update deployment (exit code: $EXIT_CODE)"
+          echo "This is often due to:"
+          echo "1. Domain restrictions (script owner domain mismatch)"
+          echo "2. Insufficient permissions"
+          echo "3. Invalid deployment ID"
+          echo ""
+          echo "The script was still pushed and versioned successfully."
+          echo "Manual deployment update may be required."
+          
+          # デプロイメント失敗は警告として扱い、ワークフローは続行
+          exit 0
+        fi
     # ------------------------------------------------------------------ #
     # GitHub へ通常 push
     # ------------------------------------------------------------------ #
