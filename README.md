@@ -24,7 +24,7 @@
 
 - [`README.md`](README.md) — プロジェクトの概要とクイックスタート。
 - [`docs/`](docs/) — 詳細なセットアップ手順などのガイド類を配置します。
-- [`DEV_GUIDE.md`](DEV_GUIDE.md) — スプレッドシート構成や API 仕様など、開発者向けのリファレンス。
+- [`AGENTS.md`](AGENTS.md) — スプレッドシート構成や API 仕様など、開発者向けのリファレンス。
 
 ---
 
@@ -197,7 +197,7 @@ graph TD
 
 ## Development Setup
 
-開発に参加する際は、詳細なAPI仕様やコーディング規約をまとめた [`DEV_GUIDE.md`](DEV_GUIDE.md) も確認してください。
+開発に参加する際は、詳細なAPI仕様やコーディング規約をまとめた [`AGENTS.md`](AGENTS.md) も確認してください。
 
 Tests require Node.js dependencies. You can install them by running the
 following script or using `npm install` directly:
