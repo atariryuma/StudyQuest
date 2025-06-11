@@ -57,7 +57,7 @@
 
 2.  **グローバルDBの初期化:**
     * Apps Script エディタで **Setup.gs** の `initGlobalDb` を実行し、`StudyQuest_Global_Master_DB` スプレッドシートを作成します。
-    * 生成されたスプレッドシートIDは `Global_Master_DB` プロパティに保存されます。
+    * 生成されたスプレッドシートIDは `Global_Master_DB` プロパティに保存されます。共有ドライブ `StudyQuest` に配置されます。
     * 作成後、実行したユーザーが編集権限を持ち、`Global_Users` シートに `admin` として登録されます。
     * そのほかの教師と共有するか、Web アプリの実行ユーザーを「自分」に設定してください。
 
