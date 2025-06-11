@@ -1,4 +1,4 @@
-jest.mock('../src/shared/escapeHtml.js', () => (s) => s);
+jest.mock('../src/shared/escapeHtml.js', () => (s) => s, { virtual: true });
 
 const { JSDOM } = require('jsdom');
 const escapeHtml = require('../src/shared/escapeHtml.js');
