@@ -1,0 +1,12 @@
+
+/**
+ * HTML エスケープ関数（テスト用）
+ */
+module.exports = function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
