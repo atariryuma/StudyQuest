@@ -17,6 +17,34 @@ if (typeof LockService === 'undefined') {
     }
   };
 }
+if (typeof getGlobalUserRowMap_ !== "function") {
+  function getGlobalUserRowMap_(sheet) {
+    if (!sheet) return {};
+    var last = sheet.getLastRow();
+    if (last < 2) return {};
+    var vals = sheet.getRange(2,1,last-1,1).getValues();
+    var map = {};
+    for (var i=0;i<vals.length;i++) {
+      var em = String(vals[i][0] || "").trim().toLowerCase();
+      if (em) map[em] = i + 2;
+    }
+    return map;
+  }
+}
+if (typeof setValuesIfChanged_ !== "function") {
+  function setValuesIfChanged_(range, values) {
+    if (!range || !values) return;
+    var old = range.getValues();
+    var diff = false;
+    for (var i=0;i<values.length && !diff;i++) {
+      for (var j=0;j<values[i].length;j++) {
+        if (String(old[i][j]) !== String(values[i][j])) { diff = true; break; }
+      }
+    }
+    if (diff) range.setValues(values);
+  }
+}
+
 
 function processLoginBonus(userEmail, teacherCode, studentId) {
   userEmail   = String(userEmail || '').trim();
@@ -32,12 +60,9 @@ function processLoginBonus(userEmail, teacherCode, studentId) {
     if (!db) return;
     var sheet = db.getSheetByName(CONSTS.SHEET_GLOBAL_USERS);
     if (!sheet) return;
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) return;
-    var emails = sheet.getRange(2,1,lastRow-1,1).getValues().flat();
-    var idx = emails.indexOf(userEmail);
-    if (idx === -1) return;
-    var row = idx + 2;
+    var map = getGlobalUserRowMap_(sheet);
+    var row = map[userEmail.toLowerCase()];
+    if (!row) return;
     var now = new Date();
     var lastLogin = new Date(sheet.getRange(row, 9).getValue());
     var streak = Number(sheet.getRange(row, 10).getValue()) || 1;
@@ -47,13 +72,15 @@ function processLoginBonus(userEmail, teacherCode, studentId) {
     } else if (diffDays > 1) {
       streak = 1;
     }
-    sheet.getRange(row, 9, 1, 2).setValues([[now, streak]]);
+    setValuesIfChanged_(sheet.getRange(row, 9, 1, 2), [[now, streak]]);
+    if (typeof removeCacheValue_ === "function") removeCacheValue_("globalUserRowMap");
     if (diffDays !== 0) {
       added = 50;
       var totalXp = Number(sheet.getRange(row, 4).getValue()) || 0;
       totalXp += added;
       var lvl = calcLevelFromXp_(totalXp);
-      sheet.getRange(row, 4, 1, 2).setValues([[totalXp, lvl]]);
+      setValuesIfChanged_(sheet.getRange(row, 4, 1, 2), [[totalXp, lvl]]);
+      if (typeof removeCacheValue_ === "function") removeCacheValue_("globalUserRowMap");
     }
   } finally {
     if (lock.releaseLock) lock.releaseLock();
@@ -176,14 +203,15 @@ function purchaseItem(userEmail, itemId, quantity) {
       }
     }
     if (price === null) return { status: 'error' };
-    var emails = userSheet.getRange(2,1,userSheet.getLastRow()-1,1).getValues().flat();
-    var idx = emails.indexOf(userEmail);
-    if (idx === -1) return { status: 'error' };
-    var row = idx + 2;
-    var coins = Number(userSheet.getRange(row,6).getValue()) || 0;
-    var total = price * quantity;
-    if (coins < total) return { status: 'error' };
-    userSheet.getRange(row,6).setValue(coins - total);
+      var map = getGlobalUserRowMap_(userSheet);
+      var row = map[userEmail.toLowerCase()];
+      if (!row) return { status: 'error' };
+      var coins = Number(userSheet.getRange(row,6).getValue()) || 0;
+      var total = price * quantity;
+      if (coins < total) return { status: 'error' };
+      setValuesIfChanged_(userSheet.getRange(row,6,1,1), [[coins - total]]);
+      if (typeof removeCacheValue_ === "function") removeCacheValue_("globalUserRowMap");
+
     invSheet.appendRow([Utilities.getUuid(), userEmail, itemId, quantity, new Date()]);
     return { status: 'ok' };
   } finally {
