@@ -1,3 +1,20 @@
+function getContactFullName_(email) {
+  email = String(email || '').trim();
+  if (!email) return '';
+  try {
+    if (typeof ContactsApp !== 'undefined' &&
+        ContactsApp &&
+        typeof ContactsApp.getContact === 'function') {
+      var c = ContactsApp.getContact(email);
+      if (c && typeof c.getFullName === 'function') {
+        var n = c.getFullName();
+        if (n) return n;
+      }
+    }
+  } catch (e) {}
+  return '';
+}
+
 function setupInitialTeacher(secretKey) {
   var props = PropertiesService.getScriptProperties();
   var stored = props.getProperty(CONSTS.PROP_TEACHER_PASSCODE);
@@ -6,6 +23,7 @@ function setupInitialTeacher(secretKey) {
   }
 
   var email = Session.getEffectiveUser().getEmail();
+  var teacherName = getContactFullName_(email) || String(email).split('@')[0];
   if (props.getProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email)) {
     return { status: "error", message: "already_exists" };
   }
@@ -23,11 +41,11 @@ function setupInitialTeacher(secretKey) {
           exists = emails.some(function(e){ return String(e).trim().toLowerCase() === email.toLowerCase(); });
         }
         if (!exists) {
-          var handle = String(email).split('@')[0];
+          var name = teacherName;
           var now = new Date();
           userSheet.getRange(last + 1, 1, 1, 12).setValues([[
             email,
-            handle,
+            name,
             'teacher',
             0,
             0,
@@ -74,9 +92,12 @@ function setupInitialTeacher(secretKey) {
     sh.appendRow(def.headers);
   });
 
-  // record owner email in Settings sheet
+  // record owner email and name in Settings sheet
   var settings = ss.getSheetByName(CONSTS.SHEET_SETTINGS);
-  if (settings) settings.appendRow(['ownerEmail', email]);
+  if (settings) {
+    settings.appendRow(['ownerEmail', email]);
+    settings.appendRow(['ownerName', teacherName]);
+  }
 
   props.setProperty(CONSTS.PROP_TEACHER_CODE_PREFIX + email, teacherCode);
   props.setProperty(CONSTS.PROP_TEACHER_SSID_PREFIX + teacherCode, ss.getId());

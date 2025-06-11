@@ -75,7 +75,6 @@
       <p class="mb-2">🎉 初回ログインありがとうございます！</p>
       <p class="mb-2">Google Drive にデータベース「StudyQuest_<span id="newCodeSpan"></span>」を作成しました。</p>
       <p class="mb-2">教師コード: <span id="newCodeSpan2"></span></p>
-      <input id="teacherNameInput" class="w-full p-2 bg-black text-white border mb-4" placeholder="表示名を入力してください">
       <button id="closeFirstMsg" class="game-btn bg-indigo-600 text-white p-3 rounded-lg font-bold border-indigo-800 hover:bg-indigo-500 w-full">続行</button>
     </div>
   </div>
@@ -355,13 +354,9 @@
         const modal = document.getElementById('firstMessage');
         modal.classList.remove('hidden');
         document.getElementById('closeFirstMsg').onclick = function() {
-          const name = document.getElementById('teacherNameInput').value.trim();
-          if (!name) { alert('名前を入力してください'); return; }
-          google.script.run.withSuccessHandler(function() {
-            modal.classList.add('hidden');
-            localStorage.setItem(LS_TEACHER, '1');
-            window.top.location.href = redirect;
-          }).updateTeacherName(name);
+          modal.classList.add('hidden');
+          localStorage.setItem(LS_TEACHER, '1');
+          window.top.location.href = redirect;
         };
       } else {
         document.getElementById('welcomeText').textContent = `${new Date().toLocaleDateString('ja-JP')} にログインしました。`;
