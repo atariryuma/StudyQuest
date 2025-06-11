@@ -202,7 +202,7 @@
 
 <script>
   // GASから渡される変数を定義
-  const SCRIPT_URL = '<?!= typeof scriptUrl !== "undefined" ? scriptUrl : "" ?>';
+  const SCRIPT_URL = '<?!= typeof scriptUrl !== "undefined" ? scriptUrl.replace("/dev","/exec") : "" ?>';
   const urlParams = new URLSearchParams(window.location.search);
   let teacherCode = urlParams.get('teacher') || '<?!= typeof teacher !== "undefined" ? teacher : "" ?>';
   const grade = '<?!= typeof grade !== "undefined" ? grade : "" ?>';

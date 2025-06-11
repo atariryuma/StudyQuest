@@ -37,7 +37,7 @@
   </div>
   <script>
   <?!= include('shared/escapeHtml.html'); ?>
-  const SCRIPT_URL = '<?!= scriptUrl ?>';
+  const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
   const enrolledClasses = JSON.parse(sessionStorage.getItem('enrolledClasses') || '[]');
 
     function renderClassCards() {
