@@ -1,9 +1,10 @@
 # .github/workflows/deploy-gas-webapp.yml
 name: deploy-gas-webapp
 
-# ── 同ブランチでは常に直列実行 (cancel しない)
+# ── 同一ブランチでは常に直列実行（実行中のものはキャンセルしない）
 concurrency:
   group: deploy-gas-webapp
+  cancel-in-progress: false
 
 on:
   push:
@@ -15,7 +16,7 @@ on:
       - '.github/workflows/**'
 
 permissions:
-  contents: write  # 自動コミットに必要
+  contents: write   # 自動コミットに必要
 
 jobs:
   deploy:
@@ -34,20 +35,20 @@ jobs:
     # 2. Node.js + npm キャッシュ
     - uses: actions/setup-node@v4
       with:
-        node-version: '20'
-        cache: 'npm'
+        node-version: 20
+        cache: npm
 
     # 3. Install deps
     - run: npm ci
 
-    # 4. Get package version
+    # 4. Get package version（※ SyntaxError 回避のためダブルクォートを外側に）
     - id: ver
-      run: echo "VERSION=$(node -p 'require(\"./package.json\").version')" >> $GITHUB_OUTPUT
+      run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
 
     # 5. Inject build version into Code.gs
     - run: sed -i "s/__BUILD_VERSION__/v${{ steps.ver.outputs.VERSION }}/" src/Code.gs
 
-    # 6. Tests
+    # 6. Unit tests
     - run: npm test
 
     # 7. Tools (clasp & jq)
@@ -60,13 +61,21 @@ jobs:
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # 9. Push to GAS & create new version
+    # 9. (任意) 重複ファイルをクリーンアップしてから push
+    #    ※ escapeHtml.js が生成物で重複するケースの対策例
+    - run: |
+        # 同名ファイルが存在する場合は削除／リネームして衝突を防ぐ
+        if [ -f "src/shared/escapeHtml.js" ]; then
+          rm -f src/shared/escapeHtml.js
+        fi
+
+    # 10. Push to GAS & create new version
     - run: |
         set -eux
         clasp push --force
         clasp version "v${{ steps.ver.outputs.VERSION }}"
 
-    # 10. Update existing Web-App deployment
+    # 11. Update existing Web-App deployment
     - run: |
         set -eux
         VNUM=$(clasp versions | grep -E '^[0-9]+' | awk '{print $1}' | sort -nr | head -n1)
@@ -74,8 +83,8 @@ jobs:
           --versionNumber "$VNUM" \
           --description "v${{ steps.ver.outputs.VERSION }} (auto-deploy)"
 
-    # 11. Bump patch for next dev cycle & push
-    - if: ${{ success() }}
+    # 12. Bump patch for next dev cycle & push
+    - if: success()
       run: |
         set -eux
         git config user.name github-actions
@@ -86,6 +95,6 @@ jobs:
 
         npm version patch -m "chore: bump to %s [skip ci]"
 
-        # 最新リモートを取り込み、競合なく push
+        # Re-base & push safely
         git pull --rebase --autostash origin main
         git push --follow-tags --force-with-lease
