@@ -60,14 +60,14 @@ jobs:
         mkdir -p ~/.config
         echo "${CLASPRC_JSON}" > ~/.clasprc.json
 
-    # ── delete remote escapeHtml.* before push
     - name: Delete remote escapeHtml.* if present
       run: |
         set -eux
         clasp files:list --json \
           | jq -r '.[] | select(.name=="escapeHtml") | .id' \
           | while read -r ID; do
-              clasp files:delete "$ID"
+              # v3 以降なら: clasp files:delete "$ID" --yes
+              echo y | clasp files:delete "$ID"
             done
 
     # ------------------------------------------------------------------ #
