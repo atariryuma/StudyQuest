@@ -175,17 +175,17 @@ function initTeacher(passcode) {
     {
       name: CONSTS.SHEET_STUDENTS,
       color: "4285f4",
-      header: ['StudentID', 'Grade', 'Class', 'Number', 'FirstLogin', 'LastLogin', 'LoginCount', 'TotalXP', 'Level', 'LastTrophyID'],
+      header: ['StudentID', 'Grade', 'Class', 'Number', 'FirstLogin', 'LastLogin', 'LoginCount', 'TotalXP', 'Level', 'LastTrophyID', 'TotalLikes'],
       description: "ログインした生徒の情報が記録されます。",
-      columnsJa: ['生徒ID','学年','組','番号','初回ログイン','最終ログイン','ログイン回数','累積XP','レベル','最終トロフィーID']
+      columnsJa: ['生徒ID','学年','組','番号','初回ログイン','最終ログイン','ログイン回数','累積XP','レベル','最終トロフィーID','累計いいね数']
     },
     {
       name: CONSTS.SHEET_SUBMISSIONS,
       color: "008080",
       header: ['StudentID', 'TaskID', 'Question', 'StartedAt', 'SubmittedAt', 'ProductURL',
-               'QuestionSummary', 'AnswerSummary', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Status'],
+               'QuestionSummary', 'AnswerSummary', 'EarnedXP', 'TotalXP', 'Level', 'Trophy', 'Status', 'LikeScore'],
       description: "全生徒の回答の概要（ボード表示用）です。",
-      columnsJa: ['生徒ID','課題ID','問題文','開始日時','提出日時','成果物URL','問題概要','回答概要','付与XP','累積XP','レベル','トロフィー','ステータス']
+      columnsJa: ['生徒ID','課題ID','問題文','開始日時','提出日時','成果物URL','問題概要','回答概要','付与XP','累積XP','レベル','トロフィー','ステータス','いいねポイント']
     },
     {
       name: CONSTS.SHEET_AI_FEEDBACK,
