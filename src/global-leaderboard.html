@@ -24,7 +24,7 @@
     <tbody></tbody>
   </table>
   <script>
-    <?!= include('shared/escapeHtml'); ?>
+    <?!= include('shared/escapeHtml.html'); ?>
     function renderLeaderboard(data){
       const tbody=document.querySelector('#globalTable tbody');
       tbody.innerHTML=data.map(r=>`<tr><td>${r.rank}</td><td>${escapeHtml(r.handleName)}</td><td>${escapeHtml(r.level)}</td><td>${escapeHtml(r.totalXp)}</td></tr>`).join('');

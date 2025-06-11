@@ -7,3 +7,8 @@ function escapeHtml(text) {
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   return text == null ? '' : String(text).replace(/[&<>"']/g, m => map[m]);
 }
+
+// Export for tests or Node usage
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = escapeHtml;
+}

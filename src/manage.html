@@ -443,10 +443,11 @@
   <script>
     const SCRIPT_URL = '<?!= scriptUrl.replace("/dev", "/exec") ?>';
     window.teacherCode = '<?!= teacher ?>';
+    const version = '<?!= typeof version !== "undefined" ? version : "" ?>';
   </script>
 
   <script>
-  <?!= include('shared/escapeHtml'); ?>
+  <?!= include('shared/escapeHtml.html'); ?>
     // Lucide Icons を SVG に置き換える
     function renderIcons(scope) {
       // lucide.js の初期化を待つため、わずかに遅延させる
@@ -533,6 +534,7 @@
       populateXpOptions();
       const debugPanel = document.getElementById('debugPanel');
       const versionEl = document.getElementById('versionInfo');
+      versionEl.textContent = version;
       const params = new URLSearchParams(location.search);
       teacherCode = params.get('teacher') || teacherCode;
       const debugCloseBtn = document.getElementById('debugClose');
@@ -1510,6 +1512,6 @@
   </div>
 
   <!-- バージョン表示 -->
-  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"><?= version ?></div>
+  <div id="versionInfo" class="fixed bottom-2 right-2 text-xs text-gray-400"></div>
 </body>
 </html>
