@@ -23,10 +23,12 @@ function doGet(e) {
   template.classroom   = (e && e.parameter && e.parameter['class'])  ? e.parameter['class']  : '';
   template.number      = (e && e.parameter && e.parameter.number)    ? e.parameter.number    : '';
   template.version     = getSqVersion();
-  var result = template
-    .evaluate()
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN)
-    .setTitle('StudyQuest');
+  var result = template.evaluate();
+  if (HtmlService && HtmlService.XFrameOptionsMode &&
+      HtmlService.XFrameOptionsMode.SAMEORIGIN) {
+    result.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN);
+  }
+  result.setTitle('StudyQuest');
   console.timeEnd('doGet');
   return result;
 }
