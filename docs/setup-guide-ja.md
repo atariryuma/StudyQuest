@@ -32,6 +32,7 @@
 | Students | StudentID, Grade, Class, Number, FirstLogin, LastLogin, LoginCount, TotalXP, Level, LastTrophyID, TotalLikes |
 | Tasks | TaskID, Title, Subject, Question, Type, Choices, Difficulty, TimeLimit, XpBase, Status, CreatedAt, CorrectAnswer, Explanation, IsAiGenerated |
 | Submissions | SubmissionID, UserEmail, TaskID, Answer, EarnedXP, Bonuses, SubmittedAt, AiSummary, LikeScore |
+| Likes | LikeID, TaskID, StudentID, LikedBy, Value, CreatedAt |
 | Trophies | TrophyID, Name, Description, IconURL, Condition |
 | Items | ItemID, Name, Type, Price, Effect |
 | Leaderboard | Rank, UserEmail, HandleName, Level, TotalXP, UpdatedAt |
@@ -127,7 +128,18 @@
 | AiSummary | AI要約 (自由回答時) |
 | LikeScore | いいねポイント |
 
+#### Likes
+| 列 | 意味 |
+| --- | --- |
+| LikeID | いいねID |
+| TaskID | 対象課題ID |
+| StudentID | いいねされた生徒ID |
+| LikedBy | 送信者メールアドレス |
+| Value | 付与ポイント(教師:5,生徒:1) |
+| CreatedAt | 送信日時 |
+
 #### Trophies
+
 | 列 | 意味 |
 | --- | --- |
 | TrophyID | トロフィーID |
