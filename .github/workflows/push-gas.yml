@@ -1,8 +1,8 @@
-# .github/workflows/deploy-gas-webapp.yml
-name: deploy-gas-webapp
+# .github/workflows/gas-push.yml
+name: gas-push
 
 concurrency:
-  group: deploy-gas-webapp
+  group: gas-push
   cancel-in-progress: false    # 同ブランチを常に直列実行
 
 on:
@@ -22,12 +22,11 @@ env:
   CLASP_VERSION: latest        # 必要に応じて固定化
 
 jobs:
-  deploy:
+  push:
     runs-on: ubuntu-latest
 
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
 
     steps:
     # ──────────────────────────────────────────────
@@ -78,35 +77,8 @@ jobs:
               clasp delete "$ID" --yes
             done
 
-    # 10. push & version
-    - name: Push to GAS & create new version
+    # 10. push
+    - name: Push to GAS
       run: |
         set -eux
         clasp push --force
-        clasp version "v${{ steps.ver.outputs.VERSION }}"
-
-    # 11. web-app deployment 更新（ID が設定されている場合のみ）
-    - if: env.DEPLOYMENT_ID != ''
-      run: |
-        set -eux
-        VNUM=$(clasp versions | awk '/^[0-9]+/{print $1}' | sort -nr | head -1)
-        clasp update-deployment "$DEPLOYMENT_ID" \
-          --versionNumber "$VNUM" \
-          --description "v${{ steps.ver.outputs.VERSION }} (auto)"
-
-    # ──────────────────────────────────────────────
-    # 12. build artefact のコミット & 次パッチに bump
-    - if: success()
-      run: |
-        set -eux
-        git config user.name  github-actions
-        git config user.email github-actions@github.com
-
-        git add -A
-        # 変更があるときのみコミット
-        git diff --cached --quiet || \
-          git commit -m "build: embed v${{ steps.ver.outputs.VERSION }} [skip ci]" --no-verify
-
-        npm version patch -m "chore: bump to %s [skip ci]" --no-verify
-        git pull --rebase --autostash origin main
-        git push --follow-tags
