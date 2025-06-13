@@ -130,8 +130,8 @@ function addLike(teacherCode, taskId, targetStudentId)
 
 ## 5  Deployment & CI
 
-* **Tooling**: `clasp push --force` via GitHub Actions (`deploy-gas-webapp.yml`).
-* **Secrets**: `CLASPRC_JSON`, `DEPLOYMENT_ID`.
+* **Tooling**: `clasp push --force` via GitHub Actions (`gas-push.yml`).
+* **Secrets**: `CLASPRC_JSON`.
 * **Branch policy**: PR → `main` triggers lint + Jest (optional) + deploy.
 
 ---
